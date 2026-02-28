@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+import fs from 'fs';
+import path from 'path';
+
+const NOTES_FILE = path.join(process.cwd(), 'ai-notes.json');
+const CHAT_LOG_FILE = path.join(process.cwd(), 'ai-chat-log.json');
+
 export async function POST(request: NextRequest) {
     try {
         const apiKey = process.env.GEMINI_API_KEY;
@@ -12,7 +18,26 @@ export async function POST(request: NextRequest) {
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
         const body = await request.json();
-        const { myTeam, openSlots, availablePool, picksUntilTurn, customPrompt, chatHistory = [] } = body;
+        const { myTeam, openSlots, availablePool, picksUntilTurn, customPrompt, chatHistory = [], allDrafted = [] } = body;
+
+        // Feedback Loop: Read historical AI notes and see if any targets were drafted
+        let historicalNotes: Record<string, string> = {};
+        if (fs.existsSync(NOTES_FILE)) {
+            historicalNotes = JSON.parse(fs.readFileSync(NOTES_FILE, 'utf-8'));
+        }
+
+        let feedbackContext = '';
+        if (Object.keys(historicalNotes).length > 0 && allDrafted.length > 0) {
+            const draftedTargets = allDrafted.filter((d: any) =>
+                d.name && historicalNotes[d.name.toLowerCase()]
+            );
+            if (draftedTargets.length > 0) {
+                feedbackContext = `\n=== PAST PREDICTION EVALUATION ===\nYou recently recommended these players who have since been DRAFTED by other teams. Use this feedback to adjust your understanding of how the room values players:\n`;
+                draftedTargets.slice(0, 10).forEach((d: any) => {
+                    feedbackContext += `- ${d.name} (${d.pos}) was taken by ${d.tm}.\n`;
+                });
+            }
+        }
 
         // Build a compact representation of the full available pool
         const topBoardClipped = (availablePool || []).map((p: any) =>
@@ -25,7 +50,7 @@ Because 10 players are kept per team (180 total elite players off the board), th
 
 === IMPORTANT GROUNDING RULE ===
 You MUST use your Google Search tool to verify the most recent 2026 spring training news, injury statuses, and positional changes before recommending any player. Real-time accuracy is critical.
-
+${feedbackContext}
 === MY ROSTER CONTEXT ===
 ${JSON.stringify(myTeam, null, 2)}
 
@@ -67,14 +92,41 @@ Respond with EXACTLY 3 recommended players as a JSON array and NOTHING ELSE:
         });
 
         const text = response.response.text();
-        let recommendations = [];
+        let recommendations: any[] = [];
         try {
             // Extract JSON from anywhere in the text - handles leading/trailing markdown fences and whitespace
             const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/) || text.match(/```\s*([\s\S]*?)\s*```/) || text.match(/(\[\s*\{[\s\S]*\}\s*\])/);
             const cleaned = jsonMatch ? jsonMatch[1].trim() : text.trim();
             recommendations = JSON.parse(cleaned || "[]");
+
+            // If parsed successfully, log these to the notes file for future feedback loops
+            if (Array.isArray(recommendations) && recommendations.length > 0) {
+                recommendations.forEach(r => {
+                    if (r.name && r.rationale) {
+                        historicalNotes[r.name.toLowerCase()] = r.rationale;
+                    }
+                });
+                fs.writeFileSync(NOTES_FILE, JSON.stringify(historicalNotes, null, 2));
+            }
         } catch (e) {
             console.error("Failed to parse Gemini JSON:", text);
+        }
+
+        // Append the entire payload+text result into a persistent chat log to ensure no drafts are lost
+        try {
+            let chatLogs = [];
+            if (fs.existsSync(CHAT_LOG_FILE)) {
+                chatLogs = JSON.parse(fs.readFileSync(CHAT_LOG_FILE, 'utf-8'));
+            }
+            chatLogs.push({
+                timestamp: new Date().toISOString(),
+                prompt: customPrompt || "General Analysis",
+                rawResponse: text,
+                recommendations
+            });
+            fs.writeFileSync(CHAT_LOG_FILE, JSON.stringify(chatLogs, null, 2));
+        } catch (e) {
+            console.error("Failed to write to chat log");
         }
 
         return NextResponse.json({ recommendations, assistantMessage: text });

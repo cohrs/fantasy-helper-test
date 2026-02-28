@@ -486,11 +486,11 @@
     "isKeeper": true
   },
   {
-    "rd": 4,
+    "rd": 1,
     "pk": 55,
     "name": "Brandon Woodruff",
     "pos": "SP",
-    "tm": null,
+    "tm": "Jungle Town Piranhas",
     "playerTeam": "MIL",
     "isKeeper": false
   },
@@ -981,11 +981,11 @@
     "isKeeper": false
   },
   {
-    "rd": 7,
+    "rd": 1,
     "pk": 110,
     "name": "Ezequiel Tovar",
     "pos": "SS",
-    "tm": null,
+    "tm": "New Jersey Nine",
     "playerTeam": "COL",
     "isKeeper": false
   },
@@ -2583,11 +2583,11 @@
     "isKeeper": false
   },
   {
-    "rd": 16,
+    "rd": 1,
     "pk": 288,
     "name": "Luis Robert Jr.",
     "pos": "CF",
-    "tm": null,
+    "tm": "Jack McKeon",
     "playerTeam": "NYM",
     "isKeeper": false
   },

@@ -47,59 +47,97 @@ const WatchlistItem = ({
 }) => {
   const [showNotes, setShowNotes] = useState(false);
   return (
-    <div className={`bg-slate-950 rounded-2xl border ${isTaken ? 'border-slate-800/30 opacity-50' : 'border-slate-800/50 hover:border-slate-700/50'} group transition-all`}>
-      <div className="flex justify-between items-start p-4">
-        <div className="flex items-start gap-3 flex-1 min-w-0">
-          <div className={`w-1 h-10 rounded-full mt-0.5 shrink-0 ${activeSport === 'MLB' ? 'bg-indigo-600' : 'bg-orange-600'} ${isTaken ? 'bg-slate-700' : ''}`} />
-          <div className="flex-1 min-w-0">
-            <div className={`text-sm font-black leading-tight ${isTaken ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{player.name}</div>
-            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-              {(player.adp || player.rank) && (
-                <span className="text-[9px] font-black text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
-                  ADP {player.adp || player.rank}
-                </span>
-              )}
-              <span className="text-[9px] font-bold text-slate-500 uppercase">{player.pos}</span>
-              <span className="text-[9px] text-slate-600">•</span>
-              <span className="text-[9px] font-bold text-slate-500 uppercase">{player.team}</span>
+    <div className={`bg-slate-950 rounded-xl border ${isTaken ? 'border-slate-800/30 opacity-50' : 'border-slate-800/50 hover:border-slate-700/50'} group transition-all relative overflow-hidden`}>
+      <div className={`absolute left-0 top-0 bottom-0 w-1 ${activeSport === 'MLB' ? 'bg-indigo-600' : 'bg-orange-600'} ${isTaken ? 'bg-slate-700' : ''}`} />
+
+      <div className="flex justify-between items-center p-2 pl-3">
+        <div className="flex items-center gap-3 flex-1 min-w-0 pr-2">
+
+          {/* Rank/ADP Stacked Tiny */}
+          <div className="w-6 flex-col items-center justify-center font-black text-[8px] leading-none text-indigo-400 tabular-nums hidden sm:flex shrink-0">
+            <div className="text-[6px] text-slate-600 mb-0.5">{player.yahooRank ? 'AR' : 'ADP'}</div>
+            <div>{player.yahooRank || player.adp || player.rank || '-'}</div>
+          </div>
+
+          {/* Main Player Info Row */}
+          <div className="flex-1 min-w-0 flex items-center flex-wrap gap-x-2 gap-y-1">
+
+            {/* Name & Badges */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className={`text-xs font-black truncate max-w-[120px] ${isTaken ? 'text-slate-500 line-through' : 'text-slate-100'}`}>
+                {player.name}
+              </span>
+              {player.yahooStatus && <span className="text-[7px] font-black bg-red-500/20 text-red-400 px-1 py-0.5 rounded uppercase leading-none">{player.yahooStatus}</span>}
+              {player.isKeeper && <span className="text-[7px] font-black bg-yellow-500/20 text-yellow-400 px-1 py-0.5 rounded uppercase leading-none">K</span>}
             </div>
-            {player.rationale && (
+
+            {/* Pos & Team */}
+            <div className="flex items-center gap-1 shrink-0">
+              <span className="text-[8px] font-bold text-slate-500 uppercase">{player.pos}</span>
+              <span className="text-[7px] text-slate-700">•</span>
+              <span className="text-[8px] font-bold text-slate-600 uppercase">{player.team}</span>
+            </div>
+
+            {/* Compact Stats Row */}
+            {player.yahooStatsPairs && player.yahooStatsPairs.length > 0 && !isTaken && (
+              <div className="flex gap-1 ml-1 items-center flex-wrap">
+                <div className="w-px h-3 bg-slate-800/50 hidden md:block mx-1" />
+                {player.yahooStatsPairs.slice(0, 4).map((s: any) => (
+                  <span key={s.id} className="text-[8px] font-bold text-emerald-400/80 bg-emerald-500/5 border border-emerald-500/10 px-1 py-[1px] rounded whitespace-nowrap">
+                    <span className="opacity-60 font-normal mr-0.5">{s.label}</span>{s.val}
+                  </span>
+                ))}
+                {player.yahooStatsPairs.length > 4 && <span className="text-[8px] text-slate-500">+{player.yahooStatsPairs.length - 4}</span>}
+              </div>
+            )}
+
+            {/* Notes Toggle */}
+            {(player.rationale || player.yahooRecentNote) && (
               <button
                 onClick={() => setShowNotes(v => !v)}
-                className="mt-1.5 text-[9px] uppercase font-bold text-sky-500/70 hover:text-sky-400 flex items-center gap-1 transition-colors"
+                className={`ml-1 text-[8px] uppercase font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-colors ${showNotes ? 'bg-sky-500/20 text-sky-400' : 'text-sky-500/50 hover:text-sky-400 hover:bg-sky-500/10'}`}
               >
-                <Sparkles className="w-3 h-3" />
-                {showNotes ? 'Hide Notes' : 'AI Notes'}
-                {showNotes ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                <Sparkles className="w-2.5 h-2.5" />
+                {showNotes ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />}
               </button>
             )}
+
           </div>
         </div>
 
-        {/* Controls */}
-        <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all shrink-0">
-          <div className="flex flex-col gap-0.5 mr-1">
-            <button disabled={isFirst} onClick={onMoveUp} className="p-1 rounded bg-slate-800/50 hover:bg-slate-700 text-slate-400 hover:text-white disabled:opacity-30 transition-all">
-              <ChevronUp className="w-3 h-3" />
-            </button>
-            <button disabled={isLast} onClick={onMoveDown} className="p-1 rounded bg-slate-800/50 hover:bg-slate-700 text-slate-400 hover:text-white disabled:opacity-30 transition-all">
-              <ChevronDown className="w-3 h-3" />
-            </button>
-          </div>
-          <button onClick={onDelete} className="p-2 rounded-xl bg-slate-800/50 text-slate-500 hover:bg-red-500/20 hover:text-red-400 transition-all">
-            <Trash2 className="w-4 h-4" />
+        {/* Controls - Always visible but muted until hover to save space */}
+        <div className="flex items-center gap-0.5 opacity-30 group-hover:opacity-100 transition-opacity shrink-0">
+          <button disabled={isFirst} onClick={onMoveUp} className="p-1 rounded hover:bg-slate-800 text-slate-500 hover:text-white disabled:opacity-20 transition-all">
+            <ChevronUp className="w-3 h-3" />
+          </button>
+          <button disabled={isLast} onClick={onMoveDown} className="p-1 rounded hover:bg-slate-800 text-slate-500 hover:text-white disabled:opacity-20 transition-all">
+            <ChevronDown className="w-3 h-3" />
+          </button>
+          <div className="w-px h-3 bg-slate-800 mx-0.5" />
+          <button onClick={onDelete} className="p-1 rounded hover:bg-red-500/20 text-slate-500 hover:text-red-400 transition-all">
+            <Trash2 className="w-3 h-3" />
           </button>
         </div>
       </div>
 
-      {/* Inline AI rationale — expands below, no clipping */}
-      {player.rationale && showNotes && (
+      {/* Inline AI rationale / Yahoo Notes — expands below, no clipping */}
+      {(player.rationale || player.yahooRecentNote) && showNotes && (
         <div className="px-4 pb-4 border-t border-slate-800/50">
-          <div className="mt-3 bg-sky-500/5 border border-sky-500/20 rounded-xl p-3">
-            <div className="flex items-center gap-1.5 mb-2 text-sky-400 font-black text-[9px] uppercase tracking-widest">
-              <Sparkles className="w-3 h-3" /> AI Rationale
-            </div>
-            <p className="text-[11px] text-slate-300 leading-relaxed">{player.rationale}</p>
+          <div className="mt-3 flex flex-col gap-3">
+            {player.rationale && (
+              <div className="bg-sky-500/5 border border-sky-500/20 rounded-xl p-3">
+                <div className="flex items-center gap-1.5 mb-2 text-sky-400 font-black text-[9px] uppercase tracking-widest">
+                  <Sparkles className="w-3 h-3" /> AI Rationale
+                </div>
+                <p className="text-[11px] text-slate-300 leading-relaxed">{player.rationale}</p>
+              </div>
+            )}
+            {player.yahooRecentNote && (
+              <div className="bg-slate-800/20 border-l-2 border-sky-500/30 pl-3 py-2 italic rounded-r-xl">
+                <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Latest News</div>
+                <p className="text-[11px] text-slate-300 leading-snug">{player.yahooRecentNote}</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -117,7 +155,7 @@ export default function Home() {
   const [activeSport, setActiveSport] = useState('MLB');
   const [searchTerm, setSearchTerm] = useState('');
   const [myRoster, setMyRoster] = useState<{ id: number; name: string; pos: string; team: string; adp: number; rationale?: string; }[]>([]);
-  const [showWatchlistDrafted, setShowWatchlistDrafted] = useState(true);
+  const [watchlistTab, setWatchlistTab] = useState<'AVAILABLE' | 'DRAFTED' | 'ALL'>('AVAILABLE');
   const [isSyncing, setIsSyncing] = useState(false);
   const [yahooConnected, setYahooConnected] = useState(false);
   const [watchlistPosFilter, setWatchlistPosFilter] = useState('ALL');
@@ -155,6 +193,7 @@ export default function Home() {
   const [draftResults, setDraftResults] = useState<{ rd: number; pk: number; tm: string | null; name: string; pos: string; playerTeam: string; isKeeper: boolean }[]>([]);
   const [showDrafted, setShowDrafted] = useState(false);
   const [positionFilter, setPositionFilter] = useState('ALL');
+  const [statSort, setStatSort] = useState<string | null>(null); // null = rank/ADP default
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   // New Layout States 
@@ -164,10 +203,14 @@ export default function Home() {
   // Yahoo enriched player data (ranked + projected stats)
   const [yahooPlayers, setYahooPlayers] = useState<any[]>([]);
   const [isLoadingYahoo, setIsLoadingYahoo] = useState(false);
+  // Yahoo last-season stats, keyed by lowercased player name
+  const [yahooStats, setYahooStats] = useState<Record<string, Record<string, string>>>({});
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
 
   // Gemini Assistant
   const [isAskingAssistant, setIsAskingAssistant] = useState(false);
   const [assistantRecs, setAssistantRecs] = useState<any[]>([]);
+  const [aiNotes, setAiNotes] = useState<Record<string, string>>({});
   const [assistantPrompt, setAssistantPrompt] = useState("");
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'model'; parts: { text: string }[] }[]>([]);
   const [showAssistantModal, setShowAssistantModal] = useState(false);
@@ -206,22 +249,22 @@ export default function Home() {
 
   // Backend JSON Load
   useEffect(() => {
-    fetch('/api/draft-data')
-      .then(res => res.json())
-      .then(data => {
-        if (data.roster) setMyRoster(data.roster);
-        if (data.draft && data.draft.length > 0) {
-          setDraftResults(data.draft);
-          // Only count non-keeper picks to determine current draft position
-          const draftedCount = data.draft.filter((p: any) => p.tm && !p.isKeeper).length;
-          setCurrentPick(draftedCount + 1);
-        }
-        setIsDataLoaded(true);
-      })
-      .catch(err => {
-        console.error("Error loading draft DB:", err);
-        setIsDataLoaded(true);
-      });
+    Promise.all([
+      fetch('/api/draft-data').then(res => res.json()).catch(() => ({})),
+      fetch('/api/assistant/notes').then(res => res.json()).catch(() => ({}))
+    ]).then(([draftData, notesData]) => {
+      if (draftData.roster) setMyRoster(draftData.roster);
+      if (draftData.draft && draftData.draft.length > 0) {
+        setDraftResults(draftData.draft);
+        const draftedCount = draftData.draft.filter((p: any) => p.tm && !p.isKeeper).length;
+        setCurrentPick(draftedCount + 1);
+      }
+      if (notesData) setAiNotes(notesData);
+      setIsDataLoaded(true);
+    }).catch(err => {
+      console.error("Error loading initial data:", err);
+      setIsDataLoaded(true);
+    });
   }, []);
 
   useEffect(() => {
@@ -313,6 +356,38 @@ export default function Home() {
     }
   };
 
+  // Confirmed Yahoo MLB stat IDs (from cached data 2026-02-28)
+  const YAHOO_STAT_LABELS: Record<string, string> = {
+    // Batting
+    '3': 'AVG', '7': 'R', '8': 'H', '12': 'HR', '13': 'RBI', '16': 'SB', '55': 'OPS',
+    // Pitching
+    '26': 'ERA', '27': 'WHIP', '28': 'W', '42': 'K', '50': 'IP', '83': 'QS',
+  };
+  // Lower = better (for sorting ascending)
+  const ASCENDING_STATS = new Set(['26', '27']); // ERA, WHIP
+  const BATTING_STAT_IDS = ['7', '12', '13', '16', '3', '55'];
+  const PITCHING_STAT_IDS = ['28', '42', '50', '26', '27'];
+
+  const loadYahooStats = async (forceRefresh = false) => {
+    setIsLoadingStats(true);
+    try {
+      const res = await fetch(`/api/yahoo/stats${forceRefresh ? '?refresh=1' : ''}`);
+      const data = await res.json();
+      if (data.byName) {
+        // byName already lowercased on server
+        const map: Record<string, Record<string, string>> = {};
+        for (const [name, player] of Object.entries<any>(data.byName)) {
+          map[name] = player.stats || {};
+        }
+        setYahooStats(map);
+      }
+    } catch (err) {
+      console.error('[Yahoo Stats] load error:', err);
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
+
   const askAssistant = async (promptOverride?: string, newSession = false) => {
     setIsAskingAssistant(true);
     setShowAssistantModal(true); // Always open the modal when a query fires
@@ -360,6 +435,7 @@ export default function Home() {
         myTeam: myRosterFull.filter(r => r.player).map(r => ({ slot: r.slot, player: r.player.name, pos: r.player.pos })),
         openSlots,
         availablePool: processedPool, // Full pool — no cap
+        allDrafted: draftResults.filter(r => r.tm), // The actual drafted pool for live AI feedback loop
         picksUntilTurn: waitPicks,
         customPrompt: userPromptText,
         chatHistory: newHistory
@@ -402,8 +478,6 @@ export default function Home() {
 
   const displayPool = useMemo(() => {
     return draftResults.filter(p => {
-      // Hide if on my personal tracker roster
-      if (myRoster.find(r => r.id === p.pk)) return false;
       // Search term filter
       if (!p.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
       // Show/Hide Drafted
@@ -425,9 +499,10 @@ export default function Home() {
       pos: p.pos,
       team: p.playerTeam || 'FA',
       adp: p.pk,
-      takenBy: p.tm
+      takenBy: p.tm,
+      rationale: aiNotes[p.name.toLowerCase()]
     }));
-  }, [searchTerm, myRoster, draftResults, showDrafted, positionFilter]);
+  }, [searchTerm, myRoster, draftResults, showDrafted, positionFilter, aiNotes]);
 
   // Standard Yahoo Roster Slots (23-man with explicit Outfielders)
   const ROSTER_SLOTS = ['C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'UTIL', 'SP', 'SP', 'SP', 'SP', 'SP', 'RP', 'RP', 'P', 'P', 'BN', 'BN', 'BN', 'BN'];
@@ -711,14 +786,40 @@ export default function Home() {
                     DRAFTED
                   </label>
                   {session && (
-                    <button
-                      onClick={loadYahooPlayers}
-                      disabled={isLoadingYahoo}
-                      className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/20 disabled:opacity-50 flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0"
-                    >
-                      <Zap className={`w-3 h-3 ${isLoadingYahoo ? 'animate-pulse' : ''}`} />
-                      {isLoadingYahoo ? '...' : yahooPlayers.length > 0 ? `AR:${yahooPlayers.length}` : 'YAHOO'}
-                    </button>
+                    <>
+                      <button
+                        onClick={loadYahooPlayers}
+                        disabled={isLoadingYahoo}
+                        className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/20 disabled:opacity-50 flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0"
+                      >
+                        <Zap className={`w-3 h-3 ${isLoadingYahoo ? 'animate-pulse' : ''}`} />
+                        {isLoadingYahoo ? '...' : yahooPlayers.length > 0 ? `AR:${yahooPlayers.length}` : 'YAHOO'}
+                      </button>
+                      <button
+                        onClick={() => loadYahooStats()}
+                        disabled={isLoadingStats}
+                        title={Object.keys(yahooStats).length > 0 ? `${Object.keys(yahooStats).length} players' stats loaded — click to refresh` : 'Load 2025 season stats from Yahoo'}
+                        className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-50 flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0"
+                      >
+                        <BarChart3 className={`w-3 h-3 ${isLoadingStats ? 'animate-pulse' : ''}`} />
+                        {isLoadingStats ? 'Loading...' : Object.keys(yahooStats).length > 0 ? `Stats:${Object.keys(yahooStats).length}` : 'Stats'}
+                      </button>
+                      {Object.keys(yahooStats).length > 0 && (
+                        <select
+                          value={statSort || ''}
+                          onChange={(e) => setStatSort(e.target.value || null)}
+                          className="bg-slate-950 border border-slate-800 text-slate-300 text-[10px] font-bold uppercase tracking-widest rounded-xl px-2 py-1.5 focus:ring-1 focus:ring-emerald-500/50 outline-none"
+                        >
+                          <option value="">Sort by Rank</option>
+                          <optgroup label="Batting">
+                            {BATTING_STAT_IDS.map(id => <option key={`b-${id}`} value={id}>{YAHOO_STAT_LABELS[id] || id}</option>)}
+                          </optgroup>
+                          <optgroup label="Pitching">
+                            {PITCHING_STAT_IDS.map(id => <option key={`p-${id}`} value={id}>{YAHOO_STAT_LABELS[id] || id}</option>)}
+                          </optgroup>
+                        </select>
+                      )}
+                    </>
                   )}
                 </div>
                 <div className="flex-1 overflow-y-auto space-y-1 pr-2">
@@ -756,7 +857,25 @@ export default function Home() {
                     });
 
                     // 3. Sort
-                    if (yahooPlayers.length > 0) {
+                    if (statSort && Object.keys(yahooStats).length > 0) {
+                      processedPool.sort((a, b) => {
+                        const aStats = yahooStats[a.name.toLowerCase()];
+                        const bStats = yahooStats[b.name.toLowerCase()];
+                        const aVal = aStats ? parseFloat(aStats[statSort]) || 0 : -Infinity;
+                        const bVal = bStats ? parseFloat(bStats[statSort]) || 0 : -Infinity;
+
+                        if (aVal !== bVal) {
+                          // e.g ERA and WHIP are better when lower
+                          return ASCENDING_STATS.has(statSort) ? aVal - bVal : bVal - aVal;
+                        }
+
+                        // Fallback to rank
+                        if (a.yahooRank && b.yahooRank) return a.yahooRank - b.yahooRank;
+                        if (a.yahooRank) return -1;
+                        if (b.yahooRank) return 1;
+                        return a.adp - b.adp;
+                      });
+                    } else if (yahooPlayers.length > 0) {
                       // If Yahoo loaded, sort by Yahoo Rank first, then ADP fallback
                       processedPool.sort((a, b) => {
                         if (a.yahooRank && b.yahooRank) return a.yahooRank - b.yahooRank;
@@ -801,6 +920,26 @@ export default function Home() {
                                 {p.yahooRecentNote}
                               </div>
                             )}
+                            {/* 2025 season stats row */}
+                            {Object.keys(yahooStats).length > 0 && !p.takenBy && (() => {
+                              const pStats = yahooStats[p.name.toLowerCase()];
+                              if (!pStats) return null;
+                              const isPitcher = /SP|RP|P/i.test(p.pos);
+                              const ids = isPitcher ? PITCHING_STAT_IDS : BATTING_STAT_IDS;
+                              const pairs = ids
+                                .map(id => ({ id, label: YAHOO_STAT_LABELS[id] || id, val: pStats[id] }))
+                                .filter(s => s.val && s.val !== '-' && s.val !== '0' && s.val !== '');
+                              if (pairs.length === 0) return null;
+                              return (
+                                <div className="flex gap-2 mt-1.5 flex-wrap">
+                                  {pairs.map(s => (
+                                    <span key={s.id} className="text-[9px] font-bold text-emerald-400/80 bg-emerald-500/5 border border-emerald-500/15 px-1.5 py-0.5 rounded">
+                                      {s.label} {s.val}
+                                    </span>
+                                  ))}
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
                         {!p.takenBy && (
@@ -1065,14 +1204,18 @@ export default function Home() {
             {/* Watchlist Header */}
             <div className="mb-4 shrink-0">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Watchlist ({myRoster.length})</h3>
-                <button
-                  onClick={() => setShowWatchlistDrafted(!showWatchlistDrafted)}
-                  className="text-[10px] font-bold uppercase text-slate-500 hover:text-slate-300 flex items-center gap-1 transition-all"
-                >
-                  {showWatchlistDrafted ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                  {showWatchlistDrafted ? 'Hide Taken' : 'Show Taken'}
-                </button>
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-800/50 px-2 py-1 rounded-lg">Watchlist ({myRoster.length})</h3>
+                <div className="flex bg-slate-950 rounded-lg p-0.5 border border-slate-800 shrink-0">
+                  {(['AVAILABLE', 'DRAFTED', 'ALL'] as const).map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setWatchlistTab(tab)}
+                      className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-md transition-all ${watchlistTab === tab ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Position filter pills */}
@@ -1128,10 +1271,13 @@ export default function Home() {
                   view = [...view].sort((a, b) => (b.p.adp || 0) - (a.p.adp || 0));
                 }
 
-                // Hide taken
-                const visibleView = showWatchlistDrafted
-                  ? view
-                  : view.filter(({ p }) => !draftResults.some(d => d.tm && normalizeName(d.name) === normalizeName(p.name)));
+                // Filter by Tab (Available/Drafted/All)
+                const visibleView = view.filter(({ p }) => {
+                  const isTaken = draftResults.some(d => d.tm && normalizeName(d.name) === normalizeName(p.name));
+                  if (watchlistTab === 'AVAILABLE') return !isTaken;
+                  if (watchlistTab === 'DRAFTED') return isTaken;
+                  return true; // 'ALL'
+                });
 
                 if (visibleView.length === 0) {
                   return <div className="text-center mt-10 text-slate-600 text-xs font-bold uppercase tracking-widest">No players match filter</div>;
@@ -1139,10 +1285,32 @@ export default function Home() {
 
                 return visibleView.map(({ p, originalIndex }, viewIdx) => {
                   const isTaken = draftResults.some(d => d.tm && normalizeName(d.name) === normalizeName(p.name));
+
+                  // Enrich the watchlist player with the latest Yahoo data from state
+                  const yhPlayer = yahooPlayers.find(yh => normalizeName(yh.name) === normalizeName(p.name)) || {};
+                  const yhStats = yahooStats[p.name.toLowerCase()];
+
+                  // Pre-format stats pairs if available
+                  let yahooStatsPairs = null;
+                  if (yhStats) {
+                    const isPitcher = /SP|RP|P/i.test(p.pos);
+                    const ids = isPitcher ? PITCHING_STAT_IDS : BATTING_STAT_IDS;
+                    yahooStatsPairs = ids
+                      .map(id => ({ id, label: YAHOO_STAT_LABELS[id] || id, val: yhStats[id] }))
+                      .filter(s => s.val && s.val !== '-' && s.val !== '0' && s.val !== '');
+                  }
+
+                  const enrichedPlayer = {
+                    ...p,
+                    ...yhPlayer,
+                    rationale: aiNotes[p.name.toLowerCase()] || p.rationale,
+                    yahooStatsPairs: yahooStatsPairs
+                  };
+
                   return (
                     <WatchlistItem
                       key={originalIndex}
-                      player={p}
+                      player={enrichedPlayer}
                       activeSport={activeSport}
                       isTaken={isTaken}
                       // isFirst/isLast reflect original array position so move ops make sense
@@ -1261,9 +1429,33 @@ export default function Home() {
                 </button>
               </div>
             )}
-            <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+            {/* AI Recommendations or Loading State */}
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3 relative">
+
+              {/* Chat History View (conversational text) */}
+              {chatHistory.length > 0 && (
+                <div className="space-y-4 mb-4">
+                  {chatHistory.map((msg, idx) => {
+                    // Skip displaying the hidden JSON schema system preamble
+                    const text = msg.parts[0].text;
+                    if (!text || (text.includes('You are an expert, cutthroat') && text.includes('JSON'))) return null;
+
+                    const isUser = msg.role === 'user';
+                    return (
+                      <div key={idx} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[90%] rounded-2xl p-4 text-xs whitespace-pre-wrap leading-relaxed ${isUser ? 'bg-indigo-600/20 text-indigo-200 border border-indigo-500/30' : 'bg-slate-800/40 text-slate-300 border border-slate-700/50'}`}>
+                          {isUser && <div className="text-[9px] font-black uppercase text-indigo-400 mb-2 tracking-widest">You</div>}
+                          {!isUser && <div className="text-[9px] font-black uppercase text-sky-400 mb-2 tracking-widest flex items-center gap-1.5"><Sparkles className="w-3 h-3" /> Assistant</div>}
+                          {text}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               {isAskingAssistant ? (
-                <div className="space-y-4 animate-pulse">
+                <div className="space-y-4 animate-pulse mt-4 border-t border-slate-800/50 pt-4">
                   {[1, 2, 3].map(i => (
                     <div key={i} className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
                       <div className="h-4 bg-slate-800 rounded w-1/3 mb-3"></div>
@@ -1273,57 +1465,58 @@ export default function Home() {
                   ))}
                 </div>
               ) : (
-                assistantRecs.map((rec, i) => {
-                  const targetPlayer = displayPool.find(p => p.name.toLowerCase() === rec.name.toLowerCase() || p.name.includes(rec.name.split(' ')[1]));
-                  const rankToDisplay = targetPlayer ? (yahooPlayers.length > 0 && yahooPlayers.find(y => normalizeName(y.name) === normalizeName(targetPlayer.name))?.rank) || targetPlayer.adp : rec.rank;
-                  const posToDisplay = targetPlayer ? targetPlayer.pos : rec.pos;
-                  const teamToDisplay = targetPlayer ? targetPlayer.team : rec.team;
-                  return (
-                    <div key={i} className="bg-slate-950 p-5 rounded-2xl border border-slate-800/50 hover:border-sky-500/40 transition-colors shadow-lg shadow-black/50 group relative">
-                      <div className="font-bold text-slate-100 mb-2 flex items-center justify-between gap-3 text-base">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-3">
-                            <span className="bg-sky-500/20 text-sky-400 px-2 py-0.5 rounded flex items-center justify-center font-black text-xs border border-sky-500/20">#{i + 1}</span>
-                            {rec.name}
+                <>
+                  {assistantRecs.map((rec, i) => {
+                    const targetPlayer = displayPool.find(p => p.name.toLowerCase() === rec.name.toLowerCase() || p.name.includes(rec.name.split(' ')[1]));
+                    const rankToDisplay = targetPlayer ? (yahooPlayers.length > 0 && yahooPlayers.find(y => normalizeName(y.name) === normalizeName(targetPlayer.name))?.rank) : rec.rank;
+                    const posToDisplay = targetPlayer ? targetPlayer.pos : rec.pos;
+                    const teamToDisplay = targetPlayer ? targetPlayer.team : rec.team;
+                    return (
+                      <div key={i} className="bg-slate-950 p-5 rounded-2xl border border-slate-800/50 hover:border-sky-500/40 transition-colors shadow-lg shadow-black/50 group relative">
+                        <div className="font-bold text-slate-100 mb-2 flex items-center justify-between gap-3 text-base">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-3">
+                              <span className="bg-sky-500/20 text-sky-400 px-2 py-0.5 rounded flex items-center justify-center font-black text-xs border border-sky-500/20">#{i + 1}</span>
+                              {rec.name}
+                            </div>
+                            <div className="flex items-center gap-2 pl-9">
+                              {rankToDisplay && <span className="text-[10px] font-black text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">{yahooPlayers.length > 0 ? 'AR' : 'ADP'} {rankToDisplay}</span>}
+                              {posToDisplay && <span className="text-[10px] font-bold text-slate-400 uppercase">{posToDisplay}</span>}
+                              {teamToDisplay && <span className="text-[10px] font-bold text-slate-500 uppercase px-1">• {teamToDisplay}</span>}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 pl-9">
-                            {rankToDisplay && <span className="text-[10px] font-black text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">{yahooPlayers.length > 0 ? 'AR' : 'ADP'} {rankToDisplay}</span>}
-                            {posToDisplay && <span className="text-[10px] font-bold text-slate-400 uppercase">{posToDisplay}</span>}
-                            {teamToDisplay && <span className="text-[10px] font-bold text-slate-500 uppercase px-1">• {teamToDisplay}</span>}
-                          </div>
+                          <button
+                            onClick={() => {
+                              const targetPlayer = displayPool.find(p =>
+                                p.name.toLowerCase() === rec.name.toLowerCase() ||
+                                p.name.toLowerCase().includes(rec.name.split(' ').pop()?.toLowerCase() || '')
+                              );
+                              const alreadyIn = myRoster.find(r => r.name.toLowerCase() === rec.name.toLowerCase());
+                              if (!alreadyIn) {
+                                const entry = targetPlayer
+                                  ? { ...targetPlayer, rationale: rec.rationale }
+                                  : { id: Date.now(), name: rec.name, pos: rec.pos, team: rec.team, adp: parseInt(rec.rank) || 999, rationale: rec.rationale };
+                                updateWatchlist([...myRoster, entry]);
+                              }
+                            }}
+                            className="w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700 hover:bg-sky-600/30 hover:text-sky-400 hover:border-sky-500/50 transition-all flex items-center justify-center text-slate-500 md:opacity-0 group-hover:opacity-100"
+                            title="Add to Watchlist"
+                          >
+                            <UserPlus className="w-3.5 h-3.5" />
+                          </button>
                         </div>
-                        <button
-                          onClick={() => {
-                            const targetPlayer = displayPool.find(p =>
-                              p.name.toLowerCase() === rec.name.toLowerCase() ||
-                              p.name.toLowerCase().includes(rec.name.split(' ').pop()?.toLowerCase() || '')
-                            );
-                            const alreadyIn = myRoster.find(r => r.name.toLowerCase() === rec.name.toLowerCase());
-                            if (!alreadyIn) {
-                              const entry = targetPlayer
-                                ? { ...targetPlayer, rationale: rec.rationale }
-                                : { id: Date.now(), name: rec.name, pos: rec.pos, team: rec.team, adp: parseInt(rec.rank) || 999, rationale: rec.rationale };
-                              updateWatchlist([...myRoster, entry]);
-                            }
-                          }}
-                          className="w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700 hover:bg-sky-600/30 hover:text-sky-400 hover:border-sky-500/50 transition-all flex items-center justify-center text-slate-500 md:opacity-0 group-hover:opacity-100"
-                          title="Add to Watchlist"
-                        >
-                          <UserPlus className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="text-[13px] text-slate-400 leading-relaxed italic border-l-[3px] border-sky-500/30 pl-3 py-1 mt-3">
+                          {rec.rationale}
+                        </div>
                       </div>
-                      <div className="text-[13px] text-slate-400 leading-relaxed italic border-l-[3px] border-sky-500/30 pl-3 py-1">
-                        {rec.rationale}
-                      </div>
-                    </div>
-                  )
-                })
+                    );
+                  })}
+                </>
               )}
             </div>
           </div>
         )
       }
-
-    </div >
+    </div>
   );
 }
