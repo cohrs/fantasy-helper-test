@@ -2664,11 +2664,11 @@
     "isKeeper": false
   },
   {
-    "rd": 17,
+    "rd": 1,
     "pk": 297,
     "name": "Tatsuya Imai",
     "pos": "SP",
-    "tm": null,
+    "tm": "K-Bandits",
     "playerTeam": "HOU",
     "isKeeper": false
   },
@@ -5643,11 +5643,11 @@
     "isKeeper": false
   },
   {
-    "rd": 35,
+    "rd": 1,
     "pk": 628,
     "name": "Jac Caglianone",
     "pos": "1B,RF",
-    "tm": null,
+    "tm": "The Papelboners",
     "playerTeam": "KC",
     "isKeeper": false
   },

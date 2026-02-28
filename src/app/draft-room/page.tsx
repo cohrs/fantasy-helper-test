@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
   Search, Trophy, Circle, UserPlus, Users, Trash2,
   ChevronRight, Activity, LayoutGrid, Link as LinkIcon,
@@ -9,19 +9,17 @@ import {
 } from 'lucide-react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 
-// Isolated component to prevent typing lag from re-rendering the huge display pool
-const AssistantInput = ({
-  onSubmit,
-  isAskingAssistant,
-  initialValue = "",
-  placeholder = "e.g., Find me a young SP with upside..."
-}: {
-  onSubmit: (val: string) => void;
+// Isolated component to prevent typing lag — exposes value via ref, no parent state on each keystroke
+const AssistantInput = React.forwardRef<{ getValue: () => string }, {
+  onSubmit?: (val: string) => void;
   isAskingAssistant: boolean;
-  initialValue?: string;
   placeholder?: string;
-}) => {
-  const [localVal, setLocalVal] = useState(initialValue);
+}>(({ onSubmit, isAskingAssistant, placeholder = "e.g., Find me a young SP with upside..." }, ref) => {
+  const [localVal, setLocalVal] = useState("");
+
+  React.useImperativeHandle(ref, () => ({
+    getValue: () => localVal,
+  }));
 
   return (
     <input
@@ -31,13 +29,15 @@ const AssistantInput = ({
       onChange={(e) => setLocalVal(e.target.value)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' && !isAskingAssistant) {
-          onSubmit(localVal);
+          onSubmit?.(localVal);
         }
       }}
-      className="w-full bg-slate-950 border border-slate-700/50 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50 placeholder:text-slate-600 transition-all text-slate-200"
+      className="w-full bg-slate-950 border border-slate-700/50 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50 placeholder:text-slate-600 transition-all text-slate-200"
     />
   );
-};
+});
+AssistantInput.displayName = 'AssistantInput';
+
 
 const WatchlistItem = ({
   player, activeSport, isTaken, isFirst, isLast, onMoveUp, onMoveDown, onDelete
@@ -45,56 +45,68 @@ const WatchlistItem = ({
   player: any; activeSport: string; isTaken: boolean; isFirst: boolean; isLast: boolean;
   onMoveUp: () => void; onMoveDown: () => void; onDelete: () => void;
 }) => {
+  const [showNotes, setShowNotes] = useState(false);
   return (
-    <div className={`relative bg-slate-950 p-5 rounded-2xl border ${isTaken ? 'border-slate-800/30 opacity-50' : 'border-slate-800/50 hover:border-slate-700/50'} flex justify-between items-start group transition-all`}>
-      <div className="flex flex-col flex-1 min-w-0 pr-4">
-        <div className="flex items-start gap-4">
-          <div className={`w-1 h-10 rounded-full mt-0.5 shrink-0 ${activeSport === 'MLB' ? 'bg-indigo-600' : 'bg-orange-600'} ${isTaken ? 'bg-slate-700' : ''}`}></div>
+    <div className={`bg-slate-950 rounded-2xl border ${isTaken ? 'border-slate-800/30 opacity-50' : 'border-slate-800/50 hover:border-slate-700/50'} group transition-all`}>
+      <div className="flex justify-between items-start p-4">
+        <div className="flex items-start gap-3 flex-1 min-w-0">
+          <div className={`w-1 h-10 rounded-full mt-0.5 shrink-0 ${activeSport === 'MLB' ? 'bg-indigo-600' : 'bg-orange-600'} ${isTaken ? 'bg-slate-700' : ''}`} />
           <div className="flex-1 min-w-0">
-            <div className={`text-sm font-black ${isTaken ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{player.name}</div>
-            <div className="text-[10px] text-slate-600 font-bold uppercase mb-1">{player.pos} • {player.team}</div>
+            <div className={`text-sm font-black leading-tight ${isTaken ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{player.name}</div>
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              {(player.adp || player.rank) && (
+                <span className="text-[9px] font-black text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">
+                  ADP {player.adp || player.rank}
+                </span>
+              )}
+              <span className="text-[9px] font-bold text-slate-500 uppercase">{player.pos}</span>
+              <span className="text-[9px] text-slate-600">•</span>
+              <span className="text-[9px] font-bold text-slate-500 uppercase">{player.team}</span>
+            </div>
             {player.rationale && (
-              <div className="mt-1 text-[9px] uppercase font-bold text-sky-500/60 flex items-center gap-1 transition-colors">
-                <Sparkles className="w-3 h-3" /> Has AI Notes
-              </div>
+              <button
+                onClick={() => setShowNotes(v => !v)}
+                className="mt-1.5 text-[9px] uppercase font-bold text-sky-500/70 hover:text-sky-400 flex items-center gap-1 transition-colors"
+              >
+                <Sparkles className="w-3 h-3" />
+                {showNotes ? 'Hide Notes' : 'AI Notes'}
+                {showNotes ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
             )}
           </div>
         </div>
-      </div>
 
-      {/* Controls */}
-      <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all shrink-0 mt-1">
-        <div className="flex flex-col gap-0.5 mr-2">
-          <button
-            disabled={isFirst}
-            onClick={onMoveUp}
-            className="p-1 rounded bg-slate-800/50 hover:bg-slate-700 text-slate-400 hover:text-white disabled:opacity-30 transition-all"
-          >
-            <ChevronUp className="w-3 h-3" />
-          </button>
-          <button
-            disabled={isLast}
-            onClick={onMoveDown}
-            className="p-1 rounded bg-slate-800/50 hover:bg-slate-700 text-slate-400 hover:text-white disabled:opacity-30 transition-all"
-          >
-            <ChevronDown className="w-3 h-3" />
+        {/* Controls */}
+        <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all shrink-0">
+          <div className="flex flex-col gap-0.5 mr-1">
+            <button disabled={isFirst} onClick={onMoveUp} className="p-1 rounded bg-slate-800/50 hover:bg-slate-700 text-slate-400 hover:text-white disabled:opacity-30 transition-all">
+              <ChevronUp className="w-3 h-3" />
+            </button>
+            <button disabled={isLast} onClick={onMoveDown} className="p-1 rounded bg-slate-800/50 hover:bg-slate-700 text-slate-400 hover:text-white disabled:opacity-30 transition-all">
+              <ChevronDown className="w-3 h-3" />
+            </button>
+          </div>
+          <button onClick={onDelete} className="p-2 rounded-xl bg-slate-800/50 text-slate-500 hover:bg-red-500/20 hover:text-red-400 transition-all">
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
-        <button onClick={onDelete} className="p-2 rounded-xl bg-slate-800/50 text-slate-500 hover:bg-red-500/20 hover:text-red-400 transition-all"><Trash2 className="w-4 h-4" /></button>
       </div>
 
-      {/* Hover Tooltip Overlay for Rationale */}
-      {player.rationale && (
-        <div className="absolute right-full top-0 mr-4 w-72 bg-slate-900 border border-sky-500/30 p-5 text-left rounded-2xl shadow-[0_10px_40px_-10px_rgba(14,165,233,0.4)] opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 z-[60]">
-          <div className="flex items-center gap-2 mb-3 text-sky-400 font-black italic text-xs uppercase tracking-widest"><Sparkles className="w-4 h-4" /> AI Rationale</div>
-          <div className="text-[13px] text-slate-300 leading-relaxed font-medium">
-            {player.rationale}
+      {/* Inline AI rationale — expands below, no clipping */}
+      {player.rationale && showNotes && (
+        <div className="px-4 pb-4 border-t border-slate-800/50">
+          <div className="mt-3 bg-sky-500/5 border border-sky-500/20 rounded-xl p-3">
+            <div className="flex items-center gap-1.5 mb-2 text-sky-400 font-black text-[9px] uppercase tracking-widest">
+              <Sparkles className="w-3 h-3" /> AI Rationale
+            </div>
+            <p className="text-[11px] text-slate-300 leading-relaxed">{player.rationale}</p>
           </div>
         </div>
       )}
     </div>
   );
 };
+
 
 /**
  * SCOUTMASTER 2026
@@ -108,6 +120,8 @@ export default function Home() {
   const [showWatchlistDrafted, setShowWatchlistDrafted] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [yahooConnected, setYahooConnected] = useState(false);
+  const [watchlistPosFilter, setWatchlistPosFilter] = useState('ALL');
+  const [watchlistSort, setWatchlistSort] = useState<'original' | 'rank-asc' | 'rank-desc'>('original');
 
   const updateWatchlist = async (newRoster: any[]) => {
     setMyRoster(newRoster);
@@ -156,6 +170,26 @@ export default function Home() {
   const [assistantRecs, setAssistantRecs] = useState<any[]>([]);
   const [assistantPrompt, setAssistantPrompt] = useState("");
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'model'; parts: { text: string }[] }[]>([]);
+  const [showAssistantModal, setShowAssistantModal] = useState(false);
+  const assistantInputRef = useRef<{ getValue: () => string }>(null);
+  const modalInputRef = useRef<{ getValue: () => string }>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const [modalPos, setModalPos] = useState({ x: 24, y: 24 }); // bottom-right offset in px
+
+  // Clamp modal back into viewport whenever its content changes height
+  useEffect(() => {
+    const el = modalRef.current;
+    if (!el) return;
+    // Wait one frame for layout to settle
+    requestAnimationFrame(() => {
+      const maxX = Math.max(0, window.innerWidth - el.offsetWidth);
+      const maxY = Math.max(0, window.innerHeight - el.offsetHeight);
+      setModalPos(prev => ({
+        x: Math.min(prev.x, maxX),
+        y: Math.min(prev.y, maxY),
+      }));
+    });
+  }, [assistantRecs, isAskingAssistant, showAssistantModal]);
 
   const { data: session } = useSession();
 
@@ -281,6 +315,7 @@ export default function Home() {
 
   const askAssistant = async (promptOverride?: string, newSession = false) => {
     setIsAskingAssistant(true);
+    setShowAssistantModal(true); // Always open the modal when a query fires
 
     // If starting a new session (button click), clear history & recs
     const activeHistory = newSession ? [] : chatHistory;
@@ -324,7 +359,7 @@ export default function Home() {
       const payload = {
         myTeam: myRosterFull.filter(r => r.player).map(r => ({ slot: r.slot, player: r.player.name, pos: r.player.pos })),
         openSlots,
-        availablePool: processedPool.slice(0, 150),
+        availablePool: processedPool, // Full pool — no cap
         picksUntilTurn: waitPicks,
         customPrompt: userPromptText,
         chatHistory: newHistory
@@ -336,14 +371,19 @@ export default function Home() {
         body: JSON.stringify(payload)
       });
       const data = await res.json();
-      if (data.recommendations) {
-        setAssistantRecs(data.recommendations);
+      if (data.error) {
+        alert(data.error);
+      } else {
+        // Always set recs (even if empty array — keeps modal visible on parse failure)
+        setAssistantRecs(data.recommendations || []);
         // Append model reply to history for next follow-up
         if (data.assistantMessage) {
           setChatHistory([...newHistory, { role: 'model' as const, parts: [{ text: data.assistantMessage }] }]);
         }
-      } else {
-        alert(data.error || 'Failed to fetch recommendations');
+        // If we got 0 recs despite a successful call, show raw response for debugging
+        if ((data.recommendations || []).length === 0 && data.assistantMessage) {
+          console.warn('Gemini returned 0 recs. Raw:', data.assistantMessage);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -613,13 +653,48 @@ export default function Home() {
 
             {viewMode === 'PLAYERS' && (
               <>
-                <div className="relative mb-6 group shrink-0">
-                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 group-focus-within:text-indigo-500 transition-colors" />
-                  <input type="text" placeholder="Search available players..." className="w-full bg-slate-950 border border-slate-800 rounded-[1.5rem] pl-14 pr-6 py-5 text-sm focus:ring-2 focus:ring-indigo-500/40 focus:outline-none transition-all" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+
+
+                {/* === PRIMARY ROW: Assistant controls === */}
+                {session && (
+                  <div className="flex items-center gap-2 mb-4 shrink-0 flex-wrap">
+                    <div className="flex items-center gap-1.5 bg-sky-500/5 border border-sky-500/20 rounded-2xl px-3 py-2 flex-1 min-w-0">
+                      {/* Toggle panel open/close without firing a query */}
+                      <button
+                        onClick={() => setShowAssistantModal(v => !v)}
+                        title={showAssistantModal ? 'Close panel' : 'Open panel'}
+                        className="shrink-0 text-sky-400/60 hover:text-sky-400 transition-colors"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <AssistantInput
+                          ref={assistantInputRef}
+                          isAskingAssistant={isAskingAssistant}
+                          onSubmit={(val) => askAssistant(val, true)}
+                          placeholder="Ask assistant: focus on closers, need a SS..."
+                        />
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => askAssistant(assistantInputRef.current?.getValue() || '', true)}
+                      disabled={isAskingAssistant}
+                      className="px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-sky-500/20 text-sky-400 border border-sky-500/30 hover:bg-sky-500/30 disabled:opacity-50 flex items-center gap-2 transition-all whitespace-nowrap"
+                    >
+                      <Sparkles className={`w-4 h-4 ${isAskingAssistant ? 'animate-spin' : ''}`} />
+                      {isAskingAssistant ? 'Analyzing...' : 'Ask Assistant'}
+                    </button>
+                  </div>
+                )}
+
+                {/* === SECONDARY ROW: Search + position filters + misc === */}
+                <div className="relative mb-3 group shrink-0">
+                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-indigo-500 transition-colors" />
+                  <input type="text" placeholder="Search players..." className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-6 py-3 text-sm focus:ring-2 focus:ring-indigo-500/40 focus:outline-none transition-all" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 </div>
 
-                <div className="flex items-center gap-3 mb-6 shrink-0 flex-wrap">
-                  {/* Position filters - scrollable row */}
+                <div className="flex items-center gap-3 mb-5 shrink-0 flex-wrap">
+                  {/* Position filters */}
                   <div className="flex gap-1.5 overflow-x-auto pb-1 flex-1 min-w-0">
                     {['ALL', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'UTIL', 'SP', 'RP'].map(pos => (
                       <button
@@ -631,45 +706,20 @@ export default function Home() {
                       </button>
                     ))}
                   </div>
-
-                  {/* Right-side controls */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 cursor-pointer whitespace-nowrap">
-                      <input type="checkbox" checked={showDrafted} onChange={(e) => setShowDrafted(e.target.checked)} className="rounded border-slate-700 bg-slate-900 text-indigo-500 focus:ring-offset-slate-900" />
-                      DRAFTED
-                    </label>
-
-                    {session && (
-                      <>
-                        <button
-                          onClick={loadYahooPlayers}
-                          disabled={isLoadingYahoo}
-                          className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/20 disabled:opacity-50 flex items-center gap-1.5 transition-all whitespace-nowrap"
-                        >
-                          <Zap className={`w-3 h-3 ${isLoadingYahoo ? 'animate-pulse' : ''}`} />
-                          {isLoadingYahoo ? '...' : yahooPlayers.length > 0 ? `AR:${yahooPlayers.length}` : 'YAHOO'}
-                        </button>
-                        <div className="w-[160px] shrink-0">
-                          <AssistantInput
-                            isAskingAssistant={isAskingAssistant}
-                            onSubmit={(val) => {
-                              setAssistantPrompt(val);
-                              setTimeout(() => askAssistant(val, false), 0);
-                            }}
-                            placeholder="Ask follow-up..."
-                          />
-                        </div>
-                        <button
-                          onClick={() => askAssistant(assistantPrompt, true)}
-                          disabled={isAskingAssistant}
-                          className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-sky-500/20 text-sky-400 border border-sky-500/30 hover:bg-sky-500/30 disabled:opacity-50 flex items-center gap-1.5 transition-all whitespace-nowrap"
-                        >
-                          <Sparkles className={`w-3 h-3 ${isAskingAssistant ? 'animate-spin' : ''}`} />
-                          {isAskingAssistant ? '...' : chatHistory.length > 0 ? 'NEW' : 'ASK'}
-                        </button>
-                      </>
-                    )}
-                  </div>
+                  <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 cursor-pointer whitespace-nowrap shrink-0">
+                    <input type="checkbox" checked={showDrafted} onChange={(e) => setShowDrafted(e.target.checked)} className="rounded border-slate-700 bg-slate-900 text-indigo-500 focus:ring-offset-slate-900" />
+                    DRAFTED
+                  </label>
+                  {session && (
+                    <button
+                      onClick={loadYahooPlayers}
+                      disabled={isLoadingYahoo}
+                      className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/20 disabled:opacity-50 flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0"
+                    >
+                      <Zap className={`w-3 h-3 ${isLoadingYahoo ? 'animate-pulse' : ''}`} />
+                      {isLoadingYahoo ? '...' : yahooPlayers.length > 0 ? `AR:${yahooPlayers.length}` : 'YAHOO'}
+                    </button>
+                  )}
                 </div>
                 <div className="flex-1 overflow-y-auto space-y-1 pr-2">
                   {(() => {
@@ -1011,42 +1061,108 @@ export default function Home() {
 
         <div className="lg:col-span-3 flex flex-col min-h-0">
           <div className="bg-slate-900 rounded-[2.5rem] p-8 border border-slate-800 flex-1 flex flex-col shadow-2xl min-h-0">
-            <div className="flex items-center justify-between mb-8 shrink-0">
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Watchlist ({myRoster.length})</h3>
-              <button
-                onClick={() => setShowWatchlistDrafted(!showWatchlistDrafted)}
-                className="text-[10px] font-bold uppercase text-slate-500 hover:text-slate-300 flex items-center gap-1 transition-all"
-              >
-                {showWatchlistDrafted ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                {showWatchlistDrafted ? 'Hide Taken' : 'Show Taken'}
-              </button>
+
+            {/* Watchlist Header */}
+            <div className="mb-4 shrink-0">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Watchlist ({myRoster.length})</h3>
+                <button
+                  onClick={() => setShowWatchlistDrafted(!showWatchlistDrafted)}
+                  className="text-[10px] font-bold uppercase text-slate-500 hover:text-slate-300 flex items-center gap-1 transition-all"
+                >
+                  {showWatchlistDrafted ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                  {showWatchlistDrafted ? 'Hide Taken' : 'Show Taken'}
+                </button>
+              </div>
+
+              {/* Position filter pills */}
+              <div className="flex gap-1 flex-wrap mb-2">
+                {['ALL', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'SP', 'RP'].map(pos => (
+                  <button
+                    key={pos}
+                    onClick={() => setWatchlistPosFilter(pos)}
+                    className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${watchlistPosFilter === pos
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-slate-800 text-slate-500 hover:text-slate-300'
+                      }`}
+                  >
+                    {pos}
+                  </button>
+                ))}
+              </div>
+
+              {/* Sort controls */}
+              <div className="flex gap-1">
+                {([['original', 'My Order'], ['rank-asc', 'Rank ↑'], ['rank-desc', 'Rank ↓']] as const).map(([val, label]) => (
+                  <button
+                    key={val}
+                    onClick={() => setWatchlistSort(val)}
+                    className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${watchlistSort === val
+                      ? 'bg-slate-700 text-slate-200'
+                      : 'bg-slate-800/50 text-slate-600 hover:text-slate-400'
+                      }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
-              {myRoster.map((p, i) => {
-                const isTaken = draftResults.some(d => d.tm && normalizeName(d.name) === normalizeName(p.name));
-                if (!showWatchlistDrafted && isTaken) return null;
-                return (
-                  <WatchlistItem
-                    key={i}
-                    player={p}
-                    activeSport={activeSport}
-                    isTaken={isTaken}
-                    isFirst={i === 0}
-                    isLast={i === myRoster.length - 1}
-                    onMoveUp={() => {
-                      const newRoster = [...myRoster];
-                      [newRoster[i - 1], newRoster[i]] = [newRoster[i], newRoster[i - 1]];
-                      updateWatchlist(newRoster);
-                    }}
-                    onMoveDown={() => {
-                      const newRoster = [...myRoster];
-                      [newRoster[i + 1], newRoster[i]] = [newRoster[i], newRoster[i + 1]];
-                      updateWatchlist(newRoster);
-                    }}
-                    onDelete={() => updateWatchlist(myRoster.filter((_, idx) => idx !== i))}
-                  />
-                );
-              })}
+
+            {/* Watchlist items — view-only sort/filter, original indices for move ops */}
+            <div className="space-y-3 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+              {(() => {
+                // Build view: each item carries its original index
+                let view = myRoster.map((p, originalIndex) => ({ p, originalIndex }));
+
+                // Position filter (view-only)
+                if (watchlistPosFilter !== 'ALL') {
+                  view = view.filter(({ p }) =>
+                    p.pos?.toUpperCase().split(/[\/,]+/).includes(watchlistPosFilter)
+                  );
+                }
+
+                // Sort (view-only — does NOT affect myRoster)
+                if (watchlistSort === 'rank-asc') {
+                  view = [...view].sort((a, b) => (a.p.adp || 9999) - (b.p.adp || 9999));
+                } else if (watchlistSort === 'rank-desc') {
+                  view = [...view].sort((a, b) => (b.p.adp || 0) - (a.p.adp || 0));
+                }
+
+                // Hide taken
+                const visibleView = showWatchlistDrafted
+                  ? view
+                  : view.filter(({ p }) => !draftResults.some(d => d.tm && normalizeName(d.name) === normalizeName(p.name)));
+
+                if (visibleView.length === 0) {
+                  return <div className="text-center mt-10 text-slate-600 text-xs font-bold uppercase tracking-widest">No players match filter</div>;
+                }
+
+                return visibleView.map(({ p, originalIndex }, viewIdx) => {
+                  const isTaken = draftResults.some(d => d.tm && normalizeName(d.name) === normalizeName(p.name));
+                  return (
+                    <WatchlistItem
+                      key={originalIndex}
+                      player={p}
+                      activeSport={activeSport}
+                      isTaken={isTaken}
+                      // isFirst/isLast reflect original array position so move ops make sense
+                      isFirst={originalIndex === 0}
+                      isLast={originalIndex === myRoster.length - 1}
+                      onMoveUp={() => {
+                        const newRoster = [...myRoster];
+                        [newRoster[originalIndex - 1], newRoster[originalIndex]] = [newRoster[originalIndex], newRoster[originalIndex - 1]];
+                        updateWatchlist(newRoster);
+                      }}
+                      onMoveDown={() => {
+                        const newRoster = [...myRoster];
+                        [newRoster[originalIndex + 1], newRoster[originalIndex]] = [newRoster[originalIndex], newRoster[originalIndex + 1]];
+                        updateWatchlist(newRoster);
+                      }}
+                      onDelete={() => updateWatchlist(myRoster.filter((_, idx) => idx !== originalIndex))}
+                    />
+                  );
+                });
+              })()}
             </div>
           </div>
         </div>
@@ -1054,29 +1170,97 @@ export default function Home() {
 
       {/* Assistant Modal / Popover */}
       {
-        (isAskingAssistant || assistantRecs.length > 0) && (
-          <div className="fixed bottom-6 right-6 w-[400px] bg-slate-900 border border-slate-700 p-6 z-50 flex flex-col max-h-[80vh] overflow-hidden rounded-[2.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.3)]">
-            <div className="flex items-center justify-between mb-6 shrink-0">
+        showAssistantModal && (
+          <div
+            ref={modalRef}
+            style={{ bottom: modalPos.y, right: modalPos.x }}
+            className="fixed w-[420px] bg-slate-900 border border-slate-700 p-6 z-50 flex flex-col max-h-[80vh] overflow-hidden rounded-[2.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.3)]"
+          >
+            {/* Drag handle — title bar; updates DOM directly, commits state on release */}
+            <div
+              className="flex items-center justify-between mb-6 shrink-0 cursor-grab active:cursor-grabbing select-none"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                const el = modalRef.current;
+                if (!el) return;
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const startPosX = modalPos.x;
+                const startPosY = modalPos.y;
+                let cx = startPosX, cy = startPosY;
+                const clamp = (rawX: number, rawY: number) => {
+                  const w = window.innerWidth;
+                  const h = window.innerHeight;
+                  const mw = el.offsetWidth;
+                  const mh = el.offsetHeight;
+                  return {
+                    x: Math.min(Math.max(0, rawX), w - mw),
+                    y: Math.min(Math.max(0, rawY), h - mh),
+                  };
+                };
+                const onMove = (mv: PointerEvent) => {
+                  const clamped = clamp(
+                    startPosX - (mv.clientX - startX),
+                    startPosY - (mv.clientY - startY)
+                  );
+                  cx = clamped.x;
+                  cy = clamped.y;
+                  el.style.right = cx + 'px';
+                  el.style.bottom = cy + 'px';
+                };
+                const onUp = () => {
+                  setModalPos({ x: cx, y: cy });
+                  window.removeEventListener('pointermove', onMove);
+                  window.removeEventListener('pointerup', onUp);
+                };
+                window.addEventListener('pointermove', onMove);
+                window.addEventListener('pointerup', onUp);
+              }}
+            >
               <h3 className="text-xl font-black italic tracking-tighter flex items-center gap-3 text-sky-400">
                 <Sparkles className="w-6 h-6" /> Pick Assistant
               </h3>
-              {assistantRecs.length > 0 && !isAskingAssistant && (
-                <button onClick={() => setAssistantRecs([])} className="text-slate-500 hover:text-red-400 bg-slate-800/50 hover:bg-slate-800 p-2 rounded-full transition-all">
-                  <Trash2 className="w-4 h-4" />
+              <div className="flex items-center gap-2">
+                {/* DEV: Load fixture without burning API quota */}
+                {process.env.NODE_ENV === 'development' && (
+                  <button
+                    onClick={async () => {
+                      const res = await fetch('/test-assistant-response.json');
+                      const recs = await res.json();
+                      setAssistantRecs(recs);
+                    }}
+                    className="text-[9px] font-black uppercase tracking-widest text-amber-400/60 hover:text-amber-400 bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/10 px-2 py-1 rounded-lg transition-all"
+                  >
+                    Load Test
+                  </button>
+                )}
+                {assistantRecs.length > 0 && !isAskingAssistant && (
+                  <button onClick={() => { setAssistantRecs([]); setChatHistory([]); }} className="text-slate-500 hover:text-red-400 bg-slate-800/50 hover:bg-slate-800 p-2 rounded-full transition-all">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+                <button onClick={() => setShowAssistantModal(false)} className="text-slate-500 hover:text-slate-300 bg-slate-800/50 hover:bg-slate-800 p-2 rounded-full transition-all">
+                  ✕
                 </button>
-              )}
+              </div>
             </div>
-            <div className="mb-4 shrink-0">
-              <AssistantInput
-                isAskingAssistant={isAskingAssistant}
-                onSubmit={(val) => {
-                  setAssistantPrompt(val);
-                  setTimeout(() => askAssistant(val), 0);
-                }}
-                placeholder="e.g., Actually I need an outfielder instead..."
-                initialValue={assistantPrompt}
-              />
-            </div>
+            {/* Follow-up input bar */}
+            {!isAskingAssistant && (
+              <div className="mb-4 shrink-0 flex gap-2">
+                <AssistantInput
+                  ref={modalInputRef}
+                  isAskingAssistant={isAskingAssistant}
+                  onSubmit={(val) => askAssistant(val, false)}
+                  placeholder="Follow up: actually find me a closer..."
+                />
+                <button
+                  onClick={() => askAssistant(modalInputRef.current?.getValue() || '', false)}
+                  className="px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-sky-500/20 text-sky-400 border border-sky-500/30 hover:bg-sky-500/30 flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0"
+                >
+                  <Sparkles className="w-3 h-3" /> Send
+                </button>
+              </div>
+            )}
             <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
               {isAskingAssistant ? (
                 <div className="space-y-4 animate-pulse">
@@ -1110,9 +1294,16 @@ export default function Home() {
                         </div>
                         <button
                           onClick={() => {
-                            const targetPlayer = displayPool.find(p => p.name.toLowerCase() === rec.name.toLowerCase() || p.name.includes(rec.name.split(' ')[1]));
-                            if (targetPlayer && !myRoster.find(r => r.id === targetPlayer.id)) {
-                              updateWatchlist([...myRoster, { ...targetPlayer, rationale: rec.rationale }]);
+                            const targetPlayer = displayPool.find(p =>
+                              p.name.toLowerCase() === rec.name.toLowerCase() ||
+                              p.name.toLowerCase().includes(rec.name.split(' ').pop()?.toLowerCase() || '')
+                            );
+                            const alreadyIn = myRoster.find(r => r.name.toLowerCase() === rec.name.toLowerCase());
+                            if (!alreadyIn) {
+                              const entry = targetPlayer
+                                ? { ...targetPlayer, rationale: rec.rationale }
+                                : { id: Date.now(), name: rec.name, pos: rec.pos, team: rec.team, adp: parseInt(rec.rank) || 999, rationale: rec.rationale };
+                              updateWatchlist([...myRoster, entry]);
                             }
                           }}
                           className="w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700 hover:bg-sky-600/30 hover:text-sky-400 hover:border-sky-500/50 transition-all flex items-center justify-center text-slate-500 md:opacity-0 group-hover:opacity-100"

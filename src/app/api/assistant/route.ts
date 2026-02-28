@@ -14,8 +14,8 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { myTeam, openSlots, availablePool, picksUntilTurn, customPrompt, chatHistory = [] } = body;
 
-        // Build a compact representation of the board to fit nicely
-        const topBoardClipped = (availablePool || []).slice(0, 150).map((p: any) =>
+        // Build a compact representation of the full available pool
+        const topBoardClipped = (availablePool || []).map((p: any) =>
             `${p.yahooRank || p.adp}. ${p.name} (${p.team} - ${p.pos})`
         ).join('\n');
 
@@ -69,7 +69,9 @@ Respond with EXACTLY 3 recommended players as a JSON array and NOTHING ELSE:
         const text = response.response.text();
         let recommendations = [];
         try {
-            const cleaned = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+            // Extract JSON from anywhere in the text - handles leading/trailing markdown fences and whitespace
+            const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/) || text.match(/```\s*([\s\S]*?)\s*```/) || text.match(/(\[\s*\{[\s\S]*\}\s*\])/);
+            const cleaned = jsonMatch ? jsonMatch[1].trim() : text.trim();
             recommendations = JSON.parse(cleaned || "[]");
         } catch (e) {
             console.error("Failed to parse Gemini JSON:", text);

@@ -1,1 +1,137 @@
-[]
+[
+  {
+    "id": 110,
+    "name": "Ezequiel Tovar",
+    "pos": "SS",
+    "team": "COL",
+    "adp": 110,
+    "takenBy": null,
+    "rationale": "Tovar fills your critical need at shortstop and plays his home games in the best offensive environment in baseball. He provides a rare power/speed combination for the position, directly addressing your team's lack of stolen bases, and appears healthy heading into the 2026 season after an injury-plagued 2025. Given his rank and the two picks before your next turn, he is a high-priority target who is unlikely to be available later."
+  },
+  {
+    "id": 126,
+    "name": "Gleyber Torres",
+    "pos": "2B",
+    "team": "DET",
+    "adp": 126,
+    "takenBy": null,
+    "rationale": "The breaking news on Jordan Westburg's partially torn UCL makes him an extremely risky pick who will miss all of April, at minimum. Pivot to Torres, who fills your 2B hole with a reliable power source. While his average can fluctuate, he provides legitimate home run and RBI production that is difficult to find at this stage of the draft, and he is healthy heading into spring training."
+  },
+  {
+    "id": 473,
+    "name": "Gabriel Moreno",
+    "pos": "C",
+    "team": "AZ",
+    "adp": 473,
+    "takenBy": null,
+    "rationale": "Moreno is a 26-year-old emerging star at a premium position where you currently have a gaping hole. He's coming off his best offensive season in 2025 and is poised for a true breakout in 2026 if he can stay healthy. Reports from spring training are glowing, with particular praise for his understanding of the strike zone, which will only enhance his value in a 7x7 format that includes OPS."
+  },
+  {
+    "id": 372,
+    "name": "Masyn Winn",
+    "pos": "SS",
+    "team": "STL",
+    "adp": 372,
+    "takenBy": null,
+    "rationale": "At just 23 years old, Winn has already established himself as an elite defensive shortstop, winning a Gold Glove in 2025. He's now fully healthy after off-season knee surgery and has explicitly stated his intent to be more aggressive on the basepaths in 2026, a huge boon for your stolen base category. With the departure of several veterans in St. Louis, Winn is positioned as a leader on the team and a prime candidate for the leadoff spot, which would maximize his runs-scored contribution."
+  },
+  {
+    "id": 302,
+    "name": "Wilyer Abreu",
+    "pos": "LF,CF,RF",
+    "team": "BOS",
+    "adp": 302,
+    "takenBy": null,
+    "rationale": "Abreu, 26, is a two-time Gold Glove winner who is slated for a full-time role in 2026, which means a significant increase in plate appearances and counting stats. While his batting average and OPS might see a slight dip with more exposure to left-handed pitching, the sheer volume of at-bats will be invaluable for accumulating hits, runs, HR, and RBI. He fills your vacant LF spot with a player who has a solid power and speed combination, having hit 22 homers and stolen 6 bases in 2025."
+  },
+  {
+    "id": 125,
+    "name": "Jordan Westburg",
+    "pos": "2B,3B",
+    "team": "BAL",
+    "adp": 125,
+    "takenBy": null,
+    "rationale": "Westburg is entering his age-27 season and has established himself as a solid regular for a potent Orioles offense. He provides much-needed eligibility at second base and offers a good blend of power and speed, making him a valuable contributor across multiple categories in this 7x7 format."
+  },
+  {
+    "id": 958,
+    "name": "Evan Carter",
+    "pos": "LF,CF,RF",
+    "team": "TEX",
+    "adp": 958,
+    "takenBy": null,
+    "rationale": "At just 23, Carter offers an elite blend of power and speed that is exceedingly rare this deep in the draft. He is fully recovered from the wrist fracture that ended his 2025 season and is aiming for 30 stolen bases in 2026. Securing a young, multi-category contributor for our vacant LF spot is a move that provides both a high floor and a massive ceiling."
+  },
+  {
+    "id": 1166,
+    "name": "Zack Gelof",
+    "pos": "2B",
+    "team": "ATH",
+    "adp": 1166,
+    "takenBy": null,
+    "rationale": "Gelof fills our desperate need at second base with significant power and speed upside. Although his 2025 was marred by injuries, he is reportedly healthy heading into 2026 and working on his swing. His ADP has plummeted due to the down year, making him an incredible value pick with 20/20 potential if he can stay on the field and make more consistent contact."
+  },
+  {
+    "id": 314,
+    "name": "Jared Jones",
+    "pos": "SP",
+    "team": "PIT",
+    "adp": 314,
+    "takenBy": null,
+    "rationale": "Jones is putting on a massive power display this spring, already launching three home runs in the first week of games, with one traveling a projected 427 feet. Often compared to Aaron Judge for his 6-foot-7 frame and immense raw power, he hit 35 homers in the high minors last season and appears poised to bring that thump to the big leagues in 2026, making him the highest-upside power bat available."
+  },
+  {
+    "id": 249,
+    "name": "Munetaka Murakami",
+    "pos": "1B,3B",
+    "team": "CWS",
+    "adp": 249,
+    "takenBy": null,
+    "rationale": "Murakami is a legendary power hitter from Japan who once hit 56 home runs in a season, and has explicitly stated his goal is to \"hit as many bombs as possible\" for Chicago fans. He has already shown impressive exit velocities in spring training, and as the centerpiece of the White Sox lineup, he will have a permanent green light to swing for the fences, giving him a ceiling of 40+ homers."
+  },
+  {
+    "id": 1249,
+    "name": "Coby Mayo",
+    "pos": "1B",
+    "team": "BAL",
+    "adp": 1249,
+    "takenBy": null,
+    "rationale": "A massive opportunity has opened for Mayo at third base due to a significant injury to Jordan Westburg, clearing his path to everyday at-bats. Known for his plus-plus raw power, the 24-year-old has a 6-foot-4, 230-pound frame built for hitting home runs and now has the playing time security to translate that into 30+ homer potential for a potent Orioles lineup."
+  },
+  {
+    "id": 717,
+    "name": "Jordan Hicks",
+    "pos": "SP,RP",
+    "team": "CWS",
+    "adp": 717,
+    "takenBy": null,
+    "rationale": "While the White Sox are trying him as a starter, his electric stuff has always played best in high-leverage relief. If the starter experiment fails, as it has before, he immediately becomes a top candidate for saves and holds on a team that needs a reliable bullpen arm, all while retaining valuable SP eligibility."
+  },
+  {
+    "id": 90,
+    "name": "Pablo López",
+    "pos": "SP",
+    "team": "MIN",
+    "adp": 90,
+    "takenBy": null,
+    "rationale": "Although the Braves are currently planning for him to be in the starting rotation, he is coming off a significant 2025 shoulder injury. The team has acknowledged he is a 'nice fallback option' for the bullpen, a role where he previously excelled and could quickly return to if the starter workload proves too much, making him a great source of holds for a top team."
+  },
+  {
+    "id": 330,
+    "name": "Reynaldo López",
+    "pos": "SP",
+    "team": "ATL",
+    "adp": 330,
+    "takenBy": null,
+    "rationale": "Although the Braves are currently planning for him to be in the starting rotation, he is coming off a significant 2025 shoulder injury. The team has acknowledged he is a 'nice fallback option' for the bullpen, a role where he previously excelled and could quickly return to if the starter workload proves too much, making him a great source of holds for a top team."
+  },
+  {
+    "id": 174,
+    "name": "Ryan Helsley",
+    "pos": "RP",
+    "team": "BAL",
+    "adp": 174,
+    "takenBy": null,
+    "rationale": "In a 7x7 league that includes holds and saves, securing a top-tier closer is paramount. Helsley is locked in as the Orioles' primary closer and offers elite strikeout potential. While there was some inconsistency in 2025, the move to a competitive Baltimore team should provide plenty of save opportunities, and his high-octane arsenal gives him a massive ceiling for strikeouts and ratio help."
+  }
+]
