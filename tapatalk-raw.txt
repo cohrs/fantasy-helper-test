@@ -1,0 +1,2621 @@
+2026 Draft Player List - Asshat Roto Leagues
+var GOP={},HCS=parseInt("0");!function(){var t,e,s=parseInt("0"),O=parseInt("0"),r=(t="GOP",(e=window.document.cookie.match("(^|;) ?"+t+"=([^;]*)(;|$)"))?e[2]:null);r&&(GOP=JSON.parse(atob(r))),!s&&!O||GOP.thm||(GOP.thm="dark"),GOP.thm?"customize"!==GOP.thm||HCS||(GOP.thm="original"):(GOP.thm=HCS?"customize":"original",GOP.thm_o=1),GOP.ft&&parseInt(GOP.ft)||(GOP.ft=13),document.write('
+'),document.write("
+html {font-size: "+parseInt(GOP.ft)+"px}
+"),"dark"===GOP.thm&&document.querySelector('meta[name="theme-color"]').setAttribute("content","#3D3F43")}();
+/* Background Solid  */
+.topic_type, .pagination li a:hover, .pagination li a:focus, .pagination li.active span, .pagination li.active a, a.button1:hover, input.button1:hover, a.button2:hover, input.button2:hover, input.button3:hover, a.no_avatar:hover, input.button1:focus, input.button2:focus, input.button3:focus, .specialbutton, input.specialbutton, .panel .specialbutton, a.specialbutton, .unread-mark, input.quick-relay.button1 {  background: #5b6abf;	}
+/* Borders Dark */
+.pagination li a:hover, blockquote, .codebox code, a.postlink, input.button1:focus, input.button2:focus, input.button3:focus, input.specialbutton, .inputbox:hover, .inputbox:focus, .specialbutton, a.specialbutton, .button:focus, div .vip_ads_specialbotton, .donate_select {border-color: #5b6abf;}
+/* Background Gradient  */
+.headerbar, .scrollToTop, .no_avatar, .badge, thead tr, .sidebar_block_stripe:before, .fancy_panel:before {background: #5b6abf;}
+/* override special*/
+#footer, .navbar, .default-submit-action, .btn-tabs.active {background-color: #5b6abf !important; }
+/* custom loader color */
+.loader-base { color: #5b6abf;}
+.loader__figure {border: 0 solid #5b6abf;}
+.loader__label {color: #5b6abf;}
+div .vip_ads_specialbotton {color: #5b6abf;}
+div .vip_ads_specialbotton:hover {background-color: #5b6abf; color: #eee; }
+@-webkit-keyframes loader-figure, @-moz-keyframes loader-figure, @keyframes loader-figure {
+0% {height: 0; width: 0; background-color: #5b6abf;}
+29% {background-color: #5b6abf;}
+30% {height: 2em; width: 2em; background-color: transparent; border-width: 1em; opacity: 1;}
+100% {height: 2em; width: 2em; border-width: 0; opacity: 0; background-color: transparent;}
+.loader-base { color: #5b6abf;}
+.slideout-menu{background-color: #5b6abf;}
+/* #footer.stretch-footer-shadow box shadow stretch to body bottom */
+#footer.stretch-footer-shadow{box-shadow: 0 1000px 0 1000px #5b6abf;}
+.syscolorbg{background-color: #5b6abf !important;}
+/* general theme color */
+.tapatalk-theme-background {background-color: #5b6abf !important;}
+.tapatalk-theme-border, .nav-l.fixed .nav-item.active {border-color: #5b6abf !important;}
+.tapatalk-theme-color, .nav-l.fixed .nav-item.active a, .nav-l.fixed .nav-item:hover a, .nav-l.sub .nav-item:hover a {color: #5b6abf !important;}
+.nav-l.fixed .nav-item.active .st0, .nav-l.fixed .nav-item:hover .st0 {fill: #5b6abf;}
+.tt-tm-hv:hover{color: #5b6abf !important;}
+/* TOPIC poll bar style */
+.poll_bar .poll-title svg path {fill: #5b6abf !important;}
+.checkmark:hover { border: 1px solid #5b6abf; }
+.custom_checkbox input:checked + .checkmark { background: #5b6abf; border: 1px solid #5b6abf; }
+/* FORUMS/DISCUSSIONS nav active item style */
+.showTTIDForumsHideDiv{background-color: #5b6abf;}
+#navbar_home .inner .nav-bar-left .logo-pic-box
+{   border-top: 1px solid #5b6abf;
+border-left: 1px solid #5b6abf;
+border-right: 1px solid #5b6abf;}
+var HS_FORUM_ID = "33492";
+var FORUM_TAPATALK_ID = "1989197";
+var SCRIPT_NAME = "viewtopic";
+var PHPBBASIC_ENABLED = "";
+var HOME_URL    = "" || "https://www.tapatalk.com/groups/asshatrotoleagues/?sid=8a7156cd6f79b6389f2f144f5069dcc1";
+var DEV_ENV     = "";
+var DONATION_VISIBILITY = "";
+var PREMIUM_MEMBER_VISIBILITY = "";
+var ENCODE_WELCOME_MESSAGE = "";
+var FORUM_TIER = "0";
+var TTG_IMAGES_PATH = "./images/";
+var AVATAR_DEFAULT = "https://groups.tapatalk-cdn.com/static/image/no_avatar.png";
+var FORUM_DOMAIN_ID = "1";
+var CURRENT_USER_ID = parseInt("0");
+var USER_PERFORMACE = parseFloat("4.41");
+var TOTAL_POSTS_NUM = parseInt("8500");
+var USER_POSTS_NUM = parseInt("0");
+var CURRENT_PP_VERSION = "10";
+var PHONEMODE = "desktop";
+var USERNAME_CLEAN = "anonymous";
+var WEB_ADS_REQUEST = "0";
+var WEB_ADS = "0";
+var WEB_ADS_ENABLE_INFINITE_PLACEHOLDER = "0";
+var BOARD_URL = "https://www.tapatalk.com/groups/asshatrotoleagues/";
+var TT_COOKIE_NAME   = "phpbb_asshatrotoleagues";
+var TT_COOKIE_PATH   = "/groups/asshatrotoleagues";
+var TT_COOKIE_SECURE = parseInt("0");
+var HAS_ENABLE_VIP_PLUS = parseInt("1");
+var IS_VIP_PLUS = parseInt("0");
+var IS_VIP = parseInt("0");
+var U_COOKIE_TTID = "";
+var SITE_NAME = "Asshat Roto Leagues";
+var ADS_REASON = "no_ads_bot";
+var EMAIL_HASH = [];
+var USER_COUNTRY = "US";
+var FORCE_DISABLE_VIPPLUS_MESSAGES = parseInt("0");
+var ADS_STAGE = parseInt("3");
+var ADS_NSFW_SITE = parseInt("0");
+var IS_NSFW_PAGE = parseInt("0");
+var ADS_NSFW_LEVEL = parseInt("0");
+var ADS_NSFW_PERCENTAGE= parseFloat("0.00");
+var VIP_PLUS_STATUS = parseInt("2");
+var TAPATALK_COM_DOMAIN = "https://www.tapatalk.com";
+var U_TTID = parseInt("");
+var U_COOKIE_TTID = parseInt("");
+var U_MODERATE_PIN_TOPIC = parseInt("");
+var L_PIN_TOPIC = "Pin Topic";
+var U_PIN_TOPIC_MCP_LINK = "";
+var L_PIN_TOPIC_DESC_7DAYS = "Pay 200 Gold Points to pin topic to the top of the group for 7 days, gain more views and awareness.";
+var L_PIN_TOPIC_DESC_30DAYS = "Pay 500 Gold Points to pin topic to the top of the group for 30 days, gain more views and awareness.";
+var U_IS_VIP_PLUS = parseInt("0");
+var U_IS_VIP = parseInt("0");
+var S_BUY_VIP_SHOW_POPUP = parseInt("0");
+var S_CANUSE_FORUM_WALLET = parseInt("0");
+var S_IS_ADMIN = parseInt("0");
+var S_ADS_BY_TAPATALK = parseInt("1");
+var AWARD_NOTIFICATION_ID = '';
+var ALWAYS_SHOW_NOTIFICATION = parseInt("");
+var TRY_PIN_TOPIC ='';
+var IS_SUPER_ADMIN = parseInt("0");
+var UA_AJAX_MENTION_URL = '/groups/asshatrotoleagues/app.php/mentionloc/?sid=8a7156cd6f79b6389f2f144f5069dcc1';
+var TTID_FORUMS_SWITCH_DISABLE = parseInt("0");
+var PROFILE_HAT_STYLE = parseInt("0");
+var SHOW_PROFILE_HAT_NOTIFICATION = parseInt("");
+var SHOW_PROFILE_CARD_NOTIFICATION = parseInt("");
+var SHOW_GP_INTRO = parseInt("");
+var GP_BALANCE = parseFloat("0");
+var T_THEME_PATH = 'https://www.tapatalk.com/groups/static/styles/Tapatalk/theme';
+var CURRENT_USER_AVATAR = '
+var PROFILE_HATS_CHOSEN = '0';
+var POST_CARDS_CHOSEN = '0';
+var POST_CARDS_CATEGORY_CHOSEN = '2';
+var SESSION_ELASPE = parseInt('');
+var S_USER_LOGGED_IN = parseInt('');
+var U_REGISTER = 'https://www.tapatalk.com/groups/asshatrotoleagues/ucp.php?mode=register&amp;sid=8a7156cd6f79b6389f2f144f5069dcc1';
+var S_LOGIN_REDIRECT = '';
+var U_LOGIN_URL = 'https://www.tapatalk.com/groups/asshatrotoleagues/ucp.php?mode=login&amp;sid=8a7156cd6f79b6389f2f144f5069dcc1';
+var U_LOGIN_LOGOUT = 'https://www.tapatalk.com/groups/asshatrotoleagues/ucp.php?mode=login&amp;sid=8a7156cd6f79b6389f2f144f5069dcc1';
+var L_LOGIN_LOGOUT = 'Login';
+var ABTEST = parseInt('');
+var ADS_FREE_EXPIRE = parseInt('');
+var currentTopicID = parseInt('1235');
+var SHOW_PERMIUM_HTML = parseInt('0');
+var S_AWARD_NOTIFICATION_TYPE = parseInt('0');
+var AWARD_NOTIFICATION_TITLE_JS = '';
+var AWARD_NOTIFICATION_CONTENT_JS = '';
+var U_AWARD_NOTIFICATION_LINK_JS = '';
+var FAST_REGISTER = parseInt('');
+var IFRAME_TTG_URL = 'https://www.tapatalk.com/connect/register?client_id=1489117111&state=REG:8a7156cd6f79b6389f2f144f5069dcc1&response_type=code&redirect_uri=https://www.tapatalk.com/groups/asshatrotoleagues/auth.php&scope=basic&fname=Asshat+Roto+Leagues&fid=1989197&sty=ttg&forumid=33492';
+var NAV_TTG_URL_GOOGLEONETAP = 'hst_client_id%3D1489117111%26hst_response_type%3Dcode%26hst_redirect_uri%3Dhttps%253A%252F%252Fwww.tapatalk.com%252Fgroups%252Fasshatrotoleagues%252Fauth.php%26hst_state%3DREG%253A8a7156cd6f79b6389f2f144f5069dcc1%26hst_scope%3Dbasic%26hst_fid%3D1989197%26hst_fname%3DAsshat%252BRoto%252BLeagues%26hst_sty%3Dttg%26hst_forumid%3D33492%26hst_register_channel%3Dttg_banner';
+var CHECK_IN_DAYS = '';
+var POPUP_TTID_CONNECT = parseInt('0');
+var HIDE_TTID_POPUP = parseInt('0');
+var POPUP_TTID_CONNECT_EMAIL = '';
+var GOLD_POINT_ENABLED = '0';
+var EMAIL_VIP_PROMOTION = parseInt('');
+var S_USER_TYPE_STATUS = '';
+var SEARCHED_QUERY = '';
+var TOPIC_ID = '1235';
+var REPLY_TOPIC_ID = '';
+var U_WATCH_TOPIC = '';
+var U_STOP_WATCHING_TOPIC = '';
+var S_VIEW_FORUM_INDEX = parseInt('');
+var S_ENABLE_OPENAI_CHAT = '';
+var S_IN_POSTING = '';
+var ASSETS_VERSION = '1106';
+var S_VIEW_FORUM_DISCUSSIONS = 0;
+S_VIEW_FORUM_DISCUSSIONS = 0;
+window.onerror = function(msg, url, line){
+console.log(msg, url, line);
+return true;
+var CUSTOM_HEADER = parseInt('0');
+var CUSTOM_RIGHT = parseInt('0');
+var CUSTOM_FOOTER = parseInt('0');
+var CUSTOM_STICKY_FOOTER = parseInt('0');
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+var gtagOptions = {};
+gtagOptions['tt_fid'] = '1989197';
+gtagOptions['ttg_fid'] = '33492';
+gtagOptions['group_name'] = 'asshatrotoleagues';
+gtagOptions['page_type'] = 'viewtopic';
+gtagOptions['user_type'] = 'guest';
+gtagOptions['is_ads'] = '0';
+gtagOptions['ads_reason'] = 'no_ads_bot';
+if(gtagOptions['is_ads'] == '1') {
+gtagOptions['ads_light'] = window.USER_POSTS_NUM >= 500 ? "1" : "0";
+gtag('config', 'G-1H02GELQQB', gtagOptions);
+function gaSendEvent(category, action, subtype) {
+var gaSendData = {
+category: category
+if (typeof subtype !== "undefined") {
+gaSendData.subtype = subtype
+if (typeof gtag !== "undefined") {
+gtag('event', action, gaSendData);
+.jquery-modal {
+z-index: 999999;
+.modal a.close-modal {
+top: 10px;
+right: 10px;
+width: 30px;
+height: 30px;
+line-height: 1.25;
+text-align: center;
+text-decoration: none;
+text-indent: 0;
+background: transparent;
+if (GOP.thm==='dark')document.getElementById('settings_style').setAttribute('media','max-width: 1px');
+if (HCS && (GOP.thm==='dark' ||  GOP.thm==='original')) (document.getElementById('hs_custom_css') ? document.getElementById('hs_custom_css').setAttribute('media','max-width: 1px') : '');
+Search
+We've updated our
+Privacy Policy
+and by continuing you're agreeing to the updated terms.
+// navbar top ttidforum js
+if(isNaN(U_COOKIE_TTID) || ($(window).width()
+Asshat Roto Leagues
+Asshat Roto Leagues
+An online forum for a varied assortment of Yahoo!; sports leagues. New owners welcome!
+FORUMS
+DISCUSSIONS
+GALLERY
+MESSAGES
+NOTIFICATIONS
+Asshat Roto Leagues
+Baseball
+2026 Draft Player List
+Moderators:
+Jungle Town Piranhas
+Fuzzy Platypus of Death
+billdiehard
+petemania
+Share with:
+Copy link
+1 post
+2026 Draft Player List
+2026 Draft Player List
+Jungle Town Piranhas
+Rickey Henderson
+Jungle Town Piranhas
+var post_data_40011754 = {"POST_AUTHOR":"Jungle Town Piranhas","S_CAN_GIVE_AWARD":0,"U_EDIT":0,"DELETE_VIP_ADS":0,"U_REPORT":0,"S_POST_LOCKED":0,"POSTER_ID":"8","S_POST_CONTACT_NAME":"Send private message","S_POST_CONTACT_URL":"https:\/\/www.tapatalk.com\/groups\/asshatrotoleagues\/ucp.php?mode=login&iframe=1&amp;sid=8a7156cd6f79b6389f2f144f5069dcc1","U_DELETE":"","S_POST_HIDDEN":0,"U_HAS_PROFILE_ACTION":1,"MEMBER_IS_VIP_PLUS":false,"MEMBER_IS_VIP":0,"POSTER_AVATAR":"
+","U_POST_AUTHOR":"https:\/\/www.tapatalk.com\/groups\/asshatrotoleagues\/memberlist.php?mode=viewprofile&amp;u=8&amp;sid=8a7156cd6f79b6389f2f144f5069dcc1","HIDE_VIP_PLUS":0,"PROFILE_HAT":0,"POST_AUTHOR_FULL":"
+Jungle Town Piranhas
+","S_ONLINE":0,"POSTER_POSTS":"897","POSTER_LIKED":"22","POSTER_GIFTED":0,"POSTER_JOINED":"
+Aug 25, 2005
+","POSTER_LAST_VISIT":"
+3:21 PM - Today
+","U_ADD_FRIEND":"https:\/\/www.tapatalk.com\/groups\/asshatrotoleagues\/ucp.php?i=zebra&amp;add=Jungle+Town+Piranhas&amp;sid=8a7156cd6f79b6389f2f144f5069dcc1","U_IS_FRIEND":0,"U_POST_TTID":"25560450","S_GIVEN_AWARD":0,"S_POST_UNAPPROVED":0,"S_POST_DELETED":0,"U_QUOTE":1,"EDIT_VIP_ADS":0,"S_CAN_LIKE":1,"S_EMOTION":null,"S_RECOMMEND_LIKE":true,"S_LIKED":0,"S_CAN_DISLIKE":1,"S_DISLIKED":0,"U_PIN_TOPIC":0,"S_CAN_GIVE_VIP":0,"S_GUEST_POSTING":0};
+Feb 05, 2024
+2024-02-05T19:29+00:00
+1. Shohei Ohtani (Batter) LAD - Util - Keeper - Mdub
+·   2. Aaron Judge NYY - LF,CF,RF - Keeper - K-Bandits
+·   3. Bobby Witt Jr. KC - SS - Keeper - Pirates Baseball
+·   4. Juan Soto NYM - LF,RF - Keeper - No Talent Ass Clowns
+·   5. Tarik Skubal DET - SP  - Keeper - Mountain Diehards
+·   6. Paul Skenes PIT - SP  - Keeper - No Talent Ass Clowns
+·   7. Vladimir Guerrero Jr. TOR - 1B - Keeper - Jack McKeon
+·   8. José Ramírez CLE - 3B - Keeper - 1st to 3rd
+·   9. Ronald Acuña Jr. ATL - RF - Keeper - Jack McKeon
+·   10. Garrett Crochet BOS - SP  - Keeper - Pirates Baseball
+·   11. Corbin Carroll AZ - CF,RF  - Keeper - No Talent Ass Clowns
+·   12. Julio Rodríguez SEA - CF  - Keeper - No Talent Ass Clowns
+·   13. Fernando Tatis Jr. SD - RF - Keeper - Brohams
+·   14. Bryan Woo SEA - SP  - Keeper - Mountain Diehards
+·   15. Kyle Tucker LAD - RF - Keeper - The Joshua Trees
+·   16. Cristopher Sánchez PHI - SP - Keeper - 1st to 3rd
+·   17. Francisco Lindor NYM - SS - Keeper - Jack McKeon
+·   18. Gunnar Henderson BAL - SS  - Keeper - No Talent Ass Clowns
+·   19. Ketel Marte AZ - 2B  - Keeper - Mountain Diehards
+·   20. Junior Caminero TB - 3B  - Keeper - Pirates Baseball
+·   21. Kyle Schwarber PHI - LF - Keeper - Mountain Diehards
+·   22. Nick Kurtz ATH - 1B  - Keeper - No Talent Ass Clowns
+·   23. Pete Alonso BAL - 1B - Keeper - New Jersey Nine
+·   24. Brent Rooker ATH - LF,RF - Keeper - Jungle Town Piranhas
+·   25. Logan Webb SF - SP - Keeper - The Joshua Trees
+·   26. Freddie Freeman LAD - 1B - Keeper - Jack McKeon
+·   27. Bryce Harper PHI - 1B - Keeper - K-Bandits
+·   28. Max Fried NYY - SP - Keeper - New Jersey Nine
+·   29. Yordan Alvarez HOU - LF - Keeper - Jack McKeon
+·   30. Yoshinobu Yamamoto LAD - SP - Keeper - Cubs Win Cubs Win
+·   31. Logan Gilbert SEA - SP - Keeper - The Joshua Trees
+·   32. Chris Sale ATL - SP  - Keeper - Brohams
+·   33. Trea Turner PHI - SS - Keeper - Jungle Town Piranhas
+·   34. Jacob deGrom TEX - SP  - Keeper - Mountain Diehards
+·   35. Elly De La Cruz CIN - SS - Keeper - The Papelboners
+·   36. Rafael Devers SF - 1B  - Keeper - Brohams
+·   37. Jackson Chourio MIL - LF,CF,RF  - Keeper - The Papelboners
+·   38. Yandy Díaz TB - 1B - Keeper - JP
+·   39. George Kirby SEA - SP  - Keeper - Amazins
+·   40. Hunter Brown HOU - SP  - Keeper - Pirates Baseball
+·   41. Mookie Betts LAD - SS  - Keeper - Pirates Baseball
+·   42. Spencer Schwellenbach ATL - SP
+·   43. Cal Raleigh SEA - C - Keeper - The Joshua Trees
+·   44. Cole Ragans KC - SP - Keeper - Hulkamania
+·   45. Hunter Greene CIN - SP  - Keeper - Mountain Diehards
+·   46. Manny Machado SD - 3B - Keeper - New Jersey Nine
+·   47. Jesús Luzardo PHI - SP - Keeper - Jack McKeon
+·   48. Joe Ryan MIN - SP - Keeper - The Joshua Trees
+·   49. Freddy Peralta NYM - SP - Keeper - Jungle Town Piranhas
+·   50. Zack Wheeler PHI - SP - Keeper - Cubs Win Cubs Win
+·   51. Zach Neto LAA - SS  - Keeper Timber Wolves
+·   52. Matt Olson ATL - 1B - Keeper - The Joshua Trees
+·   53. Nathan Eovaldi TEX - SP
+·   54. Framber Valdez DET - SP - Keeper - JP
+·   55. Brandon Woodruff MIL - SP
+·   56. George Springer TOR - LF,CF,RF - Keeper - Mountain Diehards
+·   57. Mason Miller SD - RP  - Keeper - The Papelboners
+·   58. James Wood WSH - LF - Keeper - K-Bandits
+·   59. Roman Anthony BOS - LF,CF,RF  - Keeper - Brohams
+·   60. Blake Snell LAD - SP - Keeper - Cubs Win Cubs Win
+·   61. Corey Seager TEX - SS - Keeper - Mdub
+·   62. Jackson Merrill SD - CF - Keeper - Amazins
+·   63. Nick Pivetta SD - SP - Keeper - Mdub
+·   64. Bo Bichette NYM - SS - Keeper - The Joshua Trees
+·   65. Wyatt Langford TEX - LF,CF  - Keeper - Pirates Baseball
+·   66. Sonny Gray BOS - SP - Keeper - New Jersey Nine
+·   67. Seiya Suzuki CHC - LF,RF  - Keeper - 1st to 3rd
+·   68. Austin Riley ATL - 3B  - Keeper Timber Wolves
+·   69. Jeremy Peña HOU - SS - Keeper - JP
+·   70. Dylan Cease TOR - SP - Keeper - Jack McKeon
+·   71. Josh Naylor SEA - 1B  - Keeper - Mountain Diehards
+·   72. Riley Greene DET - LF,CF,RF  - Keeper - Mountain Diehards
+·   73. Jazz Chisholm Jr. NYY - 2B,3B - Keeper - K-Bandits
+·   74. Edwin Díaz LAD - RP  - Keeper - Dillweed
+·   75. Maikel Garcia KC - 2B,3B,SS - Keeper - JP
+·   76. Luis Castillo SEA - SP - Keeper - Hulkamania
+·   77. Geraldo Perdomo AZ - SS  - Keeper Timber Wolves
+·   78. Cade Smith CLE - RP - Keeper - Mdub
+·   79. Kevin Gausman TOR - SP - Keeper - The Joshua Trees
+·   80. William Contreras MIL - C  - Keeper - Amazins
+·   81. Kyle Bradish BAL - SP - Keeper - Mdub
+·   82. Pete Crow-Armstrong CHC - CF  - Keeper - The Papelboners
+·   83. Vinnie Pasquantino KC - 1B  - Keeper - Amazins
+·   84. Jarren Duran BOS - LF,CF - Keeper - Hulkamania
+·   85. Shota Imanaga CHC - SP
+·   86. Brice Turang MIL - 2B  - Keeper - 1st to 3rd
+·   87. Christian Yelich MIL - LF - Keeper - JP
+·   88. Jhoan Duran PHI - RP  - Keeper - No Talent Ass Clowns
+·   89. Drew Rasmussen TB - SP
+·   90. Pablo López MIN - SP
+·   91. Andrés Muñoz SEA - RP  - Keeper - 1st to 3rd
+·   92. Nolan McLean NYM - SP - Keeper - Mdub
+·   93. Tanner Bibee CLE - SP  - Keeper - Dillweed
+·   94. Josh Hader HOU - RP  - Keeper - Pirates Baseball
+·   95. Eury Pérez MIA - SP  - Keeper - Pirates Baseball
+·   96. Jose Altuve HOU - 2B,LF  - Keeper - The Papelboners
+·   97. Ranger Suárez BOS - SP
+·   98. Alex Bregman CHC - 3B - Keeper - Jungle Town Piranhas
+·   99. Cody Bellinger NYY - LF,CF,RF  - Keeper - Amazins
+·   100. Byron Buxton MIN - CF
+·   101. Michael King SD - SP - Keeper - Hulkamania
+·   102. Shohei Ohtani (Pitcher) LAD - SP -- Keeper - Cubs Win Cubs Win
+·   103. Devin Williams NYM - RP - Keeper - JP
+·   104. Tyler Glasnow LAD - SP
+·   105. Matthew Boyd CHC - SP
+·   106. Chase Burns CIN - SP,RP
+·   107. Emmet Sheehan LAD - SP - Keeper - Mdub
+·   108. Willy Adames SF - SS  - Keeper - Mountain Diehards
+·   109. Taylor Ward BAL - LF
+·   110. Ezequiel Tovar COL - SS
+·   111. Joe Musgrove SD - SP
+·   112. Shane McClanahan TB - SP
+·   113. Ian Happ CHC - LF
+·   114. Nico Hoerner CHC - 2B  - Keeper - Amazins
+·   115. Ryan Pepiot TB - SP
+·   116. Spencer Strider ATL - SP - Keeper - The Joshua Trees
+·   117. Teoscar Hernández LAD - LF,RF - Keeper - Cubs Win Cubs Win
+·   118. Aroldis Chapman BOS - RP  - Keeper - 1st to 3rd
+·   119. Randy Arozarena SEA - LF,CF - Keeper - Dillweed
+·   120. Griffin Jax TB - RP
+·   121. Brandon Nimmo TEX - LF,CF  - Keeper - Dillweed
+·   122. Bryan Abreu HOU - RP  - Keeper - Dillweed
+·   123. David Bednar NYY - RP - Keeper - Cubs Win Cubs Win
+·   124. Abner Uribe MIL - RP
+·   125. Jordan Westburg BAL - 2B,3B
+·   126. Gleyber Torres DET - 2B
+·   127. Michael Busch CHC - 1B  - Keeper - 1st to 3rd
+·   128. Nick Lodolo CIN - SP  - Keeper - Amazins
+·   129. Carlos Rodón NYY - SP  - Keeper - Brohams
+·   130. Eugenio Suárez CIN - 3B - Keeper - JP
+·   131. Shane Bieber TOR - SP - Keeper - Jungle Town Piranhas
+·   132. Salvador Perez KC - C,1B  - Keeper - Brohams
+·   133. Merrill Kelly AZ - SP - Keeper - JP
+·   134. Aaron Nola PHI - SP
+·   135. Alec Burleson STL - 1B,LF,RF  - Keeper - Dillweed
+·   136. Jeremiah Estrada SD - RP
+·   137. Bryan Reynolds PIT - LF,CF,RF  - Keeper - 1st to 3rd
+·   138. Garrett Whitlock BOS - RP
+·   139. Garrett Cleavinger TB - RP
+·   140. Luis Arraez SF - 1B,2B - Keeper - Jack McKeon
+·   141. Dansby Swanson CHC - SS
+·   142. Matt Strahm KC - RP
+·   143. Cade Horton CHC - SP - Keeper - The Joshua Trees
+·   144. CJ Abrams WSH - SS - Keeper - K-Bandits
+·   145. Trevor Megill MIL - RP  - Keeper - Dillweed
+·   146. Tyler Soderstrom ATH - 1B,LF  - Keeper - The Papelboners
+·   147. Michael Harris II ATL - CF - Keeper - New Jersey Nine
+·   148. Matt Chapman SF - 3B
+·   149. Jack Flaherty DET - SP - Keeper - New Jersey Nine
+·   150. Hunter Goodman COL - C - Keeper - Jungle Town Piranhas
+·   151. Gerrit Cole NYY - SP - Keeper - Jungle Town Piranhas
+·   152. Gavin Williams CLE - SP - Keeper - Mdub
+·   153. Raisel Iglesias ATL - RP - Keeper - Jungle Town Piranhas
+·   154. Andy Pages LAD - LF,CF,RF - Keeper Timber Wolves
+·   155. Alex Vesia LAD - RP
+·   156. Kris Bubic KC - SP
+·   157. Ben Rice NYY - C,1B  - Keeper - Dillweed
+·   158. Shea Langeliers ATH - C - Keeper - Jungle Town Piranhas
+·   159. Edwin Uceta TB - RP
+·   160. Zac Gallen AZ - SP - Keeper - JP
+·   161. Trey Yesavage TOR - SP - Keeper - K-Bandits
+·   162. Jacob Wilson ATH - SS  - Keeper - Pirates Baseball
+·   163. Jameson Taillon CHC - SP
+·   164. Jeff Hoffman TOR - RP
+·   165. Andrew Abbott CIN - SP
+·   166. A.J. Minter NYM - RP
+·   167. Steven Kwan CLE - LF - Keeper - K-Bandits
+·   168. Trevor Rogers BAL - SP
+·   169. Tyler Rogers TOR - RP
+·   170. MacKenzie Gore TEX - SP
+·   171. Jose A. Ferrer SEA - RP
+·   172. Sandy Alcantara MIA - SP - Keeper - Cubs Win Cubs Win
+·   173. Jurickson Profar ATL - LF
+·   174. Ryan Helsley BAL - RP
+·   175. Trevor Story BOS - SS  - Keeper - Amazins
+·   176. Willson Contreras BOS - 1B
+·   177. Jonathan Aranda TB - 1B - Keeper - Hulkamania
+·   178. Kyle Stowers MIA - LF,CF,RF
+·   179. Matt Brash SEA - RP
+·   180. JoJo Romero STL - RP
+·   181. Pete Fairbanks MIA - RP
+·   182. Will Smith LAD - C - Keeper - Cubs Win Cubs Win
+·   183. Shane Baz BAL - SP - Keeper - Dillweed
+·   184. Adrian Morejon SD - RP
+·   185. Alec Bohm PHI - 1B,3B
+·   186. Ivan Herrera STL - C  - Keeper - The Papelboners
+·   187. Grayson Rodriguez LAA - SP  - Keeper Timber Wolves
+·   188. Edward Cabrera CHC - SP
+·   189. Will Vest DET - RP
+·   190. Gabe Speier SEA - RP
+·   191. Jo Adell LAA - CF,RF - Keeper - New Jersey Nine
+·   192. Andrew Kittredge BAL - RP
+·   193. Daniel Palencia CHC - RP - Keeper - Mdub
+·   194. Casey Mize DET - SP
+·   195. Xander Bogaerts SD - SS
+·   196. Dylan Lee ATL - RP
+·   197. Ryan Walker SF - RP  - Keeper Timber Wolves
+·   198. Cody Ponce TOR - SP
+·   199. Tanner Scott LAD - RP
+·   200. Reese Olson DET - SP
+·   201. Luke Weaver NYM - RP
+·   202. Quinn Priester MIL - SP,RP
+·   203. Logan Henderson MIL - SP
+·   204. Heliot Ramos SF - LF,CF,RF
+·   205. Robert Garcia TEX - RP
+·   206. José Soriano LAA - SP
+·   207. Cam Schlittler NYY - SP - Keeper - Mdub
+·   208. Clay Holmes NYM - SP  - Keeper Timber Wolves
+·   209. Orion Kerkering PHI - RP
+·   210. Emilio Pagán CIN - RP
+·   211. Kenley Jansen DET - RP  - Keeper - 1st to 3rd
+·   212. Robbie Ray SF - SP - Keeper - New Jersey Nine
+·   213. Dennis Santana PIT - RP
+·   214. Robert Suarez ATL - RP -  - Keeper Timber Wolves
+·   215. Bryson Stott PHI - 2B,SS - Keeper - K-Bandits
+·   216. Sean Manaea NYM - SP,RP
+·   217. Grant Taylor CWS - RP
+·   218. José Alvarado PHI - RP
+·   219. Christian Walker HOU - 1B
+·   220. Jacob Misiorowski MIL - SP  - Keeper Timber Wolves
+·   221. Luke Keaschall MIN - 2B
+·   222. Shawn Armstrong CLE - RP
+·   223. Fernando Cruz NYY - RP
+·   224. Camilo Doval NYY - RP
+·   225. Bailey Ober MIN - SP
+·   226. Bubba Chandler PIT - SP - 1st Round - Amazins
+·   227. Michael Wacha KC - SP
+·   228. Xavier Edwards MIA - 2B,SS
+·   229. Tyler Holton DET - SP,RP
+·   230. Ozzie Albies ATL - 2B  - Keeper - Brohams
+·   231. Spencer Torkelson DET - 1B
+·   232. Carlos Estévez KC - RP
+·   233. Hunter Gaddis CLE - RP
+·   234. Ryne Nelson AZ - SP,RP - Keeper - JP
+·   235. Shane Smith CWS - SP
+·   236. Parker Messick CLE - SP
+·   237. Joey Cantillo CLE - SP,RP
+·   238. Bryce Miller SEA - SP
+·   239. Brenton Doyle COL - CF
+·   240. Phil Maton CHC - RP
+·   241. Marcus Semien NYM - 2B
+·   242. Justin Steele CHC - SP
+·   243. Kodai Senga NYM - SP
+·   244. Brad Keller PHI - RP
+·   245. Daylen Lile WSH - LF,RF
+·   246. Mike Burrows HOU - SP,RP
+·   247. Oneil Cruz PIT - CF - Keeper - Hulkamania
+·   248. Yainer Diaz HOU - C
+·   249. Munetaka Murakami CWS - 1B,3B
+·   250. Braxton Ashcraft PIT - SP,RP
+·   251. Seranthony Domínguez CWS - RP
+·   252. Brandon Lowe PIT - 2B
+·   253. Brendan Donovan SEA - 2B,SS,LF
+·   254. David Peterson NYM - SP
+·   255. Jacob Lopez ATH - SP
+·   256. Drake Baldwin ATL - C - Keeper - Jack McKeon
+·   257. Dean Kremer BAL - SP
+·   258. Louis Varland TOR - RP
+·   259. Bryan King HOU - RP
+·   260. Brady Singer CIN - SP  - Keeper - Dillweed
+·   261. Carlos Correa HOU - 3B,SS - Keeper - Hulkamania
+·   262. Kyle Finnegan DET - RP
+·   263. Yusei Kikuchi LAA - SP
+·   264. Mitch Keller PIT - SP  - Keeper - Brohams
+·   265. Luis García Jr. WSH - 2B
+·   266. Tyler Mahle SF - SP
+·   267. Jordan Leasure CWS - RP
+·   268. Jack Leiter TEX - SP
+·   269. Matt Svanson STL - RP
+·   270. Braxton Garrett MIA - SP
+·   271. Caleb Thielbar CHC - RP
+·   272. Hunter Harvey CHC - RP
+·   273. Jared Koenig MIL - RP
+·   274. Lawrence Butler ATH - CF,RF
+·   275. Riley O'Brien STL - RP
+·   276. Zack Littell CIN - SP
+·   277. Chris Bassitt TOR - SP
+·   278. Ceddanne Rafaela BOS - 2B,CF
+·   279. Cole Sands MIN - SP,RP
+·   280. Ryan Weathers NYY - SP
+·   281. Kody Funderburk MIN - RP
+·   282. Brandon Pfaadt AZ - SP
+·   283. Mike Trout LAA - CF,RF - Keeper - New Jersey Nine
+·   284. Seth Lugo KC - SP
+·   285. Chad Patrick MIL - SP
+·   286. Noah Cameron KC - SP
+·   287. Otto Lopez MIA - 2B,SS
+·   288. Luis Robert Jr. NYM - CF
+·   289. Zach Eflin BAL - SP
+·   290. Aaron Ashby MIL - RP
+·   291. Reid Detmers LAA - RP
+·   292. Michael McGreevy STL - SP
+·   293. Justin Sterner ATH - RP
+·   294. Kerry Carpenter DET - LF,RF
+·   295. Lucas Erceg KC - RP
+·   296. Kazuma Okamoto TOR - 1B,3B
+·   297. Tatsuya Imai HOU - SP
+·   298. Jakob Marsee MIA - LF,CF - Keeper - Cubs Win Cubs Win
+·   299. Chris Martin TEX - RP
+·   300. Brayan Bello BOS - SP
+·   301. Foster Griffin WSH - RP
+·   302. Wilyer Abreu BOS - LF,CF,RF
+·   303. Andrew Saalfrank AZ - RP
+·   304. Adolis García PHI - RF - Keeper - Cubs Win Cubs Win
+·   305. Jason Adam SD - RP
+·   306. Jake Burger TEX - 1B
+·   307. Nolan Schanuel LAA - 1B
+·   308. Roki Sasaki LAD - SP
+·   309. Eduard Bazardo SEA - RP
+·   310. Nick Martinez TB - SP,RP
+·   311. Ramón Laureano SD - LF,CF,RF  - Keeper - 1st to 3rd
+·   312. Justin Topa MIN - RP
+·   313. Robert Stephenson LAA - RP
+·   314. Jared Jones PIT - SP
+·   315. Mickey Moniak COL - LF,CF,RF
+·   316. Jeffrey Springs ATH - SP
+·   317. Daulton Varsho TOR - LF,CF
+·   318. Brooks Raley NYM - RP
+·   319. Yimi García TOR - RP
+·   320. Andrew Vaughn MIL - 1B
+·   321. Ian Seymour TB - SP,RP
+·   322. Tony Santillan CIN - RP
+·   323. Landen Roupp SF - SP
+·   324. Graham Ashcraft CIN - RP
+·   325. Troy Melton DET - SP,RP
+·   326. Blake Treinen LAD - RP
+·   327. Caleb Durbin BOS - 2B,3B
+·   328. Bryan Baker TB - RP
+·   329. Erik Sabrowski CLE - RP
+·   330. Reynaldo López ATL - SP
+·   331. Josh Bell MIN - 1B
+·   332. Kirby Yates LAA - RP
+·   333. Kutter Crawford BOS - SP
+·   334. Clayton Beeter WSH - RP
+·   335. Jackson Holliday BAL - 2B,SS - Keeper - Hulkamania
+·   336. Sal Stewart CIN - 1B  - Keeper - Amazins
+·   337. Anthony Bender MIA - RP
+·   338. JP Sears SD - SP
+·   339. Tyler Wells BAL - SP
+·   340. Isaac Mattson PIT - RP
+·   341. Ryan O'Hearn PIT - 1B,LF,RF
+·   342. Max Scherzer TOR - SP
+·   343. Connelly Early BOS - SP
+·   344. Steven Okert HOU - RP
+·   345. Zebby Matthews MIN - SP
+·   346. José Berríos TOR - SP
+·   347. Ryan Thompson AZ - RP
+·   348. Slade Cecconi CLE - SP
+·   349. Brusdar Graterol LAD - RP
+·   350. Justin Verlander SF - SP
+·   351. Cade Cavalli WSH - SP
+·   352. Mark Leiter Jr. ATH - RP
+·   353. Will Warren NYY - SP
+·   354. Dustin May STL - SP
+·   355. Keegan Akin BAL - SP,RP
+·   356. Michael Soroka AZ - SP,RP
+·   357. Justin Slaten BOS - RP
+·   358. Jorge Polanco NYM - 2B,3B  - Keeper - Pirates Baseball
+·   359. José Buttó SF - SP,RP
+·   360. Calvin Faucher MIA - RP
+·   361. Nolan Arenado AZ - 3B
+·   362. Robert Gasser MIL - SP
+·   363. Drew Pomeranz LAA - SP,RP
+·   364. Noelvi Marte CIN - 3B,RF
+·   365. Kevin Ginkel AZ - RP
+·   366. Jung Hoo Lee SF - CF
+·   367. Gregory Soto PIT - RP
+·   368. Kyle Manzardo CLE - 1B
+·   369. Erik Miller SF - RP
+·   370. Angel Zerpa MIL - RP
+·   371. Aaron Civale CHC - SP,RP
+·   372. Masyn Winn STL - SS
+·   373. Drew Anderson DET - RP
+·   374. Jakob Junis TEX - RP
+·   375. Robby Snelling MIA - SP
+·   376. Dylan Crews WSH - CF,RF  - Keeper Timber Wolves
+·   377. Adley Rutschman BAL - C - Keeper - K-Bandits
+·   378. Brant Hurter DET - SP,RP
+·   379. Hoby Milner CHC - RP
+·   380. Taj Bradley MIN - SP
+·   381. Max Meyer MIA - SP
+·   382. Hogan Harris ATH - RP
+·   383. Taylor Rogers MIN - RP
+·   384. Steven Matz TB - RP
+·   385. John Schreiber KC - RP
+·   386. Greg Weissert BOS - RP
+·   387. Mason Montgomery PIT - RP
+·   388. Bennett Sousa HOU - RP
+·   389. Matthew Liberatore STL - SP
+·   390. Brendon Little TOR - RP
+·   391. Hunter Barco PIT - SP,RP
+·   392. Cristian Javier HOU - SP
+·   393. Corbin Burnes AZ - SP - Keeper - New Jersey Nine
+·   394. Willi Castro COL - 2B,3B,LF,RF
+·   395. Alejandro Kirk TOR - C
+·   396. Braydon Fisher TOR - RP
+·   397. Ernie Clement TOR - 1B,2B,3B,SS
+·   398. Pierce Johnson CIN - RP
+·   399. Tommy Nance TOR - RP
+·   400. Tyler Kinley ATL - RP
+·   401. Royce Lewis MIN - 3B
+·   402. Andrew Nardi MIA - RP
+·   403. Trent Grisham NYY - CF
+·   404. Julian Fernández WSH - RP
+·   405. Brad Lord WSH - SP,RP
+·   406. Tanner Banks PHI - RP
+·   407. Sam Hentges SF - RP
+·   408. Carmen Mlodzinski PIT - SP,RP
+·   409. Luis Gil NYY - SP
+·   410. Matt McLain CIN - 2B
+·   411. Jeff McNeil ATH - 2B,LF,CF,RF
+·   412. Chandler Simpson TB - LF,CF
+·   413. Matt Festa CLE - RP
+·   414. David Morgan SD - RP
+·   415. Yennier Cano BAL - RP
+·   416. TJ Friedl CIN - LF,CF
+·   417. Cody Bradford TEX - SP
+·   418. Justin Wilson BOS - RP
+·   419. Jacob Latz TEX - SP,RP
+·   420. Jordan Romano LAA - RP
+·   421. Eduardo Rodriguez AZ - SP
+·   422. Wandy Peralta SD - RP
+·   423. PJ Poulin WSH - RP
+·   424. Hurston Waldrep ATL - SP
+·   425. Kumar Rocker TEX - SP
+·   426. Brock Burke CIN - RP
+·   427. Sal Frelick MIL - LF,CF,RF - Keeper - Jack McKeon
+·   428. Ryne Stanek STL - RP
+·   429. Colin Rea CHC - SP,RP
+·   430. Joe Jiménez ATL - RP
+·   431. Tim Herrin CLE - RP
+·   432. Mike Vasil CWS - SP,RP
+·   433. Jacob Webb CHC - RP
+·   434. Aaron Bummer ATL - RP
+·   435. Ben Brown CHC - SP,RP
+·   436. Carlos Vargas SEA - RP
+·   437. Justin Lawrence PIT - RP
+·   438. Jack Dreyer LAD - SP,RP
+·   439. Tim Hill NYY - RP
+·   440. A.J. Puk AZ - RP
+·   441. Johan Oviedo BOS - SP
+·   442. Lucas Giolito BOS - SP
+·   443. Colin Selby BAL - RP
+·   444. Grant Holmes ATL - SP
+·   445. Jordan Beck COL - LF,RF
+·   446. Luis Severino ATH - SP
+·   447. Tyler Phillips MIA - RP
+·   448. Jake Cronenworth SD - 1B,2B,SS
+·   449. Jimmy Herget COL - RP
+·   450. Miguel Vargas CWS - 1B,3B
+·   451. Joe Boyle TB - SP,RP
+·   452. Colson Montgomery CWS - 3B,SS  - Keeper - No Talent Ass Clowns
+·   453. Luis García NYM - RP
+·   454. Agustín Ramírez MIA - C  - Keeper - The Papelboners
+·   455. Brandon Sproat MIL - SP
+·   456. Nick Mears KC - RP
+·   457. Huascar Brazobán NYM - SP,RP
+·   458. Elvis Alvarado ATH - RP
+·   459. Brent Headrick NYY - RP
+·   460. Victor Vodnik COL - RP
+·   461. Joel Peguero SF - RP
+·   462. Luis Morales ATH - SP
+·   463. Josh White MIA - RP
+·   464. Ryan Zeferjahn LAA - RP
+·   465. Porter Hodge CHC - RP
+·   466. Brady Basso ATH - RP
+·   467. Ryan Yarbrough NYY - SP,RP
+·   468. J.T. Ginn ATH - SP,RP
+·   469. Trevor McDonald SF - SP,RP
+·   470. Eric Lauer TOR - SP,RP
+·   471. Cade Gibson MIA - RP
+·   472. Ryan Fernandez STL - RP
+·   473. Gabriel Moreno AZ - C
+·   474. Kade Strowd AZ - RP
+·   475. Andrew Alvarez WSH - SP
+·   476. Mason Englert TB - RP
+·   477. Brenan Hanifee DET - RP
+·   478. Jake Bird NYY - RP
+·   479. Spencer Bivens SF - RP
+·   480. Ben Joyce LAA - RP
+·   481. Griffin Canning NYM - SP
+·   482. Jonathan Loáisiga AZ - RP
+·   483. Hunter Dobbins STL - SP
+·   484. Seth Halvorsen COL - RP
+·   485. Payton Tolle BOS - SP,RP
+·   486. Enyel De Los Santos HOU - RP
+·   487. Simeon Woods Richardson MIN - SP
+·   488. Danny Coulombe TEX - RP
+·   489. Joel Payamps ATL - RP
+·   490. Tobias Myers NYM - SP,RP
+·   491. Jovani Morán BOS - RP
+·   492. Ryan Weiss HOU - SP
+·   493. Lars Nootbaar STL - LF,CF,RF
+·   494. David Festa MIN - SP
+·   495. Anthony Santander TOR - LF,RF
+·   496. Adrian Houser SF - SP
+·   497. Sean Newcomb CWS - SP,RP
+·   498. Yariel Rodriguez TOR - RP
+·   499. Caleb Ferguson CIN - RP
+·   500. Andrés Giménez TOR - 2B,SS
+·   501. Cole Winn TEX - RP
+·   502. Yuki Matsui SD - RP
+·   503. Cole Sulser TB - RP
+·   504. Kevin Kelly TB - RP
+·   505. Richard Fitts STL - SP
+·   506. Anthony Banda LAD - RP
+·   507. Kyle Harrison MIL - SP,RP
+·   508. Javier Assad CHC - SP
+·   509. Taylor Clarke AZ - RP
+·   510. Daniel Lynch IV KC - RP
+·   511. Jonathan Bowlan PHI - RP
+·   512. Dietrich Enns BAL - SP,RP
+·   513. Brandon Marsh PHI - LF,CF
+·   514. Justin Bruihl STL - RP
+·   515. Jonah Tong NYM - SP
+·   516. Lake Bachar MIA - RP
+·   517. Brandon Eisert CWS - SP,RP
+·   518. J.P. Crawford SEA - SS
+·   519. Rhett Lowder CIN - SP
+·   520. Grant Anderson MIL - RP
+·   521. Ian Hamilton ATL - RP
+·   522. Justin Martinez AZ - RP
+·   523. Thomas White MIA - SP
+·   524. Connor Phillips CIN - RP
+·   525. Marcell Ozuna PIT - Util
+·   526. Gordon Graceffo STL - RP
+·   527. Anthony Kay CWS - SP
+·   528. Austin Warren NYM - RP
+·   529. DL Hall MIL - SP,RP
+·   530. Evan Sisk PIT - RP
+·   531. Alex Cobb DET - SP
+·   532. Paul Sewald DET - RP
+·   533. Colton Cowser BAL - LF,CF,RF
+·   534. Yoendrys Gómez TB - SP,RP
+·   535. Rob Zastryzny MIL - RP
+·   536. Clarke Schmidt NYY - SP
+·   537. Justin Wrobleski LAD - RP
+·   538. Chris Paddack MIA - SP,RP
+·   539. Colt Keith DET - 1B,2B,3B
+·   540. Miles Mikolas STL - SP
+·   541. Cole Henry WSH - RP
+·   542. Bradgley Rodriguez SD - RP
+·   543. Mason Fluharty TOR - RP
+·   544. Juan Mejia COL - RP
+·   545. Griff McGarry WSH - SP
+·   546. Sawyer Gipson-Long DET - SP,RP
+·   547. Chase Silseth LAA - RP
+·   548. Jordan Montgomery AZ - SP
+·   549. Josh Jung TEX - 3B
+·   550. Michael Kelly ATH - RP
+·   551. Drey Jameson AZ - RP
+·   552. Ben Casparius LAD - SP,RP
+·   553. Zack Kelly BOS - SP,RP
+·   554. Paul Blackburn NYY - SP,RP
+·   555. Jon Gray TEX - RP
+·   556. Jordan Wicks CHC - SP,RP
+·   557. Matt Gage SF - RP
+·   558. Keider Montero DET - SP,RP
+·   559. Andrew Painter PHI - SP
+·   560. Christian Scott NYM - SP
+·   561. Harrison Bader SF - LF,CF,RF
+·   562. Rico Garcia BAL - RP
+·   563. Brock Stewart LAD - RP
+·   564. Hayden Wesneski HOU - SP
+·   565. Craig Yoho MIL - RP
+·   566. Tyler Alexander TEX - SP,RP
+·   567. Jason Foley SF - RP
+·   568. Ryan Brasier TEX - RP
+·   569. Paul Goldschmidt NYY - 1B
+·   570. Edgardo Henriquez LAD - RP
+·   571. Davis Martin CWS - SP
+·   572. Danny Young ATL - RP
+·   573. Félix Bautista BAL - RP
+·   574. Casey Legumina SEA - RP
+·   575. Max Muncy LAD - 3B - Keeper - Jungle Town Piranhas
+·   576. Yaramil Hiraldo BAL - RP
+·   577. Alexis Díaz TEX - RP
+·   578. AJ Blubaugh HOU - SP,RP
+·   579. Tyler Ferguson ATH - RP
+·   580. Justin Hagenman NYM - RP
+·   581. Tommy Kahnle DET - RP
+·   582. Dylan Ross NYM - RP
+·   583. Bowden Francis TOR - SP
+·   584. J.T. Realmuto PHI - C
+·   585. Isaac Paredes HOU - 3B
+·   586. Sean Burke CWS - SP,RP
+·   587. Jalen Beeks AZ - RP
+·   588. Kyle Hurt LAD - RP
+·   589. Jason Alexander HOU - SP,RP
+·   590. Hayden Harris ATL - RP
+·   591. Andre Granillo STL - RP
+·   592. José Leclerc ATH - RP
+·   593. Andrew Chafin LAA - RP
+·   594. Giancarlo Stanton NYY - LF,RF  - Keeper - Brohams
+·   595. Spencer Arrighetti HOU - SP
+·   596. Logan Allen CLE - SP
+·   597. Cristian Mena AZ - SP,RP
+·   598. Matt Wallner MIN - LF,RF
+·   599. Andre Pallante STL - SP
+·   600. Steven Cruz KC - RP
+·   601. Zach McCambley PHI - RP
+·   602. Tristan Beck SF - RP
+·   603. Patrick Sandoval BOS - SP
+·   604. Ron Marinaccio SD - RP
+·   605. Jose Corniell TEX - SP
+·   606. Liam Hendriks BOS - RP
+·   607. Ronel Blanco HOU - SP
+·   608. Jackson Rutledge WSH - SP,RP
+·   609. Luke Little CHC - RP
+·   610. Manuel Rodríguez TB - RP
+·   611. Eric Orze MIN - RP
+·   612. Cooper Criswell SEA - RP
+·   613. Luinder Avila KC - RP
+·   614. Yohan Ramírez PIT - RP
+·   615. Nick Sandlin LAA - RP
+·   616. Andrew Walters CLE - RP
+·   617. Chase Lee TOR - RP
+·   618. Richard Lovelady WSH - RP
+·   619. DJ Herz WSH - SP
+·   620. Hunter Bigge TB - RP
+·   621. Brandyn Garcia AZ - RP
+·   622. Scott Barlow ATH - RP
+·   623. Stephen Kolek KC - SP
+·   624. Emerson Hancock SEA - SP,RP
+·   625. Craig Kimbrel NYM - RP
+·   626. Zach Pop PHI - RP
+·   627. Kervin Castro NYY - RP
+·   628. Jac Caglianone KC - 1B,RF
+·   629. Jack Perkins ATH - SP,RP
+·   630. James McArthur KC - RP
+·   631. Alex Lange KC - RP
+·   632. River Ryan LAD - SP
+·   633. Elmer Rodríguez NYY - SP
+·   634. Steven Wilson TB - RP
+·   635. Franco Aleman CLE - RP
+·   636. Yosver Zulueta SEA - RP
+·   637. Jonathan India KC - 2B,3B,LF
+·   638. Keaton Winn SF - SP,RP
+·   639. Brent Suter LAA - SP,RP
+·   640. Easton McGee MIL - RP
+·   641. Yerry De los Santos NYY - RP
+·   642. Philip Abner AZ - RP
+·   643. Sam Moll CIN - RP
+·   644. Angel Bastardo TOR - SP
+·   645. Joe Rock TB - SP,RP
+·   646. Dom Hamel NYY - SP,RP
+·   647. Tony Gonsolin LAD - SP
+·   648. Kyle Backhus PHI - RP
+·   649. Jaden Hill COL - RP
+·   650. Sammy Peralta MIL - RP
+·   651. Lance McCullers Jr. HOU - SP
+·   652. Ricky Tiedemann TOR - SP
+·   653. JT Brubaker SF - RP
+·   654. Michael Kopech LAD - RP
+·   655. Reiver Sanmartin SF - RP
+·   656. Nate Pearson HOU - RP
+·   657. Logan Evans SEA - SP
+·   658. Carson Whisenhunt SF - SP
+·   659. Dylan Smith DET - RP
+·   660. Nestor Cortes SD - SP
+·   661. Alek Manoah LAA - SP
+·   662. Martín Pérez ATL - SP
+·   663. Shane Drohan MIL - SP
+·   664. Mick Abel MIN - SP
+·   665. Emiliano Teodo TEX - RP
+·   666. Evan Reifert TB - RP
+·   667. Luis Curvelo TEX - RP
+·   668. Chad Green TOR - RP
+·   669. Dylan Dodd ATL - RP
+·   670. Drew Thorpe CWS - SP
+·   671. Ryan Johnson LAA - RP
+·   672. Konnor Pilkington WSH - RP
+·   673. Beau Brieske DET - RP
+·   674. Jayden Murray HOU - RP
+·   675. Bryce Elder ATL - SP
+·   676. Alex Carrillo NYM - RP
+·   677. Domingo González SEA - RP
+·   678. Jonathan Pintaro NYM - SP,RP
+·   679. Ryan Jeffers MIN - C
+·   680. Ryan Borucki CWS - RP
+·   681. Ethan Roberts CHC - RP
+·   682. Drew Sommers DET - RP
+·   683. Joey Gerber NYM - SP,RP
+·   684. Kyle Hart SD - SP,RP
+·   685. Landon Knack LAD - SP
+·   686. Spencer Horwitz PIT - 1B
+·   687. Hunter Stratton ATL - RP
+·   688. Carlos Rodriguez MIL - RP
+·   689. Cade Povich BAL - SP
+·   690. Colton Gordon HOU - SP,RP
+·   691. Jose Espada BAL - RP
+·   692. Tomoyuki Sugano BAL - SP
+·   693. Will Klein LAD - RP
+·   694. Bryan Hudson CWS - RP
+·   695. Andrew Benintendi CWS - LF
+·   696. AJ Smith-Shawver ATL - SP
+·   697. Zak Kent TEX - RP
+·   698. Kyle Nicolas PIT - RP
+·   699. Gavin Hollowell CHC - RP
+·   700. Andrew Hoffmann AZ - RP
+·   701. Héctor Neris KC - RP
+·   702. Lazaro Estrada TOR - SP,RP
+·   703. Nick Raquet STL - RP
+·   704. Brandon Walter HOU - SP
+·   705. Max Lazar PHI - RP
+·   706. George Klassen LAA - SP
+·   707. Brennan Bernardino COL - SP,RP
+·   708. Marco Raya MIN - SP,RP
+·   709. Gus Varland WSH - RP
+·   710. Gavin Stone LAD - SP
+·   711. Garrett Acton MIA - RP
+·   712. Bryan Hoeing SD - RP
+·   713. Jhony Brito SD - RP
+·   714. Blake Walston AZ - RP
+·   715. Zach Maxwell CIN - RP
+·   716. Grant Wolfram BAL - RP
+·   717. Jordan Hicks CWS - SP,RP
+·   718. Prelander Berroa CWS - RP
+·   719. Ty Adcock SD - RP
+·   720. Alan Rangel PHI - SP,RP
+·   721. Drew Smith NYM - RP
+·   722. Eric Cerantola KC - RP
+·   723. Tim Mayza PHI - RP
+·   724. Nolan Hoffman PHI - SP,RP
+·   725. Gage Jump ATH - SP
+·   726. Chris Murphy CWS - RP
+·   727. Cole Wilcox SEA - RP
+·   728. José Suarez ATL - RP
+·   729. Kai-Wei Teng HOU - SP,RP
+·   730. Paxton Schultz WSH - RP
+·   731. Ty Madden DET - RP
+·   732. Jake Bloss TOR - SP
+·   733. Didier Fuentes ATL - SP
+·   734. Blas Castano SEA - SP,RP
+·   735. George Soriano WSH - RP
+·   736. Juan Morillo AZ - RP
+·   737. Derek Law AZ - RP
+·   738. Kaleb Ort LAA - RP
+·   739. Troy Taylor SEA - RP
+·   740. Josh Winckowski TOR - RP
+·   741. Cody Laweryson MIN - RP
+·   742. Luis Perales WSH - SP
+·   743. Grant Holman ATH - RP
+·   744. Randy Vásquez SD - SP
+·   745. Paul Gervase LAD - RP
+·   746. Jhonathan Díaz SEA - RP
+·   747. Colin Holderman CLE - RP
+·   748. Ryan Bergert KC - SP
+·   749. Wikelman González CWS - SP,RP
+·   750. Blade Tidwell SF - SP,RP
+·   751. Carson Seymour SF - SP,RP
+·   752. Adam Macko TOR - SP,RP
+·   753. Daysbel Hernández ATL - RP
+·   754. Marc Church TEX - RP
+·   755. Jose Quintana MIL - SP
+·   756. Peyton Gray TEX - RP
+·   757. Tyler Gilbert CWS - SP,RP
+·   758. Jhancarlos Lara ATL - SP,RP
+·   759. Michel Otañez TEX - RP
+·   760. Bailey Horn DET - RP
+·   761. Travis Adams MIN - SP,RP
+·   762. Jack Neely CHC - RP
+·   763. Eiberson Castellano COL - RP
+·   764. Jake Irvin WSH - SP
+·   765. Chase Shugart PHI - RP
+·   766. Alek Jacob SD - RP
+·   767. Joey Lucchesi SF - RP
+·   768. Pierson Ohl COL - SP,RP
+·   769. Scott Alexander SF - RP
+·   770. Doug Nikhazy CLE - RP
+·   771. J.P. France HOU - SP,RP
+·   772. Patrick Corbin TEX - SP
+·   773. Jake Eder WSH - RP
+·   774. Bailey Falter KC - SP
+·   775. Juan Burgos AZ - RP
+·   776. Brandon Williamson CIN - SP
+·   777. Julian Aguiar CIN - SP
+·   778. Luke Jackson SEA - RP
+·   779. Jorge Soler LAA - RF
+·   780. Sauryn Lao WSH - RP
+·   781. Eduarniel Núñez ATH - RP
+·   782. Ryan Loutos SEA - RP
+·   783. Tink Hence STL - SP
+·   784. Dax Fulton MIA - SP
+·   785. Angel Chivilli NYY - RP
+·   786. Randy Rodríguez SF - RP
+·   787. David Robertson PHI - RP
+·   788. Alec Marsh KC - SP
+·   789. Allan Winans NYY - SP
+·   790. Anthony Maldonado HOU - RP
+·   791. Luis L. Ortiz CLE - SP
+·   792. Shelby Miller MIL - RP
+·   793. Yu Darvish SD - SP
+·   794. Erasmo Ramírez MIN - RP
+·   795. Ryan Pressly CHC - RP
+·   796. Anthony DeSclafani AZ - SP,RP
+·   797. José Ureña LAA - SP,RP
+·   798. Frankie Montas NYM - SP
+·   799. Kenta Maeda DET - RP
+·   800. Chris Stratton LAD - RP
+·   801. Winston Santos TEX - SP
+·   802. Chris Flexen CHC - RP
+·   803. Nick Nastrini LAD - SP,RP
+·   804. John Means BAL - SP
+·   805. Reed Garrett NYM - RP
+·   806. Mike Baumann NYM - RP
+·   807. Connor Seabold TOR - RP
+·   808. Michael Mercado PHI - RP
+·   809. Emmanuel Clase CLE - RP
+·   810. Bryce Jarvis AZ - RP
+·   811. Tommy Henry AZ - RP
+·   812. Max Kranick NYM - RP
+·   813. Tylor Megill NYM - SP
+·   814. Jeff Criswell COL - RP
+·   815. Connor Brogdon CLE - RP
+·   816. Henry Baez ATH - SP
+·   817. Jorge López WSH - RP
+·   818. Rolddy Muñoz ATL - RP
+·   819. Lou Trivino PHI - RP
+·   820. Josh Lowe LAA - LF,CF,RF
+·   821. Chris Devenski PIT - RP
+·   822. Thomas Harrington PIT - SP,RP
+·   823. Jairo Iriarte CWS - RP
+·   824. Noah Schultz CWS - SP
+·   825. Addison Barger TOR - 3B,LF,RF
+·   826. Rafael Montero DET - RP
+·   827. Erick Fedde CWS - SP,RP
+·   828. Tanner Rainey DET - RP
+·   829. Brandon Young BAL - SP
+·   830. Chase DeLauter CLE - CF,RF
+·   831. Chayce McDermott BAL - SP,RP
+·   832. Adam Mazur MIA - SP
+·   833. Jackson Jobe DET - SP,RP
+·   834. Sam Bachman LAA - RP
+·   835. Osvaldo Bido NYY - SP,RP
+·   836. Miguel Castro LAA - RP
+·   837. Josh Simpson MIA - RP
+·   838. Yoniel Curet PHI - SP
+·   839. Brandon Waddell NYM - RP
+·   840. Ryan Webb CLE - SP,RP
+·   841. Jean Cabrera PHI - SP
+·   842. Jayvien Sandridge LAA - RP
+·   843. Mitch Farris LAA - SP
+·   844. Génesis Cabrera PHI - RP
+·   845. Ryan Harbin PIT - RP
+·   846. Colin Poche NYM - RP
+·   847. Jesús Sánchez HOU - LF,CF,RF
+·   848. Michael Petersen MIA - RP
+·   849. Tanner Houck BOS - SP
+·   850. Trevor Williams WSH - SP
+·   851. Luis Guerrero TB - RP
+·   852. Connor Norby MIA - 3B
+·   853. Mason Barnett ATH - SP
+·   854. Roddery Muñoz HOU - RP
+·   855. Jesse Scholtens TB - SP,RP
+·   856. Hayden Birdsong SF - SP,RP
+·   857. Caden Dana LAA - SP
+·   858. Ryan Rolison CHC - RP
+·   859. T.J. McFarland ATH - RP
+·   860. Seth Johnson PHI - SP,RP
+·   861. John Brebbia COL - RP
+·   862. Zach Brzykcy MIA - RP
+·   863. Quinn Mathews STL - SP
+·   864. Ky Bush CWS - SP
+·   865. Bobby Miller LAD - SP
+·   866. Chris Roycroft STL - RP
+·   867. Tommy Edman LAD - 2B,3B,CF
+·   868. Yilber Díaz AZ - RP
+·   869. Lyon Richardson CIN - RP
+·   870. Jared Triolo PIT - 1B,2B,3B,SS
+·   871. Mason Black KC - SP,RP
+·   872. Cam Sanders PIT - RP
+·   873. Scott McGough ATH - RP
+·   874. Hunter Strickland LAA - RP
+·   875. Kyle Teel CWS - C
+·   876. Joe Ross PHI - RP
+·   877. Gunnar Hoglund ATH - SP
+·   878. Keegan Thompson COL - RP
+·   879. Victor Mederos LAA - SP,RP
+·   880. Marcus Stroman NYY - SP
+·   881. Tyler Anderson LAA - SP
+·   882. Janson Junk MIA - SP,RP
+·   883. Tanner McDougal CWS - SP
+·   884. Joey Estes ATH - SP
+·   885. Mitch Spence ATH - SP,RP
+·   886. Joey Wentz ATL - SP,RP
+·   887. Jackson Kowar MIN - RP
+·   888. Luis Mey CIN - RP
+·   889. Gavin Sheets SD - 1B,LF,RF
+·   890. Cedric Mullins TB - CF
+·   891. Anthony Molina ATL - RP
+·   892. Brooks Lee MIN - 2B,3B,SS
+·   893. Ken Waldichuk WSH - SP
+·   894. Matt Waldron SD - SP
+·   895. Joey Ortiz MIL - SS
+·   896. Orlando Ribalta WSH - RP
+·   897. Spencer Steer CIN - 1B,LF
+·   898. Bradley Blalock MIA - SP
+·   899. Chase Meidroth CWS - 2B,3B,SS
+·   900. José Urquidy DET - RP
+·   901. Luis Medina ATH - SP
+·   902. Marcelo Mayer BOS - 2B,3B
+·   903. Wade Miley CIN - SP
+·   904. Kendall Graveman AZ - RP
+·   905. Ryan Gusto MIA - SP,RP
+·   906. Mike Clevinger PIT - RP
+·   907. Sam Aldegheri LAA - SP
+·   908. Andry Lara WSH - RP
+·   909. Cal Quantrill TEX - SP
+·   910. Mitchell Parker WSH - SP
+·   911. Mark Vientos NYM - 3B - Keeper - Hulkamania
+·   912. Brett Baty NYM - 2B,3B
+·   913. Lucas Sims CWS - RP
+·   914. Chase Petty CIN - SP
+·   915. Jordan Walker STL - LF,RF
+·   916. Zach Agnos COL - RP
+·   917. Jack Kochanowicz LAA - SP
+·   918. Walker Buehler PHI - SP
+·   919. Kyle Leahy STL - RP
+·   920. Jonathan Cannon CWS - SP,RP
+·   921. Justin Crawford PHI - Util
+·   922. Trevor Larnach MIN - LF,RF
+·   923. Luis Peralta COL - RP
+·   924. Austin Hays CWS - LF
+·   925. Wenceel Pérez DET - CF,RF
+·   926. Brady House WSH - 3B
+·   927. Germán Márquez COL - SP
+·   928. Francisco Alvarez NYM - C - Keeper - Hulkamania
+·   929. JJ Wetherholt STL - 2B,3B,SS  - Keeper - No Talent Ass Clowns
+·   930. Romy Gonzalez BOS - 1B,2B
+·   931. Carson Palmquist COL - SP,RP
+·   932. Taijuan Walker PHI - SP,RP
+·   933. Anthony Volpe NYY - SS
+·   934. Austin Wells NYY - C
+·   935. McCade Brown COL - SP
+·   936. Samuel Basallo BAL - C  - Keeper - No Talent Ass Clowns
+·   937. Mike Yastrzemski ATL - LF,CF,RF
+·   938. Dominic Canzone SEA - LF,RF
+·   939. Kyle Freeland COL - SP
+·   940. Tyler Stephenson CIN - C
+·   941. Ke'Bryan Hayes CIN - 3B
+·   942. Nolan Gorman STL - 2B,3B
+·   943. Carlos Carrasco ATL - SP
+·   944. Miguel Andujar SD - 3B,LF
+·   945. Jake Meyers HOU - CF
+·   946. Konnor Griffin PIT - SS,CF - Keeper - K-Bandits
+·   947. Logan O'Hoppe LAA - C
+·   948. Joc Pederson TEX - Util
+·   949. Parker Meadows DET - CF
+·   950. Victor Scott II STL - CF
+·   951. Ryan Feltner COL - SP
+·   952. Ryan McMahon NYY - 3B
+·   953. Rhys Hoskins MIL - 1B
+·   954. Gavin Lux TB - 2B,3B,LF
+·   955. Michael Lorenzen (Pitcher) COL - SP,RP
+·   956. Tyler O'Neill BAL - LF,RF
+·   957. Josh Smith TEX - 1B,3B,SS,LF,RF
+·   958. Evan Carter TEX - LF,CF,RF
+·   959. Nick Gonzales PIT - 2B,SS
+·   960. Dillon Dingler DET - C
+·   961. Austin Gomber TEX - SP
+·   962. Bryce Eldridge SF - 1B
+·   963. Antonio Senzatela COL - SP,RP
+·   964. Dylan Beavers BAL - LF,RF
+·   965. Lenyn Sosa CWS - 1B,2B
+·   966. Tyler Freeman COL - 2B,RF
+·   967. Bo Naylor CLE - C
+·   968. Edgar Quero CWS - C
+·   969. Tanner Gordon COL - SP
+·   970. Brayan Rocchio CLE - 2B,SS
+·   971. Josiah Gray WSH - SP
+·   972. Zach McKinstry DET - 3B,SS,LF,RF
+·   973. Luis Rengifo LAA - 2B,3B
+·   974. Chase Dollander COL - SP
+·   975. Carter Jensen KC - C
+·   976. Alek Thomas AZ - CF
+·   977. Lane Thomas KC - CF,RF
+·   978. Cam Smith HOU - RF
+·   979. Lourdes Gurriel Jr. AZ - LF
+·   980. Jake Mangum PIT - LF,CF,RF
+·   981. Moisés Ballesteros CHC - C
+·   982. Freddy Fermin SD - C
+·   983. Pavin Smith AZ - 1B
+·   984. José Caballero NYY - 2B,3B,SS,LF,RF
+·   985. Kyle Isbel KC - CF
+·   986. Owen Caissie MIA - CF,RF
+·   987. Jasson Domínguez NYY - LF,CF  - Keeper - Brohams
+·   988. Jake McCarthy COL - LF,CF,RF
+·   989. Victor Caratini MIN - C,1B
+·   990. Carson Benge NYM - Util
+·   991. Kevin McGonigle DET - SS  - Keeper - The Papelboners
+·   992. Christian Moore LAA - 2B
+·   993. Jake Fraley TB - LF,RF
+·   994. Brooks Baldwin CWS - 2B,3B,SS,LF,CF,RF
+·   995. C.J. Kayfus CLE - 1B,LF,RF
+·   996. Victor Robles SEA - LF,CF,RF
+·   997. Gabriel Arias CLE - 2B,SS
+·   998. Carson Kelly CHC - C
+·   999. Ha-Seong Kim ATL - 2B,SS
+·   1000. Yoán Moncada LAA - 3B
+·   1001. Carlos Narváez BOS - C
+·   1002. Tommy Pham PIT - LF,CF,RF
+·   1003. Patrick Bailey SF - C
+·   1004. Carson Williams TB - SS
+·   1005. Max Muncy ATH - 2B,3B,SS
+·   1006. Isaac Collins KC - LF,RF
+·   1007. JJ Bleday CIN - LF,CF,RF
+·   1008. Nathan Lukes TOR - LF,CF,RF
+·   1009. Heriberto Hernández MIA - LF,RF
+·   1010. Nick Castellanos PHI - RF
+·   1011. Ty France TOR - 1B
+·   1012. Austin Martin MIN - 2B,LF,CF
+·   1013. Blaze Alexander BAL - 2B,3B
+·   1014. Luisangel Acuña CWS - 2B
+·   1015. Sean Murphy ATL - C
+·   1016. Edouard Julien COL - 1B,2B
+·   1017. Andrew McCutchen PIT - RF
+·   1018. Davis Schneider TOR - 2B,LF
+·   1019. Cole Young SEA - 2B
+·   1020. George Valera CLE - LF,RF
+·   1021. Rowdy Tellez TEX - 1B
+·   1022. Denzel Clarke ATH - CF
+·   1023. Nasim Nuñez WSH - 2B,SS
+·   1024. Christopher Morel MIA - LF
+·   1025. Garrett Mitchell MIL - CF,RF
+·   1026. Joey Bart PIT - C
+·   1027. Jacob Young WSH - CF
+·   1028. Zach Cole HOU - LF,CF,RF
+·   1029. Michael Conforto LAD - LF
+·   1030. Matt Shaw CHC - 3B
+·   1031. Griffin Conine MIA - LF,RF
+·   1032. Starling Marte NYM - LF,RF
+·   1033. Michael Massey KC - 2B,LF
+·   1034. Jesse Winker NYM - LF,RF
+·   1035. Jhostynxon Garcia PIT - CF,RF
+·   1036. Graham Pauley MIA - 3B
+·   1037. Mauricio Dubón ATL - 2B,3B,SS,LF,CF
+·   1038. Danny Jansen TEX - C
+·   1039. Thomas Saggese STL - 2B,3B,SS
+·   1040. Vaughn Grissom LAA - 2B
+·   1041. Jake Bauers MIL - 1B,LF,RF
+·   1042. Carlos Santana AZ - 1B
+·   1043. Kody Clemens MIN - 1B,2B,LF,RF
+·   1044. Amed Rosario NYY - 2B,3B
+·   1045. Keibert Ruiz WSH - C
+·   1046. Troy Johnston COL - 1B,LF,RF
+·   1047. Thairo Estrada COL - 2B
+·   1048. Javier Báez DET - 2B,3B,SS,CF
+·   1049. Taylor Walls TB - SS
+·   1050. Tyler Austin CHC - 1B
+·   1051. Randal Grichuk KC - LF,RF
+·   1052. Colby Thomas ATH - LF,CF,RF
+·   1053. Casey Schmitt SF - 1B,2B,3B
+·   1054. Tyrone Taylor NYM - LF,CF,RF
+·   1055. Colt Emerson SEA - SS
+·   1056. Will Benson CIN - LF,CF,RF
+·   1057. Miguel Amaya CHC - C
+·   1058. Sung-Mun Song SD - 2B,3B
+·   1059. Isiah Kiner-Falefa BOS - 2B,3B,SS
+·   1060. Masataka Yoshida BOS - LF
+·   1061. Adrian Del Castillo AZ - C
+·   1062. Matt Vierling DET - LF,CF
+·   1063. Luis Campusano SD - C
+·   1064. Andrés Chaparro WSH - 1B
+·   1065. Pedro Pagés STL - C
+·   1066. Rob Refsnyder SEA - LF,CF,RF
+·   1067. Kyle Higashioka TEX - C
+·   1068. Luke Raley SEA - 1B,LF,CF,RF
+·   1069. Dane Myers CIN - LF,CF,RF
+·   1070. Jonny DeLuca TB - LF,CF,RF
+·   1071. Javier Sanoja MIA - 2B,3B,SS,LF,CF
+·   1072. Harry Ford WSH - C
+·   1073. Dominic Smith SF - 1B
+·   1074. Kyle Karros COL - 3B
+·   1075. Tyler Locklear AZ - 1B
+·   1076. Enrique Hernández LAD - 1B,2B,3B,LF
+·   1077. Ezequiel Duran TEX - 1B,2B,3B,SS,LF
+·   1078. Ben Williamson TB - 3B
+·   1079. Jeremiah Jackson BAL - 3B,RF
+·   1080. Adam Frazier KC - 2B,LF,RF
+·   1081. Edmundo Sosa PHI - 2B,3B,SS
+·   1082. Nick Fortes TB - C
+·   1083. José Tena WSH - 2B,3B
+·   1084. Nick Sogard BOS - 1B,2B
+·   1085. Gary Sánchez BAL - C
+·   1086. Charlie Condon COL - 1B
+·   1087. Robert Hassell III WSH - CF,RF
+·   1088. Triston Casas BOS - 1B
+·   1089. Otto Kemp PHI - 1B,3B,LF
+·   1090. Jose Trevino CIN - C
+·   1091. Henry Davis PIT - C
+·   1092. Angel Martínez CLE - 2B,LF,CF
+·   1093. Blaine Crim COL - 1B
+·   1094. Sam Haggerty TEX - LF,CF
+·   1095. Cody Freeman TEX - 2B
+·   1096. Alex Verdugo ATL - LF,RF
+·   1097. Everson Pereira CWS - LF,CF
+·   1098. Ryan Ritter COL - 2B,SS
+·   1099. Wilmer Flores SF - 1B
+·   1100. Oswald Peraza LAA - 1B,2B,3B,SS
+·   1101. Drew Gilbert SF - CF,RF
+·   1102. Ryan Mountcastle BAL - 1B
+·   1103. Luis Torrens NYM - C
+·   1104. Joe Mack MIA - C
+·   1105. David Fry CLE - Util
+·   1106. Justyn-Henry Malloy TB - LF,RF
+·   1107. Braxton Fulford COL - C
+·   1108. Justin Turner CHC - 1B,3B
+·   1109. Adael Amador COL - 2B
+·   1110. Connor Wong BOS - C
+·   1111. Abimelec Ortiz WSH - 1B
+·   1112. Liam Hicks MIA - C,1B
+·   1113. Hunter Feduccia TB - C
+·   1114. James McCann AZ - C
+·   1115. Darell Hernaiz ATH - 2B,3B,SS
+·   1116. Oswaldo Cabrera NYY - 3B
+·   1117. Dalton Rushing LAD - C
+·   1118. Johnathan Rodríguez CLE - RF
+·   1119. Jon Berti CHC - 2B,3B
+·   1120. Mitch Garver SEA - C
+·   1121. Jorge Mateo ATL - 2B,SS,CF
+·   1122. Miguel Rojas LAD - 2B,3B,SS
+·   1123. Blake Perkins MIL - LF,CF,RF
+·   1124. Travis d'Arnaud LAA - C
+·   1125. Jordan Lawlar AZ - 3B  - Keeper - Amazins
+·   1126. Chris Taylor LAA - 2B,LF,CF,RF
+·   1127. Alan Roden MIN - LF,RF
+·   1128. Daniel Schneemann CLE - 2B,3B,SS,CF,RF
+·   1129. Ryan Waldschmidt AZ - LF,CF,RF
+·   1130. Hyeseong Kim LAD - 2B,SS,CF
+·   1131. Travis Bazzana CLE - 2B
+·   1132. Joshua Baez STL - LF,CF,RF
+·   1133. Jose Iglesias SD - 2B,3B,SS
+·   1134. Alex Call LAD - LF,CF,RF
+·   1135. Austin Slater NYY - LF,CF,RF
+·   1136. José Fermín STL - 2B
+·   1137. Andruw Monasterio BOS - 1B,2B,3B,SS
+·   1138. Max Kepler PHI - LF,RF
+·   1139. James Outman MIN - LF,CF,RF
+·   1140. Jahmai Jones DET - LF,CF,RF
+·   1141. Nick Yorke PIT - 2B
+·   1142. Nathan Church STL - LF,CF,RF
+·   1143. Jack Suwinski PIT - LF,CF,RF
+·   1144. Yohel Pozo STL - C
+·   1145. Richie Palacios TB - LF
+·   1146. Kristian Campbell BOS - 2B,CF
+·   1147. Brett Harris ATH - 3B
+·   1148. Luis Matos SF - LF,CF,RF
+·   1149. Carlos Cortes ATH - LF,RF
+·   1150. Bryce Johnson SD - LF,CF,RF
+·   1151. Jake Rogers DET - C
+·   1152. Bryce Teodosio LAA - CF
+·   1153. J.C. Escarra NYY - C
+·   1154. Kyle Farmer ATL - 1B,2B,3B,SS
+·   1155. Ronny Mauricio NYM - 2B,3B
+·   1156. LaMonte Wade Jr. CWS - 1B,RF
+·   1157. Christian Vázquez MIN - C
+·   1158. Will Wagner SD - 1B,3B
+·   1159. Jacob Melton TB - LF,CF
+·   1160. David Hamilton MIL - 2B,SS
+·   1161. Luis Urías ATH - 2B,3B
+·   1162. Gio Urshela MIN - 3B
+·   1163. Mark Canha KC - LF,RF
+·   1164. Dylan Moore PHI - 1B,2B,3B,LF,RF
+·   1165. Austin Wynns ATH - C
+·   1166. Zack Gelof ATH - 2B
+·   1167. Derek Hill CWS - LF,CF
+·   1168. Warming Bernabel WSH - 1B
+·   1169. Leo Rivas SEA - 2B,SS
+·   1170. Jerar Encarnacion SF - RF
+·   1171. Myles Straw TOR - LF,CF,RF
+·   1172. Rafael Marchán PHI - C
+·   1173. Christian Koss SF - 2B,3B
+·   1174. Michael Helman TEX - CF
+·   1175. Zac Veen COL - LF,RF
+·   1176. MJ Melendez NYM - LF
+·   1177. John Rave KC - LF,CF,RF
+·   1178. Tim Tawa AZ - 1B,2B,LF,CF
+·   1179. Eric Wagaman MIN - 1B,LF
+·   1180. Deyvison De Los Santos MIA - 1B,3B
+·   1181. Andy Ibáñez ATH - 2B,3B
+·   1182. Jorge Barrosa AZ - LF,CF
+·   1183. Orlando Arcia MIN - 1B,2B,3B,SS
+·   1184. Riley Adams WSH - C
+·   1185. Nick Loftin KC - 2B,3B,LF
+·   1186. Brendan Rodgers BOS - 2B
+·   1187. Braden Montgomery CWS - Util
+·   1188. Tirso Ornelas SD - LF
+·   1189. Endy Rodríguez PIT - C,1B
+·   1190. Ryan Vilade TB - LF,RF
+·   1191. Walker Jenkins MIN - Util  - Keeper - The Papelboners
+·   1192. Christian Encarnacion-Strand CIN - 1B,3B
+·   1193. Nate Eaton BOS - 3B,CF,RF
+·   1194. Nolan Jones CLE - LF,CF,RF
+·   1195. Eli White ATL - LF,CF,RF
+·   1196. Leo Jiménez TOR - 2B
+·   1197. César Salazar HOU - C
+·   1198. Ryan Bliss SEA - 2B
+·   1199. Elias Díaz SD - C
+·   1200. Paul DeJong NYY - 2B,3B,SS
+·   1201. Tyler Fitzgerald SF - 2B
+·   1202. Tyler Heineman TOR - C
+·   1203. Drew Millas WSH - C
+·   1204. Curtis Mead CWS - 1B,2B,3B
+·   1205. Alex Freeland LAD - 3B,SS
+·   1206. Rafael Flores Jr. PIT - C,1B
+·   1207. Juan Brito CLE - 1B,2B
+·   1208. Max Schuemann NYY - 2B,3B,SS
+·   1209. Johan Rojas PHI - CF
+·   1210. Kris Bryant COL - Util
+·   1211. Alejandro Osuna TEX - LF,CF,RF
+·   1212. Nick Allen HOU - SS
+·   1213. Esteury Ruiz MIA - LF,CF
+·   1214. Leody Taveras BAL - CF,RF
+·   1215. Tom Murphy SF - C
+·   1216. Joey Wiemer WSH - LF,CF,RF
+·   1217. Bryan Torres STL - 2B,LF,RF
+·   1218. Tyler Tolbert KC - LF,CF
+·   1219. Luke Maile KC - C
+·   1220. Andrew Knizner SEA - C
+·   1221. Maximo Acosta MIA - SS
+·   1222. Korey Lee CWS - C
+·   1223. Jimmy Crooks STL - C
+·   1224. Zach Dezenzo HOU - LF,RF
+·   1225. Orelvis Martinez WSH - 2B,3B
+·   1226. Sebastian Walcott TEX - 3B,SS
+·   1227. Matthew Lugo LAA - LF,CF
+·   1228. Jett Williams MIL - 2B,SS
+·   1229. Trey Sweeney DET - SS
+·   1230. Nacho Alvarez Jr. ATL - 3B
+·   1231. Tyler Callihan CIN - 2B,LF
+·   1232. Eloy Jiménez TOR - RF
+·   1233. Daniel Susac SF - C
+·   1234. Manuel Margot DET - LF,CF,RF
+·   1235. Kevin Alcantara CHC - RF
+·   1236. Ildemaro Vargas AZ - 1B,2B
+·   1237. Joey Loperfido TOR - LF,CF,RF
+·   1238. T.J. Rumfield COL - 1B
+·   1239. Yanquiel Fernández NYY - RF
+·   1240. Jeferson Quero MIL - C
+·   1241. Austin Hedges CLE - C
+·   1242. Michael Toglia CIN - 1B
+·   1243. Tanner Murray CWS - 2B,3B,SS,LF,RF
+·   1244. Dairon Blanco KC - LF,CF,RF
+·   1245. Aidan Miller PHI - SS
+·   1246. Dominic Keegan TB - C
+·   1247. Mickey Gasper BOS - C
+·   1248. Mason McCoy SD - SS
+·   1249. Coby Mayo BAL - 1B
+·   1250. Tre' Morgan TB - 1B
+·   1251. Tristan Gray MIN - 2B,SS
+·   1252. Jacob Stallings BAL - C
+·   1253. Brandon Lockridge MIL - LF,CF,RF
+·   1254. Rece Hinds CIN - RF
+·   1255. Grant McCray SF - LF,CF,RF
+·   1256. Kyren Paris LAA - 2B,CF
+·   1257. Ryan Clifford NYM - 1B
+·   1258. Jace Jung DET - 3B
+·   1259. Enmanuel Valdez PIT - 1B
+·   1260. Spencer Jones NYY - CF
+·   1261. Emmanuel Rodriguez MIN - CF
+·   1262. Blake Dunn CIN - LF,RF
+·   1263. Austin Barnes NYM - C
+·   1264. Alex Jackson MIN - C
+·   1265. Junior Perez ATH - LF,CF,RF
+·   1266. Drew Waters KC - LF,CF,RF
+·   1267. Brett Wisely TB - 2B
+·   1268. Yohandy Morales WSH - 1B,3B
+·   1269. Dustin Harris CWS - LF
+·   1270. Tim Anderson LAA - 2B,SS
+·   1271. Garrett Hampson CIN - 2B,LF,CF
+·   1272. Jesus Rodriguez SF - C
+·   1273. Kameron Misner KC - CF,RF
+·   1274. Michael Arroyo SEA - 2B
+·   1275. Jared Young NYM - 1B,LF
+·   1276. Victor Mesa Jr. TB - RF
+·   1277. Tommy Troy AZ - 2B
+·   1278. Sterlin Thompson COL - 1B,LF
+·   1279. Leo De Vries ATH - SS - 1st Round - Brohams
+·   1280. Brice Matthews HOU - 2B
+·   1281. Ryan Kreidler MIN - CF
+·   1282. Billy Cook PIT - CF
+·   1283. Anthony Seigler BOS - 3B
+·   1284. Heston Kjerstad BAL - LF,RF
+·   1285. Samad Taylor SD - 2B,RF
+·   1286. Cesar Prieto STL - 2B,3B,SS
+·   1287. Justin Dean CHC - CF
+·   1288. Jhonkensy Noel BAL - 1B,RF
+·   1289. Justin Foscue TEX - 1B
+·   1290. Ji Hwan Bae NYM - CF,RF
+·   1291. Miles Mastrobuoni SEA - 2B,3B,LF,RF
+·   1292. Wade Meckler LAA - CF
+·   1293. Taylor Trammell HOU - LF,CF
+·   1294. Tristan Peters CWS - CF
+·   1295. Matt Koperniak STL - LF
+·   1296. Cooper Kinney TB - 2B,3B
+·   1297. Akil Baddoo MIL - LF
+·   1298. Weston Wilson BAL - 2B,LF
+·   1299. Donovan Solano TEX - 1B
+·   1300. Denzer Guzman LAA - 3B,SS
+·   1301. Bryan Ramos STL - 3B
+·   1302. Nicky Lopez COL - 3B
+·   1303. Jorbit Vivas NYY - 2B,3B
+·   1304. Matt Mervis WSH - 1B
+·   1305. Ben Rortvedt LAD - C
+·   1306. Jared Serna MIA - 2B,SS
+·   1307. Héctor Rodríguez CIN - LF,RF
+·   1308. James Triantos CHC - 2B,LF,CF
+·   1309. Shay Whitcomb HOU - 2B,3B
+·   1310. Esmerlyn Valdez PIT - 1B,LF,RF
+·   1311. Tsung-Che Cheng BOS - 2B,3B,SS
+·   1312. Hao-Yu Lee DET - 2B,3B
+·   1313. Vidal Bruján NYM - 3B,SS
+·   1314. Garrett Stubbs PHI - C
+·   1315. Eduardo Valencia DET - C,1B
+·   1316. Ryan Ward LAD - 1B,LF,RF
+·   1317. Petey Halpin CLE - CF
+·   1318. Jonatan Clase TOR - LF,CF
+·   1319. Ronny Simon PIT - 2B,LF
+·   1320. Max Anderson DET - 2B,3B
+·   1321. Rhylan Thomas SEA - LF
+·   1322. Drew Romo CWS - C
+·   1323. Tyler Wade TEX - 2B,LF,CF
+·   1324. Pedro León PHI - RF
+·   1325. Christian Franklin WSH - LF,CF,RF
+·   1326. Michael Siani LAD - CF
+·   1327. Marco Luciano NYY - 2B,SS
+·   1328. Jonathon Long CHC - 1B
+·   1329. Trei Cruz DET - SS,LF,CF
+·   1330. Jhonny Pereda SEA - C
+·   1331. Niko Kavadas LAA - 1B,LF,RF
+·   1332. Kemp Alderman MIA - Util
+·   1333. Tyler Black MIL - 1B
+·   1334. Brandon Valenzuela TOR - C,1B
+·   1335. Ben Cowles CHC - 2B,3B,SS
+·   1336. Hayden Senger NYM - C
+·   1337. Steward Berroa MIL - CF,RF
+·   1338. Willie MacIver TEX - C
+·   1339. Braden Shewmake NYY - 2B,3B,SS
+·   1340. Tomás Nido DET - C
+·   1341. Ryan Fitzgerald LAD - SS
+·   1342. Maverick Handley BAL - C
+·   1343. Will Robertson BAL - LF,RF
+·   1344. Jason Heyward SD - LF,RF
+·   1345. Ryan Noda BAL - 1B
+·   1346. Christian Bethancourt CHC - C
+·   1347. Hunter Renfroe KC - RF
+·   1348. Cavan Biggio KC - 1B,RF
+·   1349. Enrique Bradfield Jr. BAL - Util
+·   1350. Anthony Rendon LAA - 3B
+·   1351. Michael Lorenzen (Batter) COL - CF
+·   1352. Lucas Spence HOU - Util
+·   1353. Deniel Ortiz STL - 1B,3B
+·   1354. Maxton Martin TEX - Util
+·   1355. Dillon Lewis MIA - Util
+·   1356. Dylan Jasso MIA - 1B,2B,3B
+·   1357. Cristian Hernandez MIA - 2B,SS
+·   1358. Kevin Made WSH - 2B,SS
+·   1359. Yohendrick Pinango TOR - Util
+·   1360. José Anderson MIL - Util
+·   1361. Benny Montgomery COL - CF,RF
+·   1362. Izaac Pacheco DET - 3B
+·   1363. Dauri Fernandez CLE - 2B,SS
+·   1364. Roberto Campos DET - CF,RF
+·   1365. Gage Workman DET - 3B,SS,LF,CF,RF
+·   1366. Daniel Vazquez KC - SS
+·   1367. Adrian Placencia LAA - 2B
+·   1368. Kahlil Watson CLE - LF,CF,RF
+·   1369. Edward Duran TOR - C
+·   1370. Ethan Holliday COL - SS
+·   1371. Aiva Arquette MIA - SS
+·   1372. Eli Willits WSH - SS
+·   1373. Jace LaViolette CLE - Util
+·   1374. Billy Carlson CWS - SS
+·   1375. Steele Hall CIN - SS
+·   1376. Noah Miller LAD - SS
+·   1377. Marek Houston MIN - SS
+·   1378. Kayson Cunningham AZ - SS
+·   1379. JoJo Parker TOR - SS
+·   1380. Gavin Kilen SF - 2B,SS
+·   1381. Luke Stevenson SEA - C
+·   1382. Daniel Pierce TB - SS
+·   1383. Sean Gamble KC - Util
+·   1384. Ike Irish BAL - C,1B
+·   1385. Devin Taylor ATH - LF,RF
+·   1386. Brendan Summerhill TB - Util
+·   1387. Slater de Brun TB - Util
+·   1388. Wehiwa Aloy BAL - SS
+·   1389. Xavier Neyens HOU - SS
+·   1390. Max Belyeu COL - Util
+·   1391. Ethan Conrad CHC - Util
+·   1392. Quentin Young MIN - SS
+·   1393. Gavin Fien WSH - SS
+·   1394. Ethan Petry WSH - Util
+·   1395. Andrew Fischer MIL - 3B
+·   1396. Cam Cannarella MIA - Util
+·   1397. Caden Bodine TB - C
+·   1398. Josh Hammond KC - 3B
+·   1399. Brandon Compton MIA - Util
+·   1400. Nick Becker SEA - SS
+·   1401. Lonnie White Jr. PIT - LF,CF,RF
+·   1402. Tate Southisene ATL - SS
+·   1403. Ryan Mitchell STL - Util
+·   1404. Dean Moss TB - Util
+·   1405. Kala'i Rosario MIN - Util
+·   1406. Alex Lodise ATL - SS
+·   1407. Samuel Zavala CWS - Util
+·   1408. Brady Ebel MIL - SS
+·   1409. Kenedy Corona NYY - LF,CF,RF
+·   1410. Jordan Yost DET - SS
+·   1411. Charles Davalan LAD - Util
+·   1412. Edwin Arroyo CIN - 2B,SS
+·   1413. Mason Neville CIN - Util
+·   1414. Daniel Dickinson MIL - 2B,SS
+·   1415. Jaden Fauske CWS - Util
+·   1416. Gabriel Gonzalez MIN - LF,RF
+·   1417. Henry Godbout BOS - 2B
+·   1418. Aeverson Arteaga SF - SS
+·   1419. Kyle Lodise CWS - SS
+·   1420. Gavin Turley ATH - RF
+·   1421. Max Williams MIA - Util
+·   1422. Korbyn Dickerson SEA - Util
+·   1423. Dax Kilby NYY - SS
+·   1424. Coy James WSH - SS
+·   1425. Carlos De La Cruz WSH - CF,RF
+·   1426. Taitn Gray TB - C
+·   1427. Kane Kepley CHC - Util
+·   1428. Josiah Hartshorn CHC - Util
+·   1429. Cameron Cauley TEX - 2B,SS
+·   1430. Nolan Schubart CLE - Util
+·   1431. Easton Carmichael PIT - C
+·   1432. Aidan West LAD - SS
+·   1433. Colin Yeaman BAL - 3B,SS
+·   1434. Dasan Brown TOR - LF,CF
+·   1435. Nick Dumesnil DET - Util
+·   1436. Cam Devanney PIT - 3B
+·   1437. Tanner Thach COL - 1B
+·   1438. Gustavo Melendez PIT - SS
+·   1439. Murf Gray PIT - 3B
+·   1440. Jack Gurevitch STL - 1B
+·   1441. Ty Harvey SD - C
+·   1442. Tim Piasentin TOR - 3B
+·   1443. Landon Hodge CWS - C
+·   1444. Elian Peña NYM - SS
+·   1445. Mitch Voit NYM - 2B
+·   1446. Cooper Flemming TB - SS
+·   1447. Luke Hill CLE - 3B
+·   1448. Josh Owens TEX - SS
+·   1449. Ethan Frey HOU - Util
+·   1450. Ryan Wideman SD - Util
+·   1451. Ethan Hedges COL - 3B
+·   1452. Antonio Jimenez NYM - SS
+·   1453. Aaron Walton CLE - Util
+·   1454. Lorenzo Meola SF - 2B
+·   1455. Cam Maldonado SF - Util
+·   1456. Isaiah Jackson BOS - Util
+·   1457. Michael Oliveto DET - C
+·   1458. Kade Snell CHC - Util
+·   1459. Jase Mitchell HOU - C
+·   1460. Jake Cook TOR - Util
+·   1461. Trevor Cohen SF - Util
+·   1462. Kaeden Kent NYY - SS
+·   1463. James Quinn-Irons TB - Util
+·   1464. Pablo Aliendo CHC - C,1B
+·   1465. Nick Monistere HOU - 3B,SS
+·   1466. Core Jackson NYY - 2B,SS
+·   1467. Diego Velasquez SF - 2B
+·   1468. Gavin Conticello AZ - CF,RF
+·   1469. Jesus Lopez TEX - C
+·   1470. Jack Brannigan PIT - 3B,SS
+·   1471. Cristofer Torin AZ - 2B,SS
+·   1472. Leo Balcazar CIN - 2B,SS
+·   1473. Jesus Baez STL - 2B,3B,SS
+·   1474. Ethan Salas SD - C
+·   1475. Rosman Verdugo SD - 2B,3B
+·   1476. Allan Castro BOS - Util
+·   1477. Carlos Virahonda AZ - C
+·   1478. Enyervert Perez AZ - 1B,3B
+·   1479. Nate George BAL - Util
+·   1480. Jorge Rodriguez BOS - C
+·   1481. Enddy Azocar BOS - Util
+·   1482. Juan Tomas CHC - SS
+·   1483. Liberts Aponte CIN - SS
+·   1484. Marcelo Alcala CWS - CF
+·   1485. Cris Rodriguez DET - Util
+·   1486. Carlos Jorge CIN - CF
+·   1487. Jude Warwick DET - 2B,SS
+·   1488. Kevin Alvarez HOU - Util
+·   1489. Ramcell Medina KC - SS
+·   1490. Warren Calcaño KC - SS
+·   1491. Moises Marchán KC - C
+·   1492. Gabriel Davalillo LAA - C
+·   1493. Andrew Salas MIA - 2B,SS
+·   1494. Marlon Quintero LAA - C
+·   1495. Brailyn Antunez MIL - Util
+·   1496. Deivid Coronil SD - 3B,SS
+·   1497. Darell Morel PIT - SS
+·   1498. Luke Adams MIL - 1B,3B
+·   1499. Jhoan De La Cruz SD - 2B,SS
+·   1500. Truitt Madonna SD - C
+·   1501. Carlos Gutierrez SF - Util
+·   1502. Kendry Martinez SEA - 2B,SS
+·   1503. Yorger Bautista SEA - Util
+·   1504. Royelny Strop STL - Util
+·   1505. Kenly Hunter STL - Util
+·   1506. Elorky Rodriguez TEX - 2B
+·   1507. Juan Sanchez TOR - 3B,SS
+·   1508. Daniel Hernandez WSH - C
+·   1509. Brayan Cortesia WSH - SS
+·   1510. Sir Jamison Jones WSH - C
+·   1511. Marconi German WSH - 2B,SS
+·   1512. Creed Willems BAL - C,1B
+·   1513. Rafael Ramirez Jr. WSH - 2B
+·   1514. Darwing Ozuna ATH - RF
+·   1515. Harold Rivas BOS - CF
+·   1516. Raudi Rodriguez LAA - CF,RF
+·   1517. Reed Trimble BAL - LF,CF,RF
+·   1518. Austin Gauthier LAD - 2B
+·   1519. Enmanuel Bonilla TOR - LF,CF
+·   1520. Gregory Barrios TB - SS
+·   1521. Jadher Areinamo TB - 2B,3B,SS
+·   1522. Jace Avina NYY - Util
+·   1523. Omar Alfonzo PIT - C,1B
+·   1524. Boston Baro NYM - 2B,3B,SS
+·   1525. Sammy Stafura PIT - 2B,SS
+·   1526. Colton Ledbetter STL - Util
+·   1527. Spencer Nivens KC - LF,RF
+·   1528. John Peck DET - 2B,3B,SS
+·   1529. Matthew Etzel MIA - Util
+·   1530. Mike Boeve MIL - 1B
+·   1531. Roc Riggio COL - 2B
+·   1532. Mac Horvath TB - 2B,3B,CF,RF
+·   1533. Ethan O'Donnell MIA - Util
+·   1534. Parks Harber SF - 1B,3B
+·   1535. Alfonsin Rosario CLE - Util
+·   1536. Nehomar Ochoa Jr. HOU - Util
+·   1537. Cooper Ingle CLE - C
+·   1538. Zach Levenson STL - LF,CF,RF
+·   1539. Kehden Hettiger PHI - C,1B
+·   1540. Dylan Campbell PHI - Util
+·   1541. TJayy Walton PHI - Util
+·   1542. Jonah Cox SF - LF,CF
+·   1543. Carson Rucker DET - 3B
+·   1544. Carson Roccaforte KC - Util
+·   1545. Jared Dickey ATH - RF
+·   1546. Aidan Smith TB - Util
+·   1547. George Wolkow CWS - CF,RF
+·   1548. Jace Bohrofen TOR - LF,CF,RF
+·   1549. Kendall George LAD - Util
+·   1550. LuJames Groover AZ - 3B
+·   1551. Tai Peete STL - Util
+·   1552. Ralphy Velazquez CLE - 1B
+·   1553. Dillon Head MIA - Util
+·   1554. Blake Mitchell KC - C
+·   1555. Max Clark DET - CF
+·   1556. Arjun Nimmala TOR - SS
+·   1557. Colin Houck NYM - 3B,SS
+·   1558. Jacob Gonzalez CWS - 2B,SS
+·   1559. Brock Wilken MIL - 3B
+·   1560. Walker Martin SF - 3B,SS
+·   1561. Brayden Taylor TB - 2B,3B
+·   1562. Jack Hurley AZ - LF,CF
+·   1563. Adrian Santana TB - SS
+·   1564. George Lombard Jr. NYY - 2B,3B,SS
+·   1565. Chase Davis STL - Util
+·   1566. Cooper Pratt MIL - SS
+·   1567. Mitch Jebb PIT - 2B
+·   1568. Cole Carrigg COL - Util
+·   1569. Maui Ahuna SF - SS
+·   1570. Jonny Farmelo SEA - Util
+·   1571. Nazzan Zanetello BOS - 2B,SS
+·   1572. Travis Honeyman STL - LF,CF
+·   1573. Myles Naylor ATH - 3B
+·   1574. Eric Bitonti MIL - 1B
+·   1575. Brandon Winokur MIN - 3B,SS
+·   1576. Ryan Lasko ATH - CF,RF
+·   1577. Homer Bush Jr. TB - Util
+·   1578. Alex Mooney CLE - 2B,3B,SS
+·   1579. Sabin Ceballos SF - 3B
+·   1580. Carson McCusker MIN - LF,RF
+·   1581. Dean Curley CLE - SS
+·   1582. Andrew Pinckney WSH - Util
+·   1583. J.D. Gonzalez TB - C
+·   1584. Devin Saltiban PHI - 2B
+·   1585. A.J. Ewing NYM - 2B
+·   1586. Brock Rodden SEA - 2B,3B,SS
+·   1587. Chase Jaworsky MIA - 2B,SS
+·   1588. Jared Sundstrom SEA - Util
+·   1589. Sam Shaw TOR - 2B
+·   1590. Nate Nankil ATH - LF,CF,RF
+·   1591. RJ Schreck TOR - Util
+·   1592. Avery Owusu-Asiedu AZ - LF,CF
+·   1593. Cole Fontenelle LAA - 3B
+·   1594. Yahil Melendez CHC - 3B,SS
+·   1595. Brett Bateman CHC - CF
+·   1596. Jaron Elkins LAD - Util
+·   1597. Sammy Hernandez STL - C,1B
+·   1598. Jhonny Severino PIT - 2B,3B
+·   1599. Travis Jankowski NYM - LF,CF,RF
+·   1600. Estuar Suero PIT - LF,CF,RF
+·   1601. Jeremy Rodriguez NYM - 2B,3B,SS
+·   1602. Jansel Luis AZ - 2B,3B,SS
+·   1603. Christian Cerda AZ - C
+·   1604. Luis Guanipa ATL - Util
+·   1605. Luis Almeyda BAL - 3B,SS
+·   1606. Yoeilin Cespedes BOS - 2B,SS
+·   1607. Johanfran Garcia BOS - C
+·   1608. Franklin Arias BOS - SS
+·   1609. Jefferson Rojas CHC - SS
+·   1610. Derniche Valdez CHC - SS
+·   1611. Alfredo Duno CIN - C
+·   1612. Sheng-En Lin CIN - SS
+·   1613. Welbyn Francisca CLE - SS
+·   1614. Robert Calaz COL - Util
+·   1615. Enrique Jimenez MIN - C,1B
+·   1616. Justice Bigbie DET - LF,RF
+·   1617. Luis Baez HOU - Util
+·   1618. Dario Laverde LAA - C
+·   1619. Felix Morrobel LAA - 2B,SS
+·   1620. Juan Flores LAA - C
+·   1621. Capri Ortiz LAA - 2B,SS
+·   1622. Anthony Scull LAA - LF,CF
+·   1623. Josue De Paula LAD - Util
+·   1624. Joendry Vargas LAD - SS
+·   1625. Thayron Liranzo DET - C
+·   1626. Andres Valor MIA - RF
+·   1627. Yophery Rodriguez BOS - Util
+·   1628. Filippo Di Turi MIL - 2B,3B,SS
+·   1629. Juan Baez MIL - 2B,3B
+·   1630. Ricardo Olivar MIN - C
+·   1631. Brando Mayea NYY - Util
+·   1632. Keiner Delgado PIT - 2B,3B,SS
+·   1633. Starlyn Caba MIA - 2B,SS
+·   1634. Raylin Heredia PHI - Util
+·   1635. Eduardo Tait MIN - C
+·   1636. Bryan Rincon PHI - SS
+·   1637. Rayner Arias SF - Util
+·   1638. Onil Perez SF - C
+·   1639. Felnin Celesten SEA - SS
+·   1640. Brailer Guerrero TB - Util
+·   1641. Echedry Vargas MIA - 3B,SS
+·   1642. Zyhir Hope LAD - Util
+·   1643. Nelson Rada LAA - Util
+·   1644. Richie Martin TEX - 3B,SS
+·   1645. Waner Luciano HOU - 2B,3B
+·   1646. Wilson Rodriguez NYY - Util
+·   1647. Luis Suisbel SEA - 3B,SS
+·   1648. Jose Fernandez AZ - SS
+·   1649. Rubel Cespedes MIN - 1B,3B
+·   1650. Jeral Perez CWS - 2B,SS
+·   1651. Charles McAdoo TOR - 1B,3B
+·   1652. Victor Arias TOR - Util
+·   1653. Jaison Chourio CLE - CF
+·   1654. Druw Jones AZ - CF,RF
+·   1655. Alejandro Nunez HOU - 2B,3B,SS
+·   1656. Lewin Díaz WSH - 1B
+·   1657. Diego Benitez ATL - 1B,3B
+·   1658. Josue Briceño DET - C,1B
+·   1659. Douglas Glod ATL - LF,RF
+·   1660. David McCabe ATL - 1B,3B
+·   1661. Jud Fabian BAL - LF,CF
+·   1662. Miguel Bleis BOS - Util
+·   1663. Mikey Romero BOS - 2B,3B
+·   1664. Eddinson Paulino TOR - 2B,SS
+·   1665. Cutter Coffey TOR - 2B,3B
+·   1666. Brooks Brannon BOS - C,1B
+·   1667. Cam Collier CIN - 1B,3B
+·   1668. Ricardo Cabrera CIN - 3B
+·   1669. Jake Fox CLE - CF
+·   1670. Angel Genao CLE - 2B,3B,SS
+·   1671. Dyan Jorge COL - 2B,SS
+·   1672. Ryan Burrowes CWS - 2B,3B,SS
+·   1673. Keaton Anthony PHI - 1B
+·   1674. Pedro Ramirez CHC - 2B,3B
+·   1675. Alexander Albertus CWS - 3B
+·   1676. Kenni Gomez HOU - Util
+·   1677. Gavin Cross KC - Util
+·   1678. Cayden Wallace WSH - 2B,3B
+·   1679. Tyler Gentry KC - RF
+·   1680. Austin Charles KC - 3B,SS
+·   1681. Payton Eeles BAL - 2B,SS,LF
+·   1682. Randy De Jesus LAA - Util
+·   1683. Bryce Rainer DET - SS
+·   1684. Seaver King WSH - SS
+·   1685. Caleb Lomavita WSH - C
+·   1686. Billy Amick MIN - 1B,3B
+·   1687. Tommy White ATH - 3B
+·   1688. Slade Caldwell AZ - LF,CF
+·   1689. Vance Honeycutt BAL - LF,CF
+·   1690. Dakota Jordan SF - Util
+·   1691. Walker Janek HOU - C
+·   1692. Theo Gillen TB - Util
+·   1693. Rayne Doncon MIN - 3B
+·   1694. Logan Wagner LAD - 2B,3B
+·   1695. Kellon Lindsey LAD - SS
+·   1696. Kaelen Culpepper MIN - SS
+·   1697. Malcolm Moore TEX - C
+·   1698. Wyatt Sanford PIT - 2B,SS
+·   1699. Ronald Hernandez NYM - C,1B
+·   1700. Griff O'Ferrall BAL - 2B,SS
+·   1701. Jacob Cozart CLE - C
+·   1702. Carter Johnson MIA - 2B,SS
+·   1703. Luis Lara MIL - Util
+·   1704. Tyson Lewis CIN - SS
+·   1705. Hendry Mendez MIN - LF
+·   1706. Kevin Bazzell WSH - C
+·   1707. Dante Nori PHI - Util
+·   1708. PJ Morlando MIA - Util
+·   1709. Jared Thomas COL - Util
+·   1710. Braylon Payne MIL - Util
+·   1711. Tanner Schobel MIN - 3B,SS
+·   1712. Yasser Mercedes MIN - CF,RF
+·   1713. Mike Sirota LAD - Util
+·   1714. Danny De Andrade MIN - 2B,3B,SS
+·   1715. Caleb Bonemer CWS - 3B,SS
+·   1716. Kavares Tears SD - Util
+·   1717. Kevin Parada NYM - C
+·   1718. Blake Burke MIL - 1B
+·   1719. Peyton Stovall CIN - 1B,2B
+·   1720. Ethan Anderson BAL - C,1B
+·   1721. Nick Morabito NYM - CF
+·   1722. Jacob Reimer NYM - 1B,3B
+·   1723. Gage Miller MIA - 2B,3B
+·   1724. Kyle DeBarge MIN - 2B,SS
+·   1725. Roderick Arias NYY - 3B,SS
+·   1726. Dylan Dreiling TEX - Util
+·   1727. Carson DeMartini PHI - 3B,SS
+·   1728. Griffin Burkholder PHI - Util
+·   1729. Henry Bolte ATH - RF
+·   1730. Ty Southisene CHC - 2B
+·   1731. Cooper Bowman ATH - 1B,2B,LF
+·   1732. Austin Overn TB - Util
+·   1733. Gabriel Rincones Jr. PHI - LF,RF
+·   1734. William Bergolla CWS - 2B,SS
+·   1735. JD Dix AZ - 2B
+·   1736. Cole Mathis CHC - 3B
+·   1737. Jared Jones PIT - 1B
+·   1738. Caleb Ricketts PHI - C
+·   1739. Termarr Johnson PIT - 2B
+·   1740. Kale Fountain SD - 1B,3B
+·   1741. Joshua Kuroda-Grauer ATH - SS
+·   1742. Chase Harlan LAD - 3B
+·   1743. Shalin Polanco PIT - LF,CF,RF
+·   1744. John Spikerman PHI - Util
+·   1745. Casey Saucke CWS - Util
+·   1746. Robert Hipwell SF - 1B,3B
+·   1747. Cole Messina COL - C
+·   1748. Lamar King Jr. SD - C,1B
+·   1749. Lazaro Montes SEA - Util
+·   1750. Victor Labrada SEA - Util
+·   1751. Luke Dickerson WSH - 2B,SS
+·   1752. Nick McLain CWS - CF
+·   1753. Jonathan Mejia STL - 2B,SS
+·   1754. Khadim Diaw MIN - C
+·   1755. Leonardo Bernal STL - C
+·   1756. Won-Bin Cho STL - CF,RF
+·   1757. Casey Cook TEX - 2B,SS
+·   1758. Josh Caron SEA - C
+·   1759. Ryan Campos STL - C
+·   1760. Xavier Isaac TB - Util
+·   1761. Émilien Pitre TB - 2B,SS
+·   1762. Anthony Gutierrez TEX - Util
+·   1763. Nick Montgomery ATL - C
+·   1764. Gleider Figuereo TEX - 3B
+·   1765. Sam Antonacci CWS - 2B,3B
+·   1766. Carter Mathison PHI - RF
+·   1767. Sam Petersen WSH - Util
+·   1768. Josh Kasevich TOR - 3B,SS
+·   1769. Sean Keys TOR - 1B,3B
+·   1770. Jakob Christian SF - 1B,LF,RF
+·   1771. Devin Fitz-Gerald WSH - Util
+·   1772. Ivan Luciano AZ - C
+·   1773. Zach Ehrhard LAD - Util
+·   1774. Nathan Flewelling TB - C
+·   1775. Fenwick Trimble MIA - Util
+·   1776. Cobb Hightower HOU - 2B,SS
+·   1777. Ronny Cruz WSH - SS
+·   1778. Elijah Green WSH - CF
+·   1779. Cristhian Vaquero WSH - Util
+·   1780. Ivan Melendez AZ - 1B
+·   1781. Ruben Santana AZ - 1B,3B
+·   1782. Andrew Pintar MIA - CF,RF
+·   1783. Carlos Jimenez SEA - Util
+·   1784. Gabriel Rodriguez CLE - 3B,SS
+·   1785. Brendan Tunink LAD - Util
+·   1786. Jacob Berry MIA - 2B,3B,RF
+·   1787. DJ Layton BAL - 2B,SS
+·   1788. Carlos Rodríguez SD - Util
+·   1789. Caden Powell HOU - 3B,SS
+·   1790. Joseph Sullivan HOU - Util
+·   1791. Marco Vargas NYM - 2B,SS
+·   1792. Max Wagner BAL - 2B,3B
+·   1793. Aron Estrada BAL - 2B
+·   1794. Braylin Tavera BAL - LF,CF,RF
+·   1795. Leandro Arias BAL - 2B,3B,SS
+·   1796. Coco Montes TB - 2B,3B
+·   1797. Axiel Plaz PIT - C,1B
+·   1798. Tony Blanco Jr. PIT - 1B
+·   1799. Yordany De Los Santos PIT - 2B,3B,SS
+·   1800. Brennan Milone ATH - 1B
+·   1801. Carlos Pacheco ATH - RF
+·   1802. Javier Vaz KC - 2B
+·   1803. Jesús Made MIL - 2B,3B,SS
+·   1804. Luis Peña MIL - 2B,3B,SS
+·   1805. Jorge Quintana MIL - 3B,SS
+·   1806. Joswa Lugo LAA - SS
+·   1807. Hayden Alvarez LAA - Util
+·   1808. Pascanel Ferreras HOU - 2B,3B,SS
+·   1809. Jancel Villarroel SF - C
+·   1810. Jose Perdomo ATL - SS
+·   1811. Rainiel Rodriguez STL - C
+·   1812. Yairo Padilla STL - SS
+·   1813. Adriel Radney AZ - RF
+·   1814. Yassel Soler AZ - 3B
+·   1815. Demetrio Crisantes AZ - 2B,3B
+·   1816. Alberto Barriga AZ - C
+·   1817. Fernando Cruz CHC - SS
+·   1818. Eli Lovich CHC - Util
+·   1819. Stiven Martinez BAL - CF,RF
+·   1820. Thomas Sosa BAL - LF,RF
+·   1821. Joshua Liranzo BAL - 1B,3B,SS
+·   1822. Emilio Sanchez BAL - 3B,SS
+·   1823. Jordan Sanchez BAL - Util
+·   1824. Nelly Taylor BOS - Util
+·   1825. Angel Cepeda CHC - 2B,3B,SS
+·   1826. Robert Arias CLE - Util
+·   1827. Ashly Andujar COL - SS
+·   1828. Franyerber Montilla DET - 2B,SS
+·   1829. Nestor Miranda DET - Util
+·   1830. Yandel Ricardo KC - SS
+·   1831. Ramon Ramirez KC - C
+·   1832. Jhonayker Ugarte KC - 3B,SS
+·   1833. Asbel Gonzalez KC - Util
+·   1834. Hyungchan Um KC - C
+·   1835. Emil Morales LAD - SS
+·   1836. Eduardo Quintero LAD - Util
+·   1837. Ching-Hsien Ko LAD - Util
+·   1838. Luis Cova MIA - Util
+·   1839. Eduardo Beltre MIN - CF,RF
+·   1840. Dameury Pena MIN - 2B,LF
+·   1841. Daiverson Gutierrez NYM - C
+·   1842. Edward Lantigua NYM - 2B,3B,SS
+·   1843. Yovanny Rodriguez NYM - C
+·   1844. Francisco Vilorio NYY - Util
+·   1845. Edgleen Perez PIT - C
+·   1846. Engelth Urena NYY - C
+·   1847. Aroon Escobar PHI - 2B,3B
+·   1848. Alirio Ferrebus PHI - C,1B
+·   1849. Edward Florentino PIT - 1B
+·   1850. Romeo Sanabria SD - 1B
+·   1851. Jhonny Level SF - SS
+·   1852. Yohendry Sanchez SF - C
+·   1853. Jose Ortiz SF - CF,RF
+·   1854. Bo Davidson SF - Util
+·   1855. Oliver Tejada SF - LF,RF
+·   1856. Dawel Joseph SEA - 3B,SS
+·   1857. Paulino Santana TEX - Util
+·   1858. Yolfran Castillo TEX - 3B,SS
+·   1859. Braylin Morel TEX - Util
+·   1860. Yeremy Cabrera WSH - Util
+·   1861. Victor Hurtado WSH - LF
+·   1862. Angel Feliz WSH - 2B,SS
+·   1863. Adolfo Sanchez CIN - Util
+·   1864. Naibel Mariano CIN - 3B,SS
+·   1865. Eli Serrano III NYM - Util
+·   1866. James Tibbs III LAD - Util
+·   1867. Shotaro Morii ATH - SS
+·   1868. Josuar Gonzalez SF - SS
+·   1869. Logan Davidson TB - 1B,3B
+·   1870. Arnoldo Lantigua CIN - Util
+·   1871. Edgar Montero ATH - SS
+·   1872. Alex Ramírez NYM - LF,RF
+·   1873. Kevin Hidalgo COL - 3B,SS
+·   1874. Andy Perez COL - SS
+·   1875. Mani Cedeno NYY - SS
+·   1876. Brayan Buelvas ATH - LF,CF,RF
+·   1877. John Gil ATL - SS
+·   1878. Chris Suero NYM - C,1B
+·   1879. Braedon Karpathios SD - Util
+·   1880. Brendan Jones MIA - Util
+·   1881. Blaze Jordan STL - 1B,3B
+·   1882. Will Bush HOU - C,1B
+·   1883. Josh Adamczewski MIL - 2B
+·   1884. Diego Tornes ATL - CF
+·   1885. Justin Gonzales BOS - Util
+·   1886. Dorian Soto BOS - SS
+·   1887. Wilfri De La Cruz BAL - SS
+·   1888. Juan Cabada CHC - 2B,3B
+·   1889. Javier Mogollon CWS - 2B,SS
+·   1890. Juneiker Caceres CLE - Util
+·   1891. Jose Fermin LAA - RP
+·   1892. Connor Prielipp MIN - SP
+·   1893. Matt Pushard STL - RP
+·   1894. John Klein MIN - SP,RP
+·   1895. Coleman Crow MIL - SP
+·   1896. Kohl Drake AZ - SP
+·   1897. Mitch Bratt AZ - SP
+·   1898. Andrew Morris MIN - SP
+·   1899. Peyton Pallette CLE - RP
+·   1900. Miguel Ullola HOU - SP,RP
+·   1901. Garrett Hawkins SD - RP
+·   1902. Kendry Rojas MIN - SP
+·   1903. Austin Peterson CLE - SP
+·   1904. Anthony Nunez BAL - RP
+·   1905. Robinson Ortiz SEA - RP
+·   1906. RJ Petit COL - RP
+·   1907. Carter Baumler TEX - RP
+·   1908. Jedixson Paez CWS - SP
+·   1909. Ryan Watson BOS - RP
+·   1910. Duncan Davitt CWS - SP
+·   1911. Welinton Herrera COL - RP
+·   1912. Elvin Rodríguez BAL - RP
+·   1913. Ronny Henriquez MIA - RP
+·   1914. Caleb Kilian SF - RP
+·   1915. Tzu-Chen Sha ATH - SP,RP
+·   1916. Frank Mozzicato KC - SP
+·   1917. Ben Kudrna KC - SP
+·   1918. Maddux Bruns LAD - SP
+·   1919. Ben Shields COL - SP
+·   1920. Jamie Arnold ATH - SP
+·   1921. Seth Hernandez PIT - SP
+·   1922. Kade Anderson SEA - SP
+·   1923. Kyson Witherspoon BOS - SP
+·   1924. Kruz Schoolcraft SD - SP
+·   1925. Liam Doyle STL - SP
+·   1926. Tyler Bremner LAA - SP
+·   1927. Josh Walker BAL - RP
+·   1928. Brendan Beck NYY - SP
+·   1929. Brock Selvidge NYY - SP
+·   1930. JB Middleton COL - SP
+·   1931. Patrick Forbes AZ - SP
+·   1932. Riley Quick MIN - SP
+·   1933. Aaron Watson CIN - SP
+·   1934. Anthony Solometo PIT - SP
+·   1935. Zachary Root LAD - SP
+·   1936. Matthew Fisher PHI - SP
+·   1937. Landon Harmon WSH - SP
+·   1938. A.J. Russell TEX - SP
+·   1939. Victor Lizarraga SD - SP
+·   1940. Briggs McKenzie ATL - SP
+·   1941. Johnny Slawinski LAA - SP
+·   1942. Michael Morales SEA - SP
+·   1943. Marcus Phillips BOS - SP
+·   1944. J.D. Thompson MIL - SP
+·   1945. Chase Shores LAA - SP
+·   1946. Dean Livingston AZ - SP
+·   1947. Cam Leiter LAD - SP
+·   1948. Ian Bedell STL - SP
+·   1949. Kaleb Wing CHC - SP
+·   1950. Miguel Sime Jr. WSH - SP
+·   1951. Ben Jacobs DET - SP
+·   1952. Justin Lamkin KC - SP
+·   1953. Pico Kohn NYY - SP
+·   1954. Tanner Franklin STL - SP
+·   1955. Michael Lombardi KC - SP
+·   1956. Nate Snead LAA - SP
+·   1957. Mason Morris CIN - SP
+·   1958. Micah Bucknam TOR - SP
+·   1959. Riley Kelly COL - SP
+·   1960. Malachi Witherspoon DET - SP
+·   1961. Anthony Eyanson BOS - SP
+·   1962. Matt Barr MIN - SP
+·   1963. Will Hynes CLE - SP
+·   1964. Griffin Hugus SEA - SP
+·   1965. Gage Wood PHI - SP
+·   1966. Brian Curley AZ - SP
+·   1967. Sean Youngerman PHI - SP
+·   1968. JT Quinn BAL - SP
+·   1969. CJ Gray AZ - SP
+·   1970. Cody Bowker PHI - SP
+·   1971. Grayson Grinsell DET - SP
+·   1972. Zane Taylor ATH - SP
+·   1973. Camden Lohman NYM - SP
+·   1974. Frank Cairone MIL - SP
+·   1975. Dominick Reid CHC - SP
+·   1976. Michael Salina SD - SP
+·   1977. Peter Kussow NYM - SP
+·   1978. Landon Beidelschies ATL - SP
+·   1979. Chase Hampton NYY - SP
+·   1980. Carlos De La Rosa SF - SP
+·   1981. Yunior Marte SF - SP
+·   1982. Jose Franco CIN - SP,RP
+·   1983. Yorman Gómez CLE - SP,RP
+·   1984. Tyler Uberstine BOS - SP
+·   1985. Miguel Mendez SD - SP
+·   1986. Jake Miller DET - SP
+·   1987. Leandro Lopez TEX - SP
+·   1988. Chung-Hsiang Huang AZ - SP
+·   1989. Daury Vasquez AZ - SP
+·   1990. Wei-En Lin ATH - SP,RP
+·   1991. Rayven Antonio ATL - SP
+·   1992. Tyler Schlaffer CHC - SP
+·   1993. Mathias LaCombe CWS - SP,RP
+·   1994. Tanner McDougal CWS - SP
+·   1995. Konner Eaton COL - SP
+·   1996. JeanPierre Ortiz CIN - SP,RP
+·   1997. Jake Miller DET - SP
+·   1998. Lucas Elissalt DET - SP
+·   1999. Kelvis Salcedo DET - SP,RP
+·   2000. Kendry Chourio KC - SP
+·   2001. Bryce Mayer HOU - SP,RP
+·   2002. Josh Hansell KC - SP
+·   2003. Xavier Mitchell LAA - SP
+·   2004. Liomar Martinez MIA - SP
+·   2005. Kevin Defrank MIA - SP
+·   2006. Eliazar Dishmey MIA - SP
+·   2007. Nate Payne MIA - SP
+·   2008. R.J. Gordon NYM - SP
+·   2009. Ramon Marquez PHI - SP
+·   2010. Bryan Balzer SD - SP
+·   2011. Lan-Hong Su SD - SP
+·   2012. Eric Yost SD - SP
+·   2013. Argenis Cayama SF - SP
+·   2014. Alberto Laroche SF - SP
+·   2015. Keyner Martinez SF - SP,RP
+·   2016. Luis De La Torre SF - SP
+·   2017. Josh Trentadue TEX - SP
+·   2018. Paul Bonzagni TEX - SP
+·   2019. Kolton Curtis TEX - SP
+·   2020. Dalton Pence TEX - SP,RP
+·   2021. Leandro Lopez TEX - SP
+·   2022. Gage Stanifer TOR - SP,RP
+·   2023. Yoel Tejeda Jr WSH - SP
+·   2024. Silvano Hechavarria TOR - SP
+·   2025. Po-Chun Lin SEA - SP
+·   2026. Antwone Kelly PIT - SP
+·   2027. Ian Mejia ATL - SP,RP
+·   2028. Logan VanWey HOU - RP
+·   2029. Kade Morris ATH - SP
+·   2030. Alex Clemmey WSH - SP
+·   2031. Garrett Baumann ATL - SP
+·   2032. Hunter Owen KC - SP
+·   2033. Kannon Kemp SD - SP,RP
+·   2034. Eriq Swan WSH - SP
+·   2035. Trey Gibson BAL - SP
+·   2036. Sean Sullivan COL - SP
+·   2037. Josh Knoth MIL - SP
+·   2038. Camden Minacci LAA - RP
+·   2039. Seth Keener CWS - SP,RP
+·   2040. Andrew Heaney LAD - SP
+·   2041. Josh Ekness MIA - RP
+·   2042. Blake Wolters KC - SP
+·   2043. Kyle Carr NYY - SP
+·   2044. Jack Mahoney COL - SP
+·   2045. Drue Hackenberg ATL - SP
+·   2046. Landen Maroudis TOR - SP
+·   2047. Lael Lockhart DET - SP
+·   2048. Carlson Reed PIT - SP
+·   2049. Alejandro Rosario WSH - SP
+·   2050. Khristian Curtis PIT - SP
+·   2051. Jackson Baumeister TB - SP
+·   2052. Bishop Letson MIL - SP
+·   2053. Josh Bostick SF - SP
+·   2054. Lebarron Johnson Jr. COL - SP
+·   2055. Ixan Henderson STL - SP
+·   2056. Zach Thornton NYM - SP
+·   2057. Cole Miller ATH - SP
+·   2058. James Ellwanger MIN - SP
+·   2059. Ty Floyd CIN - SP
+·   2060. Cade Kuehler ATL - SP
+·   2061. Paul Wilson DET - SP
+·   2062. Joe Whitman SF - SP
+·   2063. Noble Meyer MIA - SP
+·   2064. Charlee Soto MIN - SP
+·   2065. Travis Sykora WSH - SP
+·   2066. Cole Schoenwetter CIN - SP,RP
+·   2067. Steven Echavarria ATH - SP
+·   2068. Alonzo Tredwell HOU - SP,RP
+·   2069. Juaron Watts-Brown BAL - SP
+·   2070. Teddy McGraw SEA - SP
+·   2071. Levi Wells BAL - SP
+·   2072. Jaxon Wiggins CHC - SP
+·   2073. Will Sanders CHC - SP
+·   2074. Barrett Kent LAA - SP
+·   2075. Christian Oppor CWS - SP
+·   2076. Chen-Wei Lin STL - SP
+·   2077. Trevor Harrison TB - SP
+·   2078. T.J. Nichols TB - SP
+·   2079. Jaden Woods PIT - RP
+·   2080. Hiro Wyatt KC - SP
+·   2081. Josh Grosz AZ - SP
+·   2082. Patrick Reilly BAL - SP
+·   2083. Jaden Hamm DET - SP
+·   2084. Skylar Hales STL - RP
+·   2085. Andrew Sears DET - SP
+·   2086. Cade Denton COL - RP
+·   2087. Jack Wenninger NYM - SP
+·   2088. Brody Hopkins TB - SP
+·   2089. Blake Wehunt BOS - SP
+·   2090. Lucas Braun ATL - SP
+·   2091. Cade Smith NYY - SP
+·   2092. Ethan Pecko HOU - SP
+·   2093. Izack Tiger TEX - SP
+·   2094. Patrick Copen LAD - SP
+·   2095. Tucker Musgrove SD - SP,RP
+·   2096. Braxton Bragg BAL - SP
+·   2097. Jackson Nezuh HOU - SP,RP
+·   2098. James Hicks HOU - SP
+·   2099. Zack Showalter STL - RP
+·   2100. Zach Penrod WSH - RP
+·   2101. Tyler Owens DET - RP
+·   2102. Luis De León BAL - SP
+·   2103. Juan Nuñez BAL - SP,RP
+·   2104. Alex Pham BAL - RP
+·   2105. Yordanny Monegro BOS - SP
+·   2106. Adam Serwinowski CIN - SP
+·   2107. Jackson Humphries CLE - SP
+·   2108. Jordy Vargas COL - SP
+·   2109. Trey Dombroski HOU - SP,RP
+·   2110. Jose Fleury HOU - SP,RP
+·   2111. Payton Martin LAD - SP
+·   2112. Hyun-Seok Jang LAD - SP
+·   2113. Cory Lewis MIN - SP,RP
+·   2114. C.J. Culpepper MIN - SP
+·   2115. Henry Lalane NYY - SP
+·   2116. Zach Messinger NYY - SP,RP
+·   2117. Carlos Lagrange NYY - SP
+·   2118. Wen Hui Pan PHI - RP
+·   2119. Isaiah Lowe SD - SP
+·   2120. Jeter Martinez PIT - SP
+·   2121. Jimmy Joyce SEA - RP
+·   2122. Aidan Curry TEX - SP
+·   2123. Alex Hoppe SEA - RP
+·   2124. Austin Krob SD - SP,RP
+·   2125. Christian Zazueta Jr. LAD - SP
+·   2126. Joel Hurtado LAA - SP
+·   2127. Humberto Cruz SD - SP
+·   2128. Mason Adams CWS - SP
+·   2129. Cole Paplham SD - RP
+·   2130. Alex Cook TB - RP
+·   2131. Harrison Cohen NYY - RP
+·   2132. Brett Wichrowski MIL - SP
+·   2133. Jack Choate SF - SP,RP
+·   2134. Joseph Montalvo DET - SP
+·   2135. Tyson Guerrero KC - SP
+·   2136. Landon Sims AZ - RP
+·   2137. Owen Murphy ATL - SP
+·   2138. JR Ritchie ATL - SP
+·   2139. Adam Maier ATL - SP
+·   2140. Blake Burkhalter ATL - RP
+·   2141. Jackson Ferris LAD - SP
+·   2142. Nazier Mulé CHC - SP
+·   2143. Drew Gray CHC - SP
+·   2144. Jackson Cox COL - SP
+·   2145. Tyler Schweitzer CWS - SP,RP
+·   2146. Alimber Santa HOU - RP
+·   2147. Michael Knorr HOU - RP
+·   2148. Jared Karros LAD - SP
+·   2149. Chandler Champlain KC - SP
+·   2150. Hagen Smith CWS - SP
+·   2151. Ryan Costeiu LAA - SP,RP
+·   2152. Cam Caminiti ATL - SP
+·   2153. Ryan Sloan SEA - SP
+·   2154. Ronan Kopp LAD - RP
+·   2155. Nick Frasso LAD - SP,RP
+·   2156. Kash Mayfield SD - SP
+·   2157. Brody Brecht COL - SP
+·   2158. Peter Heubeck LAD - SP
+·   2159. Jonathan Santucci NYM - SP
+·   2160. Bryce Cunningham NYY - SP
+·   2161. Joey Oakie CLE - SP,RP
+·   2162. David Shields KC - SP
+·   2163. Braylon Doughty CLE - SP
+·   2164. Jurrangelo Cijntje STL - SP
+·   2165. Ben Hess NYY - SP
+·   2166. Boston Bateman BAL - SP
+·   2167. Dasan Hill MIN - SP
+·   2168. Levi Sterling PIT - SP
+·   2169. Carter Holton ATL - SP
+·   2170. Josh Hartle CLE - SP
+·   2171. Luke Holman CIN - SP
+·   2172. Drew Beam KC - SP
+·   2173. Tristan Smith CIN - SP
+·   2174. Owen Hall DET - SP
+·   2175. Tyson Neighbors BAL - RP
+·   2176. Chase Mobley CLE - SP
+·   2177. Ryan Forcucci HOU - SP
+·   2178. Chris Cortez LAA - SP
+·   2179. Trystan Vrieling SF - SP
+·   2180. Gage Ziehl BOS - SP
+·   2181. Matt Ager PIT - SP
+·   2182. Bryce Meccage MIL - SP
+·   2183. Juan Carela CWS - SP
+·   2184. Cameron Sullivan CLE - SP
+·   2185. Conrad Cason BOS - SP
+·   2186. Blake Larson CWS - SP
+·   2187. Thatcher Hurd NYY - SP
+·   2188. Connor Foley AZ - SP
+·   2189. Alex McFarlane PHI - SP,RP
+·   2190. Aiden May MIA - SP
+·   2191. Ethan Schiefelbein DET - SP
+·   2192. Micah Ottenbreit PHI - SP
+·   2193. Daniel Eagen AZ - SP
+·   2194. Michael Kennedy CLE - SP,RP
+·   2195. Travis Smith MIL - SP
+·   2196. Johnny King TOR - SP
+·   2197. Dylan Lesko TB - RP
+·   2198. Jackson Kent WSH - SP
+·   2199. Grant Shepardson MIA - SP,RP
+·   2200. Josh Randall WSH - SP
+·   2201. Jakob Wright LAD - SP
+·   2202. Jagger Haynes SD - SP
+·   2203. Taylor Dollard SEA - SP
+·   2204. Eric Silva DET - RP
+·   2205. Khal Stephen CLE - SP
+·   2206. Erik Swanson TOR - RP
+·   2207. Cooper Hjerpe STL - SP
+·   2208. Griffin Herring COL - SP
+·   2209. Brycen Mautz STL - SP
+·   2210. Pete Hansen STL - SP
+·   2211. Max Rajcic STL - SP
+·   2212. Nate Dohm STL - SP
+·   2213. Zach Swanson DET - SP
+·   2214. Brandon Clarke STL - SP
+·   2215. Sam Stuhr ATH - SP,RP
+·   2216. Luke Sinnard ATL - SP
+·   2217. Trevor Martin TB - RP
+·   2218. Brock Porter TEX - RP
+·   2219. Brandon Neely BOS - RP
+·   2220. Tekoah Roby STL - SP
+·   2221. Dane Acker TEX - RP
+·   2222. Josh Stephan TEX - SP
+·   2223. Brandon Barriera TOR - SP
+·   2224. Hunter Cranton SEA - RP
+·   2225. Cade Obermueller PHI - SP
+·   2226. Jarlin Susana WSH - SP
+·   2227. Carson Messina TOR - SP
+·   2228. Mason Molina STL - SP
+·   2229. L.P. Langevin KC - RP
+·   2230. Chia-Shi Shen SEA - SP
+·   2231. Ethan Bagwell ATL - SP
+·   2232. Clark Candiotti SD - SP
+·   2233. Cole Hertzler HOU - SP
+·   2234. Cade Crossland STL - SP
+·   2235. Dylan Jordan LAA - SP
+·   2236. Santiago Suarez TB - SP
+·   2237. Will Watson NYM - SP
+·   2238. Austin Gordon LAA - SP
+·   2239. Herick Hernandez ATL - SP
+·   2240. David Hagaman AZ - SP
+·   2241. Jake Bennett BOS - SP
+·   2242. Braden Davis STL - SP
+·   2243. Charlie Beilenson SEA - RP
+·   2244. John Holobetz BOS - SP
+·   2245. Yu-Min Lin AZ - SP
+·   2246. Owen White CWS - SP,RP
+·   2247. Dylan Ray AZ - SP
+·   2248. Spencer Giesting AZ - SP
+·   2249. Ryan Lambert NYM - RP
+·   2250. Ashton Izzi AZ - SP
+·   2251. Ethan Dorchies MIL - SP,RP
+·   2252. Luke Hayden CIN - SP
+·   2253. Marcelo Perez SEA - SP
+·   2254. Reid VanScoter SEA - SP
+·   2255. Ryan Gallagher MIN - SP
+·   2256. Grant Knipp SEA - SP
+·   2257. Gerelmi Maldonado SF - SP
+·   2258. Jacob Miller MIA - SP
+·   2259. Karson Milbrandt MIA - SP
+·   2260. Trace Bright BAL - SP,RP
+·   2261. Yujanyer Herrera COL - SP,RP
+·   2262. Jacob Bresnahan SF - SP
+·   2263. Moises Chace PHI - SP
+·   2264. Carson Ragsdale BAL - SP,RP
+·   2265. Chen Zhong-Ao Zhuang ATH - SP
+·   2266. Riley Martin CHC - RP
+·   2267. Brandon Birdsell CHC - SP
+·   2268. David Sandlin CWS - SP,RP
+·   2269. Garrett McDaniels LAD - RP
+·   2270. K.C. Hunt MIL - SP
+·   2271. Yhoiker Fajardo STL - SP
+·   2272. Dioris De La Rosa LAA - SP
+·   2273. Ubaldo Soto LAA - SP,RP
+·   2274. Anderson Brito TB - SP
+·   2275. Will Johnston ATH - SP,RP
+·   2276. Jeremy Reyes ATL - SP
+·   2277. Darlin Saladin STL - SP,RP
+·   2278. Branneli Franco STL - RP
+·   2279. Luis Gastelum STL - RP
+·   2280. Yordin Chalas AZ - SP,RP
+·   2281. Michael Forret TB - SP
+·   2282. Esteban Mejia BAL - SP
+·   2283. Keeler Morfe BAL - SP
+·   2284. Juan Valera BOS - SP
+·   2285. Hayden Mullins BOS - SP
+·   2286. Jojo Ingrassia BOS - RP
+·   2287. Dalvinson Reyes BOS - SP
+·   2288. Aldrin Batista CWS - SP,RP
+·   2289. Michael Prosecky COL - SP
+·   2290. Steven Zobac KC - SP
+·   2291. Felix Arronde KC - SP
+·   2292. Samuel Sanchez LAD - SP
+·   2293. Keyner Benitez MIA - SP
+·   2294. Brayan Mendoza MIA - RP
+·   2295. Jose Olivares MIN - SP
+·   2296. Adrian Bohorquez MIN - SP
+·   2297. Mavis Graves PHI - SP
+·   2298. Francis Pena SD - RP
+·   2299. Trent Harris SF - RP
+·   2300. Daniel Espino CLE - SP
+·   2301. Dylan Wilson SEA - SP
+·   2302. Gary Gill Hill TB - SP
+·   2303. Jose Urbina TB - SP
+·   2304. Ty Johnson TB - SP,RP
+·   2305. Marquis Grissom Jr. WSH - RP
+·   2306. Fernando Perez TOR - SP
+·   2307. Spencer Miles TOR - SP
+·   2308. Antoine Kelly LAD - SP
+·   2309. Samy Natera Jr. LAA - RP
+·   2310. Dedniel Núñez NYM - RP
+·   2311. Tyler Cleveland SEA - RP
+·   2312. Eric Reyzelman NYY - RP
+·   2313. Kenya Huggins ATH - SP
+·   2314. Wellington Aracena AZ - SP
+·   2315. Nestor German BAL - SP
+·   2316. David Davalillo TEX - SP
+·   2317. Kohei Arihara TEX - SP,RP
+·   2318. Grant Kipp CHC - SP
+·   2319. Daison Acosta SD - RP
+·   2320. Tyson Hardin MIL - SP
+·   2321. Douglas Orellana NYM - RP
+·   2322. Connor Noland CHC - SP,RP
+·   2323. Sean Paul Liñan WSH - SP
+·   2324. Elison Joseph ATL - RP
+·   2325. Cameron Foster BAL - RP
+·   2326. Tyler Samaniego BOS - RP
+·   2327. Cade Winquest NYY - SP
+·   2328. Wilber Dotel PIT - SP
+·   2329. Braden Nett ATH - SP
+·   2330. Walbert Ureña LAA - SP
+·   2331. William Kempner MIA - RP
+·   2332. Brandan Bidois PIT - RP
+·   2333. Riley Cornelio WSH - SP
+·   2334. Gabriel Hughes COL - SP
+·   2335. Alexander Alberto CWS - RP
+blockquote_event(40011754);
+Share this topic with:
+$(document).ready(function () {tryFindRecommentTopicIds();recordTopicLastVisitTime(1235);});
+Share with:
+Copy link
+$(document).ready(function () {append_endoftopicbar();});
+&nbsp;
+&nbsp;
+Back to top
+SQL time: 0.038s | PHP time: 0.109s | Total Time: 0.148s
+SQL Queries: 18 | Cached: 4
+Peak Memory Usage: 3.42 MiB
+Information
+Information
+Choose Display Mode
+Original
+var emoticons = [
+var scOptions = {};
+scOptions.smilies_allowed = "";
+scOptions.bbcode_allowed = "";
+scOptions.max_fontsize = "200";
+scOptions.sceditor_close_toolbar = "";
+scOptions.u_emoticons_root = "";
+scOptions.u_css = "https://groups.tapatalk-cdn.com/static/css/editarea.css?v=8";
+scOptions.quick_reply = "";
+scOptions.bbcode_checked = "";
+scOptions.smilies_checked = "";
+$(window).load(function () {
+if (EMAIL_VIP_PROMOTION){
+return;
+var vipPopUpExpTime;
+vipPopUpExpTime = 3600*24*30*2;
+/* First CSS File */
+var giftofspeed = document.createElement('link');
+giftofspeed.rel = 'stylesheet';
+giftofspeed.href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css";
+giftofspeed.type = 'text/css';
+var godefer = document.getElementsByTagName('link')[0];
+godefer.parentNode.insertBefore(giftofspeed, godefer);
+window.onload = function () {
+google.accounts.id.initialize({
+client_id: '608452217441-brmruuk1eu7gn65qtdbrt145umf88klu.apps.googleusercontent.com',
+callback: handleGoogleOneTapCredentialResponse,
+auto_select: true,
+google.accounts.id.prompt();
+function handleGoogleOneTapCredentialResponse(response) {
+console.log("One Tap Token: ", response.credential);
+if (typeof (window.extraGoogleOneTapCallback) !== 'undefined') {
+window.extraGoogleOneTapCallback(response);
+var url = "https://www.tapatalk.com/connect/google/callback?oauth_token=" + response.credential + "&hst=" + NAV_TTG_URL_GOOGLEONETAP;
+window.location = url;

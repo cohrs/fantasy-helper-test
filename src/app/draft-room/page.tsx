@@ -1,0 +1,1138 @@
+"use client";
+
+import React, { useState, useMemo, useEffect } from 'react';
+import {
+  Search, Trophy, Circle, UserPlus, Users, Trash2,
+  ChevronRight, Activity, LayoutGrid, Link as LinkIcon,
+  RefreshCw, ClipboardList, Clock, ShieldCheck, Zap, BarChart3,
+  Plug, Sparkles, ChevronUp, ChevronDown, Eye, EyeOff
+} from 'lucide-react';
+import { useSession, signIn, signOut } from 'next-auth/react';
+
+// Isolated component to prevent typing lag from re-rendering the huge display pool
+const AssistantInput = ({
+  onSubmit,
+  isAskingAssistant,
+  initialValue = "",
+  placeholder = "e.g., Find me a young SP with upside..."
+}: {
+  onSubmit: (val: string) => void;
+  isAskingAssistant: boolean;
+  initialValue?: string;
+  placeholder?: string;
+}) => {
+  const [localVal, setLocalVal] = useState(initialValue);
+
+  return (
+    <input
+      type="text"
+      placeholder={placeholder}
+      value={localVal}
+      onChange={(e) => setLocalVal(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && !isAskingAssistant) {
+          onSubmit(localVal);
+        }
+      }}
+      className="w-full bg-slate-950 border border-slate-700/50 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50 placeholder:text-slate-600 transition-all text-slate-200"
+    />
+  );
+};
+
+const WatchlistItem = ({
+  player, activeSport, isTaken, isFirst, isLast, onMoveUp, onMoveDown, onDelete
+}: {
+  player: any; activeSport: string; isTaken: boolean; isFirst: boolean; isLast: boolean;
+  onMoveUp: () => void; onMoveDown: () => void; onDelete: () => void;
+}) => {
+  return (
+    <div className={`relative bg-slate-950 p-5 rounded-2xl border ${isTaken ? 'border-slate-800/30 opacity-50' : 'border-slate-800/50 hover:border-slate-700/50'} flex justify-between items-start group transition-all`}>
+      <div className="flex flex-col flex-1 min-w-0 pr-4">
+        <div className="flex items-start gap-4">
+          <div className={`w-1 h-10 rounded-full mt-0.5 shrink-0 ${activeSport === 'MLB' ? 'bg-indigo-600' : 'bg-orange-600'} ${isTaken ? 'bg-slate-700' : ''}`}></div>
+          <div className="flex-1 min-w-0">
+            <div className={`text-sm font-black ${isTaken ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{player.name}</div>
+            <div className="text-[10px] text-slate-600 font-bold uppercase mb-1">{player.pos} • {player.team}</div>
+            {player.rationale && (
+              <div className="mt-1 text-[9px] uppercase font-bold text-sky-500/60 flex items-center gap-1 transition-colors">
+                <Sparkles className="w-3 h-3" /> Has AI Notes
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all shrink-0 mt-1">
+        <div className="flex flex-col gap-0.5 mr-2">
+          <button
+            disabled={isFirst}
+            onClick={onMoveUp}
+            className="p-1 rounded bg-slate-800/50 hover:bg-slate-700 text-slate-400 hover:text-white disabled:opacity-30 transition-all"
+          >
+            <ChevronUp className="w-3 h-3" />
+          </button>
+          <button
+            disabled={isLast}
+            onClick={onMoveDown}
+            className="p-1 rounded bg-slate-800/50 hover:bg-slate-700 text-slate-400 hover:text-white disabled:opacity-30 transition-all"
+          >
+            <ChevronDown className="w-3 h-3" />
+          </button>
+        </div>
+        <button onClick={onDelete} className="p-2 rounded-xl bg-slate-800/50 text-slate-500 hover:bg-red-500/20 hover:text-red-400 transition-all"><Trash2 className="w-4 h-4" /></button>
+      </div>
+
+      {/* Hover Tooltip Overlay for Rationale */}
+      {player.rationale && (
+        <div className="absolute right-full top-0 mr-4 w-72 bg-slate-900 border border-sky-500/30 p-5 text-left rounded-2xl shadow-[0_10px_40px_-10px_rgba(14,165,233,0.4)] opacity-0 pointer-events-none group-hover:opacity-100 transition-all duration-200 z-[60]">
+          <div className="flex items-center gap-2 mb-3 text-sky-400 font-black italic text-xs uppercase tracking-widest"><Sparkles className="w-4 h-4" /> AI Rationale</div>
+          <div className="text-[13px] text-slate-300 leading-relaxed font-medium">
+            {player.rationale}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
+ * SCOUTMASTER 2026
+ * Functional Prototype for 18-Team Fantasy Leagues
+ * Includes: MLB Draft Tracker & NBA Standings Scaffold
+ */
+export default function Home() {
+  const [activeSport, setActiveSport] = useState('MLB');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [myRoster, setMyRoster] = useState<{ id: number; name: string; pos: string; team: string; adp: number; rationale?: string; }[]>([]);
+  const [showWatchlistDrafted, setShowWatchlistDrafted] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [yahooConnected, setYahooConnected] = useState(false);
+
+  const updateWatchlist = async (newRoster: any[]) => {
+    setMyRoster(newRoster);
+    try {
+      await fetch('/api/draft-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'SYNC_ROSTER', rosterData: newRoster })
+      });
+    } catch (err) {
+      console.error('Failed to sync watchlist to JSON', err);
+    }
+  };
+
+  const normalizeName = (name: string) => {
+    return name
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z\s]/g, '')
+      .replace(/\s+(jr|sr|ii|iii)$/, '')
+      .trim();
+  };
+
+  const leagueName = "Asshat Roto League";
+  const myTeamName = "New Jersey Nine";
+  const totalTeams = 18;
+  const myDraftPosition = 11; // Confirmed from Tapatalk Round 1 thread
+
+  const [currentPick, setCurrentPick] = useState(1);
+  const [draftResults, setDraftResults] = useState<{ rd: number; pk: number; tm: string | null; name: string; pos: string; playerTeam: string; isKeeper: boolean }[]>([]);
+  const [showDrafted, setShowDrafted] = useState(false);
+  const [positionFilter, setPositionFilter] = useState('ALL');
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+
+  // New Layout States 
+  const [viewMode, setViewMode] = useState<'PLAYERS' | 'GRID' | 'TEAM' | 'NEEDS'>('PLAYERS');
+  const [selectedTeam, setSelectedTeam] = useState(myTeamName);
+
+  // Yahoo enriched player data (ranked + projected stats)
+  const [yahooPlayers, setYahooPlayers] = useState<any[]>([]);
+  const [isLoadingYahoo, setIsLoadingYahoo] = useState(false);
+
+  // Gemini Assistant
+  const [isAskingAssistant, setIsAskingAssistant] = useState(false);
+  const [assistantRecs, setAssistantRecs] = useState<any[]>([]);
+  const [assistantPrompt, setAssistantPrompt] = useState("");
+  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'model'; parts: { text: string }[] }[]>([]);
+
+  const { data: session } = useSession();
+
+  // Mock NBA Data
+  const nbaStats = {
+    categories: [
+      { label: "FG%", val: ".482", rk: 4 },
+      { label: "FT%", val: ".810", rk: 2 },
+      { label: "3PM", val: "842", rk: 1 },
+      { label: "REB", val: "3120", rk: 14 },
+    ],
+    matchup: { opp: "Gotham Knights", score: "5-4-0" }
+  };
+
+  // Backend JSON Load
+  useEffect(() => {
+    fetch('/api/draft-data')
+      .then(res => res.json())
+      .then(data => {
+        if (data.roster) setMyRoster(data.roster);
+        if (data.draft && data.draft.length > 0) {
+          setDraftResults(data.draft);
+          // Only count non-keeper picks to determine current draft position
+          const draftedCount = data.draft.filter((p: any) => p.tm && !p.isKeeper).length;
+          setCurrentPick(draftedCount + 1);
+        }
+        setIsDataLoaded(true);
+      })
+      .catch(err => {
+        console.error("Error loading draft DB:", err);
+        setIsDataLoaded(true);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (isDataLoaded) {
+      fetch('/api/draft-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'SYNC_ROSTER', rosterData: myRoster })
+      }).catch(err => console.error("Error syncing roster:", err));
+    }
+  }, [myRoster, isDataLoaded]);
+
+  const handleImport = async () => {
+    setIsSyncing(true);
+    try {
+      const response = await fetch('/api/scrape-draft');
+      const data = await response.json();
+
+      if (data.success && data.picks && data.picks.length > 0) {
+        setDraftResults(data.picks);
+        // Only count non-keeper picks to determine current draft position
+        const draftedCount = data.picks.filter((p: any) => p.tm && !p.isKeeper).length;
+        setCurrentPick(draftedCount + 1);
+      } else {
+        alert("Failed to sync Draft! No picks parsed or thread is empty.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error reaching the Scraper API.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Auto-polling Cron: Sync every 5 minutes natively
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      handleImport();
+    }, 5 * 60 * 1000); // 300,000ms = 5 minutes
+
+    return () => clearInterval(intervalId);
+  }, []); // Run steadily on mount
+
+  // Load live Yahoo player rankings + projected stats
+  const loadYahooPlayers = async () => {
+    setIsLoadingYahoo(true);
+    try {
+      // Initial fetch: first 500 players in 10 parallel requests
+      const results = await Promise.all([
+        fetch('/api/yahoo/players?start=0&count=50').then(r => r.json()),
+        fetch('/api/yahoo/players?start=50&count=50').then(r => r.json()),
+        fetch('/api/yahoo/players?start=100&count=50').then(r => r.json()),
+        fetch('/api/yahoo/players?start=150&count=50').then(r => r.json()),
+        fetch('/api/yahoo/players?start=200&count=50').then(r => r.json()),
+        fetch('/api/yahoo/players?start=250&count=50').then(r => r.json()),
+        fetch('/api/yahoo/players?start=300&count=50').then(r => r.json()),
+        fetch('/api/yahoo/players?start=350&count=50').then(r => r.json()),
+        fetch('/api/yahoo/players?start=400&count=50').then(r => r.json()),
+        fetch('/api/yahoo/players?start=450&count=50').then(r => r.json()),
+      ]);
+      const combined = results.flatMap(d => d.players || []).map((p, i) => ({ ...p, rank: i + 1 }));
+      setYahooPlayers(combined);
+    } catch (err) {
+      console.error('Yahoo player load error:', err);
+    } finally {
+      setIsLoadingYahoo(false);
+    }
+  };
+
+  // Append the next 100 players to the existing list
+  const loadMoreYahooPlayers = async () => {
+    setIsLoadingYahoo(true);
+    const currentCount = yahooPlayers.length;
+    try {
+      const results = await Promise.all([
+        fetch(`/api/yahoo/players?start=${currentCount}&count=50`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=${currentCount + 50}&count=50`).then(r => r.json()),
+      ]);
+      const newPlayers = results.flatMap(d => d.players || []).map((p, i) => ({ ...p, rank: currentCount + i + 1 }));
+      if (newPlayers.length === 0) {
+        alert('No more players available from Yahoo.');
+        return;
+      }
+      setYahooPlayers(prev => [...prev, ...newPlayers]);
+    } catch (err) {
+      console.error('Yahoo load more error:', err);
+    } finally {
+      setIsLoadingYahoo(false);
+    }
+  };
+
+  const askAssistant = async (promptOverride?: string, newSession = false) => {
+    setIsAskingAssistant(true);
+
+    // If starting a new session (button click), clear history & recs
+    const activeHistory = newSession ? [] : chatHistory;
+    if (newSession) {
+      setChatHistory([]);
+      setAssistantRecs([]);
+    }
+
+    const userPromptText = promptOverride !== undefined ? promptOverride.trim() : assistantPrompt.trim();
+
+    try {
+      // 1. Get my current team & open slots
+      const myPicks = draftResults.filter(p => p.tm === myTeamName);
+      const myRosterFull = getTeamRoster(myPicks);
+      const openSlots = getMissingSlots(myRosterFull);
+
+      // 2. Build the available pool using the same logic as the UI
+      let processedPool = displayPool.map(p => {
+        const pNorm = normalizeName(p.name);
+        const yMatch = yahooPlayers.find(y => normalizeName(y.name) === pNorm);
+        return { ...p, yahooRank: yMatch?.rank, yahooStatusFull: yMatch?.statusFull };
+      });
+
+      // Filter drafted
+      processedPool = processedPool.filter(p => !p.takenBy);
+
+      if (yahooPlayers.length > 0) {
+        processedPool.sort((a, b) => {
+          if (a.yahooRank && b.yahooRank) return a.yahooRank - b.yahooRank;
+          if (a.yahooRank) return -1;
+          if (b.yahooRank) return 1;
+          return a.adp - b.adp;
+        });
+      }
+
+      // Append the new user message to history
+      const newHistory = userPromptText
+        ? [...activeHistory, { role: 'user' as const, parts: [{ text: userPromptText }] }]
+        : activeHistory;
+
+      const payload = {
+        myTeam: myRosterFull.filter(r => r.player).map(r => ({ slot: r.slot, player: r.player.name, pos: r.player.pos })),
+        openSlots,
+        availablePool: processedPool.slice(0, 150),
+        picksUntilTurn: waitPicks,
+        customPrompt: userPromptText,
+        chatHistory: newHistory
+      };
+
+      const res = await fetch('/api/assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.recommendations) {
+        setAssistantRecs(data.recommendations);
+        // Append model reply to history for next follow-up
+        if (data.assistantMessage) {
+          setChatHistory([...newHistory, { role: 'model' as const, parts: [{ text: data.assistantMessage }] }]);
+        }
+      } else {
+        alert(data.error || 'Failed to fetch recommendations');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to ask assistant.');
+    } finally {
+      setIsAskingAssistant(false);
+    }
+  };
+
+  const waitPicks = useMemo(() => {
+    const rd = Math.floor((currentPick - 1) / totalTeams) + 1;
+    let next = ((rd - 1) * totalTeams) + myDraftPosition;
+    if (next < currentPick) next = (rd * totalTeams) + myDraftPosition;
+    return next - currentPick;
+  }, [currentPick, totalTeams, myDraftPosition]);
+
+  const displayPool = useMemo(() => {
+    return draftResults.filter(p => {
+      // Hide if on my personal tracker roster
+      if (myRoster.find(r => r.id === p.pk)) return false;
+      // Search term filter
+      if (!p.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+      // Show/Hide Drafted
+      if (!showDrafted && p.tm) return false;
+      // Position filter (handle multi-eligibility like '1B/OF' or 'C,1B')
+      if (positionFilter !== 'ALL') {
+        const eligiblePos = p.pos.split(/[\/,]/).map(pos => pos.trim().toUpperCase());
+        // Map OF filter to LF/CF/RF explicitly, or exact match
+        if (positionFilter === 'OF') {
+          if (!eligiblePos.some(pos => pos === 'OF' || pos === 'LF' || pos === 'CF' || pos === 'RF')) return false;
+        } else {
+          if (!eligiblePos.includes(positionFilter)) return false;
+        }
+      }
+      return true;
+    }).map(p => ({
+      id: p.pk,
+      name: p.name,
+      pos: p.pos,
+      team: p.playerTeam || 'FA',
+      adp: p.pk,
+      takenBy: p.tm
+    }));
+  }, [searchTerm, myRoster, draftResults, showDrafted, positionFilter]);
+
+  // Standard Yahoo Roster Slots (23-man with explicit Outfielders)
+  const ROSTER_SLOTS = ['C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'UTIL', 'SP', 'SP', 'SP', 'SP', 'SP', 'RP', 'RP', 'P', 'P', 'BN', 'BN', 'BN', 'BN'];
+
+  // Returns unique empty slot names (excluding BN) for a team's roster
+  const getMissingSlots = (roster: { slot: string; player: any }[]) => {
+    return roster
+      .filter(r => !r.player && r.slot !== 'BN' && r.slot !== 'P')
+      .map(r => r.slot);
+  };
+
+  const getTeamRoster = (picks: typeof draftResults) => {
+    const roster = ROSTER_SLOTS.map(slot => ({ slot, player: null as any }));
+
+    // Helper to check if a player is an offensive player (hitter)
+    const isHitter = (eligiblePos: string[]) => {
+      // If they only have P, SP, or RP, they are not a hitter
+      if (eligiblePos.every(p => ['P', 'SP', 'RP'].includes(p))) return false;
+      return true;
+    };
+
+    // Assign to exact position match first
+    picks.forEach(pick => {
+      const posString = pick.pos?.toUpperCase() || '';
+      const eligiblePos = posString.split(/[\/,]/).map(p => p.trim());
+      let assigned = false;
+
+      // Try exact match or subset match (e.g. if player is OF, try to fit in LF/CF/RF if empty)
+      for (let i = 0; i < roster.length; i++) {
+        if (!roster[i].player) {
+          const slot = roster[i].slot;
+
+          // Direct Match (e.g. Player is '1B', slot is '1B')
+          if (eligiblePos.includes(slot)) {
+            roster[i].player = pick;
+            assigned = true;
+            break;
+          }
+
+          // If the player is explicitly ONLY listed as "OF" (and not specific LF/CF/RF), 
+          // allow them to slot into the first available LF/CF/RF
+          const hasSpecificOF = eligiblePos.some(p => ['LF', 'CF', 'RF'].includes(p));
+          if (eligiblePos.includes('OF') && !hasSpecificOF && (slot === 'LF' || slot === 'CF' || slot === 'RF')) {
+            roster[i].player = pick;
+            assigned = true;
+            break;
+          }
+
+          // Pitcher Fallbacks
+          if ((slot === 'SP' && eligiblePos.includes('SP')) || (slot === 'RP' && eligiblePos.includes('RP'))) {
+            roster[i].player = pick;
+            assigned = true;
+            break;
+          }
+        }
+      }
+
+      // Try UTIL or P or BN if exact/outfield match fails
+      if (!assigned) {
+        for (let i = 0; i < roster.length; i++) {
+          if (!roster[i].player) {
+            const slot = roster[i].slot;
+
+            // UTIL: Any hitting position (but not Pitchers)
+            if (slot === 'UTIL' && isHitter(eligiblePos)) {
+              roster[i].player = pick;
+              assigned = true;
+              break;
+            }
+
+            // P: Any pitching position
+            if (slot === 'P' && (eligiblePos.includes('SP') || eligiblePos.includes('RP') || eligiblePos.includes('P'))) {
+              roster[i].player = pick;
+              assigned = true;
+              break;
+            }
+
+            // BN: Anyone
+            if (slot.startsWith('BN')) {
+              roster[i].player = pick;
+              assigned = true;
+              break;
+            }
+          }
+        }
+      }
+    });
+
+    return roster;
+  };
+
+  return (
+    <div className="h-screen overflow-hidden flex flex-col bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
+      <header className="max-w-7xl w-full mx-auto shrink-0 flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4 border-b border-slate-900 pb-8">
+        <div className="flex items-center gap-4">
+          <div className="bg-indigo-600 p-3 rounded-2xl shadow-lg"><Trophy className="w-7 h-7" /></div>
+          <div>
+            <h1 className="text-3xl font-black italic uppercase tracking-tighter">{leagueName}</h1>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">{myTeamName} • 18-Team Tracker</p>
+          </div>
+        </div>
+        <div className="flex gap-3 bg-slate-900 p-2 rounded-2xl border border-slate-800">
+          <button onClick={handleImport} disabled={isSyncing} className="px-4 py-2 bg-indigo-500/10 text-indigo-400 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-indigo-500/20 disabled:opacity-50">
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> {isSyncing ? 'SYNCING...' : 'SYNC LOCAL'}
+          </button>
+
+          {session ? (
+            <button onClick={() => signOut()} className="px-4 py-2 bg-green-500/10 text-green-400 border border-green-500/20 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-green-500/20 hover:text-red-400 transition-colors" title={session.user?.name || "Connected"}>
+              <ShieldCheck className="w-3.5 h-3.5" /> YAHOO LINKED
+            </button>
+          ) : (
+            <button onClick={() => signIn('yahoo')} className="px-4 py-2 bg-purple-600 border border-purple-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-purple-500 transition-transform active:scale-95 shadow-lg shadow-purple-600/20">
+              <Plug className="w-3.5 h-3.5" /> CONNECT YAHOO
+            </button>
+          )}
+
+          <div className="flex bg-black rounded-lg p-1 border border-slate-800 shadow-inner">
+            <button onClick={() => setActiveSport('MLB')} className={`px-4 py-1.5 rounded-md text-[10px] font-bold transition-all ${activeSport === 'MLB' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>MLB</button>
+            <button onClick={() => setActiveSport('NBA')} className={`px-4 py-1.5 rounded-md text-[10px] font-bold transition-all ${activeSport === 'NBA' ? 'bg-orange-600 text-white' : 'text-slate-500'}`}>NBA</button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl w-full mx-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-0">
+        <div className="lg:col-span-3 flex flex-col gap-6 min-h-0">
+          <div className={`bg-gradient-to-br ${activeSport === 'MLB' ? 'from-indigo-600 to-indigo-900 shadow-indigo-500/20' : 'from-orange-600 to-red-800 shadow-orange-500/20'} rounded-[2.5rem] p-8 shadow-2xl shrink-0 text-white`}>
+            <h3 className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-6">Status</h3>
+            <div className="text-6xl font-black italic tracking-tighter mb-2 leading-none">
+              {activeSport === 'MLB' ? `#${currentPick}` : nbaStats.matchup.score}
+            </div>
+            <div className="text-xs font-bold uppercase opacity-60 mb-8">{activeSport === 'MLB' ? 'Current Pick' : `vs ${nbaStats.matchup.opp}`}</div>
+            <div className="bg-black/20 p-5 rounded-3xl border border-white/10 relative">
+              <div className="text-4xl font-black">{activeSport === 'MLB' ? waitPicks : 'LIVE'}</div>
+              <div className="text-[10px] font-bold uppercase opacity-60 tracking-tight">Picks Until New Jersey Nine</div>
+            </div>
+          </div>
+
+          <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 flex-1 overflow-hidden flex flex-col min-h-0">
+            <h4 className="text-[10px] font-black text-slate-500 uppercase mb-4 tracking-widest shrink-0">Live Roster Tracker</h4>
+            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+              {Object.entries(
+                draftResults
+                  .filter(pick => pick.tm)
+                  .reduce((acc, pick) => {
+                    const tmName = pick.tm as string;
+                    if (!acc[tmName]) acc[tmName] = [];
+                    acc[tmName].push(pick);
+                    return acc;
+                  }, {} as Record<string, typeof draftResults>)
+              )
+                // Sort to ensure "New Jersey Nine" is first
+                .sort(([teamA], [teamB]) => {
+                  if (teamA === myTeamName) return -1;
+                  if (teamB === myTeamName) return 1;
+                  return teamA.localeCompare(teamB);
+                })
+                .map(([team, picks]) => {
+                  const roster = getTeamRoster(picks);
+                  const missing = getMissingSlots(roster);
+                  return (
+                    <div key={team} className={`p-4 rounded-2xl border ${team === myTeamName ? 'bg-indigo-500/10 border-indigo-500/30 shadow-inner' : 'bg-slate-950 border-slate-800'}`}>
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="font-black text-sm text-slate-100">{team}</div>
+                        <div className="text-[10px] font-bold text-slate-500">{missing.length === 0 ? <span className="text-green-500">FULL</span> : `${missing.length} OPEN`}</div>
+                      </div>
+                      {missing.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-3">
+                          {missing.map((slot, i) => (
+                            <span key={i} className="text-[9px] font-black bg-orange-500/10 text-orange-400 border border-orange-500/20 px-1.5 py-0.5 rounded uppercase">{slot}</span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+                        {roster.map((r, i) => (
+                          <div key={i} className={`text-[10px] flex items-start gap-2 min-w-0 ${r.player ? 'text-slate-200' : 'text-slate-600 italic'}`}>
+                            <span className="font-black w-6 flex-shrink-0 text-indigo-400 mt-[2px]">{r.slot}</span>
+                            <div className="flex-1 min-w-0 flex flex-col leading-tight overflow-hidden">
+                              <span className="truncate w-full">{r.player ? r.player.name : 'Empty'}</span>
+                              {r.player && (
+                                <span className="text-[8px] text-slate-500 font-bold tracking-widest uppercase truncate w-full">
+                                  {r.player.pos} • {r.player.isKeeper ? '(K)' : `RD ${r.player.rd}`}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+
+              {draftResults.length === 0 && (
+                <div className="text-center text-slate-600 text-sm mt-10 italic">
+                  No rosters synced yet.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-6 flex flex-col min-h-0">
+          <div className="bg-slate-900 rounded-[2.5rem] p-8 border border-slate-800 flex-1 flex flex-col shadow-2xl min-h-0">
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-10 shrink-0">
+              <h2 className="text-3xl font-black italic uppercase tracking-tighter flex items-center gap-4">
+                <LayoutGrid className={`w-8 h-8 ${activeSport === 'MLB' ? 'text-indigo-500' : 'text-orange-500'}`} />
+                {activeSport === 'MLB' ? 'Draft Board' : 'NBA Stats'}
+              </h2>
+              <div className="flex bg-slate-950 w-fit rounded-xl p-1 border border-slate-800 shadow-inner">
+                <button onClick={() => setViewMode('PLAYERS')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'PLAYERS' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                  <Search className="w-3.5 h-3.5" /> Pool
+                </button>
+                <button onClick={() => setViewMode('GRID')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'GRID' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                  <LayoutGrid className="w-3.5 h-3.5" /> Grid
+                </button>
+                <button onClick={() => setViewMode('TEAM')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'TEAM' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                  <Users className="w-3.5 h-3.5" /> Team
+                </button>
+                <button onClick={() => setViewMode('NEEDS')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'NEEDS' ? 'bg-orange-600 text-white shadow shadow-orange-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                  <BarChart3 className="w-3.5 h-3.5" /> Needs
+                </button>
+              </div>
+            </div>
+
+            {viewMode === 'PLAYERS' && (
+              <>
+                <div className="relative mb-6 group shrink-0">
+                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 group-focus-within:text-indigo-500 transition-colors" />
+                  <input type="text" placeholder="Search available players..." className="w-full bg-slate-950 border border-slate-800 rounded-[1.5rem] pl-14 pr-6 py-5 text-sm focus:ring-2 focus:ring-indigo-500/40 focus:outline-none transition-all" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                </div>
+
+                <div className="flex items-center gap-3 mb-6 shrink-0 flex-wrap">
+                  {/* Position filters - scrollable row */}
+                  <div className="flex gap-1.5 overflow-x-auto pb-1 flex-1 min-w-0">
+                    {['ALL', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'UTIL', 'SP', 'RP'].map(pos => (
+                      <button
+                        key={pos}
+                        onClick={() => setPositionFilter(pos)}
+                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black tracking-widest whitespace-nowrap transition-all shrink-0 ${positionFilter === pos ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-950 text-slate-500 border border-slate-800 hover:text-slate-300 hover:border-slate-700'}`}
+                      >
+                        {pos}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Right-side controls */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 cursor-pointer whitespace-nowrap">
+                      <input type="checkbox" checked={showDrafted} onChange={(e) => setShowDrafted(e.target.checked)} className="rounded border-slate-700 bg-slate-900 text-indigo-500 focus:ring-offset-slate-900" />
+                      DRAFTED
+                    </label>
+
+                    {session && (
+                      <>
+                        <button
+                          onClick={loadYahooPlayers}
+                          disabled={isLoadingYahoo}
+                          className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/20 disabled:opacity-50 flex items-center gap-1.5 transition-all whitespace-nowrap"
+                        >
+                          <Zap className={`w-3 h-3 ${isLoadingYahoo ? 'animate-pulse' : ''}`} />
+                          {isLoadingYahoo ? '...' : yahooPlayers.length > 0 ? `AR:${yahooPlayers.length}` : 'YAHOO'}
+                        </button>
+                        <div className="w-[160px] shrink-0">
+                          <AssistantInput
+                            isAskingAssistant={isAskingAssistant}
+                            onSubmit={(val) => {
+                              setAssistantPrompt(val);
+                              setTimeout(() => askAssistant(val, false), 0);
+                            }}
+                            placeholder="Ask follow-up..."
+                          />
+                        </div>
+                        <button
+                          onClick={() => askAssistant(assistantPrompt, true)}
+                          disabled={isAskingAssistant}
+                          className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-sky-500/20 text-sky-400 border border-sky-500/30 hover:bg-sky-500/30 disabled:opacity-50 flex items-center gap-1.5 transition-all whitespace-nowrap"
+                        >
+                          <Sparkles className={`w-3 h-3 ${isAskingAssistant ? 'animate-spin' : ''}`} />
+                          {isAskingAssistant ? '...' : chatHistory.length > 0 ? 'NEW' : 'ASK'}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto space-y-1 pr-2">
+                  {(() => {
+                    const search = searchTerm.toLowerCase();
+
+                    // 1. Enrich base Tapatalk pool
+                    let processedPool = displayPool.map(p => {
+                      const pNorm = normalizeName(p.name);
+                      const yMatch = yahooPlayers.find(y => normalizeName(y.name) === pNorm);
+
+                      const tMatch = draftResults.find(d => d.name?.toLowerCase() === p.name.toLowerCase());
+
+                      return {
+                        ...p,
+                        isKeeper: tMatch?.isKeeper || false,
+                        yahooRank: yMatch ? yMatch.rank : null,
+                        yahooStatus: yMatch ? yMatch.status : null,
+                        yahooStatusFull: yMatch ? yMatch.statusFull : null,
+                        yahooHasNotes: yMatch ? yMatch.hasNotes : false,
+                        yahooRecentNote: yMatch ? yMatch.recentNote : null
+                      };
+                    });
+
+                    // 2. Filter
+                    processedPool = processedPool.filter(p => {
+                      if (!p.name.toLowerCase().includes(search)) return false;
+                      if (!showDrafted && p.takenBy) return false;
+                      if (positionFilter !== 'ALL') {
+                        // Base pool has positions separated by slashes or commas
+                        const positions = p.pos.toUpperCase().split(/[\/,]+/);
+                        if (!positions.includes(positionFilter)) return false;
+                      }
+                      return true;
+                    });
+
+                    // 3. Sort
+                    if (yahooPlayers.length > 0) {
+                      // If Yahoo loaded, sort by Yahoo Rank first, then ADP fallback
+                      processedPool.sort((a, b) => {
+                        if (a.yahooRank && b.yahooRank) return a.yahooRank - b.yahooRank;
+                        if (a.yahooRank) return -1;
+                        if (b.yahooRank) return 1;
+                        return a.adp - b.adp;
+                      });
+                    }
+
+                    // 4. Render
+                    return processedPool.map(p => (
+                      <div key={p.id} className={`px-4 py-3 rounded-2xl flex justify-between items-center transition-all ${p.takenBy ? 'bg-slate-900/30 border border-slate-800/20 opacity-50' : 'bg-slate-950 border border-slate-800/50 hover:border-indigo-500/40'}`}>
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 text-center font-black text-[9px] leading-tight text-indigo-400 tabular-nums">
+                            {yahooPlayers.length > 0 ? (
+                              <>
+                                <div className="text-[7px] text-slate-600">{p.yahooRank ? 'AR' : 'ADP'}</div>
+                                <div>{p.yahooRank || p.adp}</div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="text-[7px] text-slate-600">ADP</div>
+                                <div>{p.adp}</div>
+                              </>
+                            )}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className={`font-bold text-sm ${p.takenBy ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{p.name}</span>
+                              {p.yahooStatus && <span className="text-[9px] font-black bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded-full uppercase">{p.yahooStatus}</span>}
+                              {p.isKeeper && <span className="text-[9px] font-black bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded-full uppercase">K</span>}
+                              {p.yahooHasNotes && !p.takenBy && <span title="Has player news" className="w-1.5 h-1.5 rounded-full bg-sky-400 inline-block" />}
+                            </div>
+                            <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mt-0.5">
+                              {p.team}
+                              <span className="text-indigo-500 ml-2">{p.pos}</span>
+                              {p.yahooStatusFull && !p.takenBy && <span className="text-red-400/70 ml-2">{p.yahooStatusFull}</span>}
+                              {p.takenBy && <span className="text-slate-600 ml-2">• {p.takenBy}</span>}
+                            </div>
+                            {p.yahooRecentNote && !p.takenBy && (
+                              <div className="mt-2 text-xs text-slate-400/90 leading-snug border-l-2 border-sky-500/30 pl-2 py-0.5 italic">
+                                {p.yahooRecentNote}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {!p.takenBy && (
+                          <button onClick={() => updateWatchlist([...myRoster, { id: p.id, name: p.name, pos: p.pos, team: p.team || 'FA', adp: p.adp }])} className="bg-slate-800 hover:bg-indigo-600 p-3 rounded-xl transition-all active:scale-90">
+                            <UserPlus className="w-4 h-4 text-white" />
+                          </button>
+                        )}
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </>
+            )}
+
+            {viewMode === 'GRID' && (() => {
+              const drafted = draftResults
+                .filter(pick => pick.tm && !pick.isKeeper)
+                .sort((a, b) => a.pk - b.pk);
+              return (
+                <div className="flex-1 overflow-y-auto pr-2">
+                  {drafted.length === 0 ? (
+                    <div className="text-center mt-20 opacity-50 font-black tracking-widest text-slate-500">NO DRAFT DATA SYNCED YET</div>
+                  ) : (
+                    <table className="w-full border-collapse text-sm">
+                      <thead className="sticky top-0 bg-slate-900 z-10">
+                        <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                          <th className="text-left py-3 px-4 w-14">Pick</th>
+                          <th className="text-left py-3 px-4 w-12">Rd</th>
+                          <th className="text-left py-3 px-4">Player</th>
+                          <th className="text-left py-3 px-4">Positions</th>
+                          <th className="text-left py-3 px-4">MLB Team</th>
+                          <th className="text-left py-3 px-4">Fantasy Team</th>
+                        </tr>
+                        <tr><td colSpan={6} className="pb-1"><div className="h-px bg-slate-800 w-full" /></td></tr>
+                      </thead>
+                      <tbody>
+                        {drafted.map((p, i) => (
+                          <tr key={p.pk} className={`border-b border-slate-800/50 transition-colors hover:bg-slate-800/30 ${i % 2 === 0 ? 'bg-slate-950' : 'bg-slate-900/20'}`}>
+                            <td className="py-3 px-4">
+                              <span className="text-xs font-black text-indigo-400">{p.pk}</span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="text-xs font-bold text-slate-500">{p.rd}</span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="font-bold text-slate-100">{p.name}</span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="text-xs font-black text-indigo-400 uppercase tracking-wide">{p.pos}</span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="text-xs font-bold text-slate-400">{p.playerTeam}</span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="text-xs font-bold text-slate-300">{p.tm}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              );
+            })()}
+
+            {viewMode === 'TEAM' && (
+              <div className="flex-1 flex gap-6 overflow-hidden">
+                {/* Team sidebar */}
+                <div className="w-44 shrink-0 flex flex-col gap-1 overflow-y-auto pr-2 border-r border-slate-800">
+                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 sticky top-0 bg-slate-900 py-2">Franchise</div>
+                  {Array.from(new Set(draftResults.filter(p => p.tm).map(p => p.tm as string))).sort((a, b) => {
+                    if (a === myTeamName) return -1;
+                    if (b === myTeamName) return 1;
+                    return a.localeCompare(b);
+                  }).map(team => (
+                    <button
+                      key={team}
+                      onClick={() => setSelectedTeam(team)}
+                      className={`text-left px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${selectedTeam === team ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
+                    >
+                      {team === myTeamName ? `★ ${team}` : team}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Roster table */}
+                <div className="flex-1 overflow-y-auto">
+                  <div className="flex items-baseline gap-3 mb-4">
+                    <h3 className="text-lg font-black italic tracking-tighter text-indigo-400">{selectedTeam}</h3>
+                    {(() => {
+                      const teamPicks = draftResults.filter(p => p.tm === selectedTeam);
+                      const roster = getTeamRoster(teamPicks);
+                      const missing = getMissingSlots(roster);
+                      return missing.length > 0
+                        ? <span className="text-[10px] font-black text-orange-400 uppercase tracking-wider">{missing.length} open slots</span>
+                        : <span className="text-[10px] font-black text-green-400 uppercase tracking-wider">Roster Full</span>;
+                    })()}
+                  </div>
+                  <table className="w-full border-collapse text-sm">
+                    <thead className="sticky top-0 bg-slate-900 z-10">
+                      <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                        <th className="text-left py-2 px-3 w-14">Slot</th>
+                        <th className="text-left py-2 px-3">Player</th>
+                        <th className="text-left py-2 px-3 w-12">Team</th>
+                        <th className="text-left py-2 px-3 w-24">Pos</th>
+                        <th className="text-left py-2 px-3 w-24">Pick</th>
+                      </tr>
+                      <tr><td colSpan={5}><div className="h-px bg-slate-800 w-full" /></td></tr>
+                    </thead>
+                    <tbody>
+                      {getTeamRoster(draftResults.filter(p => p.tm === selectedTeam)).map((r, i) => (
+                        <tr key={i} className={`border-b border-slate-800/30 ${r.player ? (i % 2 === 0 ? 'bg-slate-950' : 'bg-slate-900/20') : 'opacity-40'}`}>
+                          <td className="py-2 px-3">
+                            <span className={`text-[10px] font-black uppercase ${r.player ? 'text-indigo-400' : 'text-slate-600 italic'}`}>{r.slot}</span>
+                          </td>
+                          <td className="py-2 px-3">
+                            {r.player
+                              ? <span className="font-bold text-sm text-slate-100">{r.player.name}</span>
+                              : <span className="text-xs text-slate-600 italic">Empty</span>
+                            }
+                          </td>
+                          <td className="py-2 px-3">
+                            <span className="text-[10px] text-slate-500 font-bold">{r.player?.playerTeam || ''}</span>
+                          </td>
+                          <td className="py-2 px-3">
+                            <span className="text-[10px] text-indigo-400 font-bold uppercase">{r.player?.pos || ''}</span>
+                          </td>
+                          <td className="py-2 px-3">
+                            {r.player && (
+                              <span className="text-[10px] text-slate-500 font-bold">
+                                {r.player.isKeeper ? 'KEEPER' : `#${r.player.pk} Rd ${r.player.rd}`}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {viewMode === 'NEEDS' && (() => {
+              // Build a sorted list of all teams with their missing positions
+              const teamMap = draftResults
+                .filter(p => p.tm)
+                .reduce((acc, p) => {
+                  const t = p.tm as string;
+                  if (!acc[t]) acc[t] = [];
+                  acc[t].push(p);
+                  return acc;
+                }, {} as Record<string, typeof draftResults>);
+
+              const teamNeeds = Object.entries(teamMap).map(([team, picks]) => {
+                const roster = getTeamRoster(picks);
+                const missing = getMissingSlots(roster);
+                return { team, missing, openCount: missing.length };
+              }).sort((a, b) => {
+                // Put my team first, then sort by most needs
+                if (a.team === myTeamName) return -1;
+                if (b.team === myTeamName) return 1;
+                return b.openCount - a.openCount;
+              });
+
+              // Count how many teams need each position
+              const positionDemand: Record<string, number> = {};
+              const totalTeams = teamNeeds.length;
+              teamNeeds.forEach(t => {
+                t.missing.forEach(slot => {
+                  positionDemand[slot] = (positionDemand[slot] || 0) + 1;
+                });
+              });
+              const demandSorted = Object.entries(positionDemand).sort((a, b) => b[1] - a[1]);
+              const maxDemand = demandSorted[0]?.[1] || 1;
+
+              return (
+                <div className="flex-1 flex flex-col overflow-hidden gap-4">
+
+                  {/* Position Demand Summary */}
+                  {demandSorted.length > 0 && (
+                    <div className="shrink-0">
+                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Position Demand — Teams Still Needing</div>
+                      <div className="grid grid-cols-2 gap-x-8 gap-y-2">
+                        {demandSorted.map(([pos, count]) => {
+                          const pct = (count / maxDemand) * 100;
+                          const isHot = count >= maxDemand * 0.75;
+                          const isWarm = count >= maxDemand * 0.45;
+                          const barColor = isHot ? 'bg-red-500' : isWarm ? 'bg-orange-500' : 'bg-slate-600';
+                          const textColor = isHot ? 'text-red-400' : isWarm ? 'text-orange-400' : 'text-slate-500';
+                          return (
+                            <div key={pos} className="flex items-center gap-2">
+                              <span className={`text-[9px] font-black w-7 shrink-0 text-right ${textColor}`}>{pos}</span>
+                              <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
+                              </div>
+                              <span className={`text-[9px] font-black tabular-nums w-8 shrink-0 ${textColor}`}>{count}/{totalTeams}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="h-px bg-slate-800 mt-4 mb-2" />
+                    </div>
+                  )}
+
+                  {/* Team needs table */}
+                  <div className="flex-1 overflow-y-auto">
+                    <table className="w-full border-collapse text-sm">
+                      <thead className="sticky top-0 bg-slate-900 z-10">
+                        <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                          <th className="text-left py-3 px-4">Team</th>
+                          <th className="text-left py-3 px-4 w-16">Open</th>
+                          <th className="text-left py-3 px-4">Needs</th>
+                        </tr>
+                        <tr><td colSpan={3} className="pb-1"><div className="h-px bg-slate-800 w-full" /></td></tr>
+                      </thead>
+                      <tbody>
+                        {teamNeeds.map((t, i) => (
+                          <tr
+                            key={t.team}
+                            onClick={() => { setSelectedTeam(t.team); setViewMode('TEAM'); }}
+                            className={`border-b border-slate-800/50 cursor-pointer transition-colors hover:bg-slate-800/30 ${t.team === myTeamName ? 'bg-indigo-500/5' : i % 2 === 0 ? 'bg-slate-950' : 'bg-slate-900/20'}`}
+                          >
+                            <td className="py-3 px-4">
+                              <span className={`font-bold text-sm ${t.team === myTeamName ? 'text-indigo-300' : 'text-slate-200'}`}>{t.team}</span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className={`text-xs font-black ${t.openCount === 0 ? 'text-green-400' : 'text-orange-400'}`}>
+                                {t.openCount === 0 ? 'FULL' : t.openCount}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex flex-wrap gap-1">
+                                {t.missing.map((slot, j) => (
+                                  <span key={j} className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase border
+                                  ${slot.includes('SP') || slot.includes('RP') ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                      slot.includes('LF') || slot.includes('CF') || slot.includes('RF') ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                        slot === 'UTIL' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                                          'bg-orange-500/10 text-orange-400 border-orange-500/20'
+                                    }`}
+                                  >{slot}</span>
+                                ))}
+                                {t.openCount === 0 && <span className="text-[9px] text-green-500 italic">Roster Complete</span>}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {teamNeeds.length === 0 && (
+                      <div className="text-center mt-20 opacity-50 font-black tracking-widest text-slate-500">NO DRAFT DATA YET</div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div >
+
+        <div className="lg:col-span-3 flex flex-col min-h-0">
+          <div className="bg-slate-900 rounded-[2.5rem] p-8 border border-slate-800 flex-1 flex flex-col shadow-2xl min-h-0">
+            <div className="flex items-center justify-between mb-8 shrink-0">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Watchlist ({myRoster.length})</h3>
+              <button
+                onClick={() => setShowWatchlistDrafted(!showWatchlistDrafted)}
+                className="text-[10px] font-bold uppercase text-slate-500 hover:text-slate-300 flex items-center gap-1 transition-all"
+              >
+                {showWatchlistDrafted ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                {showWatchlistDrafted ? 'Hide Taken' : 'Show Taken'}
+              </button>
+            </div>
+            <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+              {myRoster.map((p, i) => {
+                const isTaken = draftResults.some(d => d.tm && normalizeName(d.name) === normalizeName(p.name));
+                if (!showWatchlistDrafted && isTaken) return null;
+                return (
+                  <WatchlistItem
+                    key={i}
+                    player={p}
+                    activeSport={activeSport}
+                    isTaken={isTaken}
+                    isFirst={i === 0}
+                    isLast={i === myRoster.length - 1}
+                    onMoveUp={() => {
+                      const newRoster = [...myRoster];
+                      [newRoster[i - 1], newRoster[i]] = [newRoster[i], newRoster[i - 1]];
+                      updateWatchlist(newRoster);
+                    }}
+                    onMoveDown={() => {
+                      const newRoster = [...myRoster];
+                      [newRoster[i + 1], newRoster[i]] = [newRoster[i], newRoster[i + 1]];
+                      updateWatchlist(newRoster);
+                    }}
+                    onDelete={() => updateWatchlist(myRoster.filter((_, idx) => idx !== i))}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </main >
+
+      {/* Assistant Modal / Popover */}
+      {
+        (isAskingAssistant || assistantRecs.length > 0) && (
+          <div className="fixed bottom-6 right-6 w-[400px] bg-slate-900 border border-slate-700 p-6 z-50 flex flex-col max-h-[80vh] overflow-hidden rounded-[2.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.3)]">
+            <div className="flex items-center justify-between mb-6 shrink-0">
+              <h3 className="text-xl font-black italic tracking-tighter flex items-center gap-3 text-sky-400">
+                <Sparkles className="w-6 h-6" /> Pick Assistant
+              </h3>
+              {assistantRecs.length > 0 && !isAskingAssistant && (
+                <button onClick={() => setAssistantRecs([])} className="text-slate-500 hover:text-red-400 bg-slate-800/50 hover:bg-slate-800 p-2 rounded-full transition-all">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <div className="mb-4 shrink-0">
+              <AssistantInput
+                isAskingAssistant={isAskingAssistant}
+                onSubmit={(val) => {
+                  setAssistantPrompt(val);
+                  setTimeout(() => askAssistant(val), 0);
+                }}
+                placeholder="e.g., Actually I need an outfielder instead..."
+                initialValue={assistantPrompt}
+              />
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+              {isAskingAssistant ? (
+                <div className="space-y-4 animate-pulse">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
+                      <div className="h-4 bg-slate-800 rounded w-1/3 mb-3"></div>
+                      <div className="h-3 bg-slate-800 rounded w-full mb-2"></div>
+                      <div className="h-3 bg-slate-800 rounded w-5/6"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                assistantRecs.map((rec, i) => {
+                  const targetPlayer = displayPool.find(p => p.name.toLowerCase() === rec.name.toLowerCase() || p.name.includes(rec.name.split(' ')[1]));
+                  const rankToDisplay = targetPlayer ? (yahooPlayers.length > 0 && yahooPlayers.find(y => normalizeName(y.name) === normalizeName(targetPlayer.name))?.rank) || targetPlayer.adp : rec.rank;
+                  const posToDisplay = targetPlayer ? targetPlayer.pos : rec.pos;
+                  const teamToDisplay = targetPlayer ? targetPlayer.team : rec.team;
+                  return (
+                    <div key={i} className="bg-slate-950 p-5 rounded-2xl border border-slate-800/50 hover:border-sky-500/40 transition-colors shadow-lg shadow-black/50 group relative">
+                      <div className="font-bold text-slate-100 mb-2 flex items-center justify-between gap-3 text-base">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-3">
+                            <span className="bg-sky-500/20 text-sky-400 px-2 py-0.5 rounded flex items-center justify-center font-black text-xs border border-sky-500/20">#{i + 1}</span>
+                            {rec.name}
+                          </div>
+                          <div className="flex items-center gap-2 pl-9">
+                            {rankToDisplay && <span className="text-[10px] font-black text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">{yahooPlayers.length > 0 ? 'AR' : 'ADP'} {rankToDisplay}</span>}
+                            {posToDisplay && <span className="text-[10px] font-bold text-slate-400 uppercase">{posToDisplay}</span>}
+                            {teamToDisplay && <span className="text-[10px] font-bold text-slate-500 uppercase px-1">• {teamToDisplay}</span>}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const targetPlayer = displayPool.find(p => p.name.toLowerCase() === rec.name.toLowerCase() || p.name.includes(rec.name.split(' ')[1]));
+                            if (targetPlayer && !myRoster.find(r => r.id === targetPlayer.id)) {
+                              updateWatchlist([...myRoster, { ...targetPlayer, rationale: rec.rationale }]);
+                            }
+                          }}
+                          className="w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700 hover:bg-sky-600/30 hover:text-sky-400 hover:border-sky-500/50 transition-all flex items-center justify-center text-slate-500 md:opacity-0 group-hover:opacity-100"
+                          title="Add to Watchlist"
+                        >
+                          <UserPlus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div className="text-[13px] text-slate-400 leading-relaxed italic border-l-[3px] border-sky-500/30 pl-3 py-1">
+                        {rec.rationale}
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        )
+      }
+
+    </div >
+  );
+}
