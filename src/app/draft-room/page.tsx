@@ -208,6 +208,16 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
               {p.yahooRecentNote}
             </div>
           )}
+          {p.rationale && (
+            <div className="mt-3 bg-slate-900/40 p-3 rounded-xl border border-sky-500/20 shadow-inner">
+              <div className="flex items-center gap-1.5 mb-1.5 font-black text-[9px] uppercase tracking-widest text-sky-400">
+                <Sparkles className="w-3 h-3" /> AI Insights
+              </div>
+              <div className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">
+                {p.rationale}
+              </div>
+            </div>
+          )}
           {Object.keys(yahooStats).length > 0 && !p.takenBy && (() => {
             const pStats = yahooStats[p.name.toLowerCase()];
             if (!pStats) return null;
