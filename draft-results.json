@@ -756,11 +756,11 @@
     "isKeeper": true
   },
   {
-    "rd": 5,
+    "rd": 2,
     "pk": 85,
     "name": "Shota Imanaga",
     "pos": "SP",
-    "tm": null,
+    "tm": "Brohams",
     "playerTeam": "CHC",
     "isKeeper": false
   },
@@ -1395,11 +1395,11 @@
     "isKeeper": false
   },
   {
-    "rd": 9,
+    "rd": 2,
     "pk": 156,
     "name": "Kris Bubic",
     "pos": "SP",
-    "tm": null,
+    "tm": "Timber Wolves",
     "playerTeam": "KC",
     "isKeeper": false
   },
@@ -1980,11 +1980,11 @@
     "isKeeper": true
   },
   {
-    "rd": 13,
+    "rd": 2,
     "pk": 221,
     "name": "Luke Keaschall",
     "pos": "2B",
-    "tm": null,
+    "tm": "Cubs Win Cubs Win",
     "playerTeam": "MIN",
     "isKeeper": false
   },

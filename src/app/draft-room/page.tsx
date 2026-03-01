@@ -900,42 +900,40 @@ export default function Home() {
               </div>
             </div>
 
+            {/* === GLOBAL ROW: Assistant controls === */}
+            {session && (
+              <div className="flex items-center gap-2 mb-4 shrink-0 flex-wrap">
+                <div className="flex items-center gap-1.5 bg-sky-500/5 border border-sky-500/20 rounded-2xl px-3 py-2 flex-1 min-w-0">
+                  {/* Toggle panel open/close without firing a query */}
+                  <button
+                    onClick={() => setShowAssistantModal(v => !v)}
+                    title={showAssistantModal ? 'Close panel' : 'Open panel'}
+                    className="shrink-0 text-sky-400/60 hover:text-sky-400 transition-colors"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <AssistantInput
+                      ref={assistantInputRef}
+                      isAskingAssistant={isAskingAssistant}
+                      onSubmit={(val) => askAssistant(val, true)}
+                      placeholder="Ask assistant: focus on closers, need a SS..."
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={() => askAssistant(assistantInputRef.current?.getValue() || '', true)}
+                  disabled={isAskingAssistant}
+                  className="px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-sky-500/20 text-sky-400 border border-sky-500/30 hover:bg-sky-500/30 disabled:opacity-50 flex items-center gap-2 transition-all whitespace-nowrap"
+                >
+                  <Sparkles className={`w-4 h-4 ${isAskingAssistant ? 'animate-spin' : ''}`} />
+                  {isAskingAssistant ? 'Analyzing...' : 'Ask Assistant'}
+                </button>
+              </div>
+            )}
+
             {viewMode === 'PLAYERS' && (
               <>
-
-
-                {/* === PRIMARY ROW: Assistant controls === */}
-                {session && (
-                  <div className="flex items-center gap-2 mb-4 shrink-0 flex-wrap">
-                    <div className="flex items-center gap-1.5 bg-sky-500/5 border border-sky-500/20 rounded-2xl px-3 py-2 flex-1 min-w-0">
-                      {/* Toggle panel open/close without firing a query */}
-                      <button
-                        onClick={() => setShowAssistantModal(v => !v)}
-                        title={showAssistantModal ? 'Close panel' : 'Open panel'}
-                        className="shrink-0 text-sky-400/60 hover:text-sky-400 transition-colors"
-                      >
-                        <Sparkles className="w-4 h-4" />
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <AssistantInput
-                          ref={assistantInputRef}
-                          isAskingAssistant={isAskingAssistant}
-                          onSubmit={(val) => askAssistant(val, true)}
-                          placeholder="Ask assistant: focus on closers, need a SS..."
-                        />
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => askAssistant(assistantInputRef.current?.getValue() || '', true)}
-                      disabled={isAskingAssistant}
-                      className="px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-sky-500/20 text-sky-400 border border-sky-500/30 hover:bg-sky-500/30 disabled:opacity-50 flex items-center gap-2 transition-all whitespace-nowrap"
-                    >
-                      <Sparkles className={`w-4 h-4 ${isAskingAssistant ? 'animate-spin' : ''}`} />
-                      {isAskingAssistant ? 'Analyzing...' : 'Ask Assistant'}
-                    </button>
-                  </div>
-                )}
-
                 {/* === SECONDARY ROW: Search + position filters + misc === */}
                 <div className="relative mb-3 group shrink-0">
                   <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-indigo-500 transition-colors" />
@@ -1341,7 +1339,7 @@ export default function Home() {
                     }
 
                     return (
-                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                      <div className="flex flex-col gap-4 max-w-4xl mx-auto w-full">
                         {visibleView.map(({ p, originalIndex }) => {
                           const isTaken = draftResults.some(d => (d.tm || d.pos.toLowerCase().includes('round')) && normalizeName(d.name) === normalizeName(p.name));
                           const yhPlayer = yahooPlayers.find(yh => normalizeName(yh.name) === normalizeName(p.name)) || {};
@@ -1602,6 +1600,6 @@ export default function Home() {
           </div>
         )
       }
-    </div>
+    </div >
   );
 }
