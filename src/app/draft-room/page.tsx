@@ -163,7 +163,9 @@ const WatchlistItem = ({
                 <div className="flex items-center gap-1.5 mb-2 text-sky-400 font-black text-[9px] uppercase tracking-widest">
                   <Sparkles className="w-3 h-3" /> AI Rationale
                 </div>
-                <p className="text-[11px] text-slate-300 leading-relaxed">{player.rationale}</p>
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  {!player.rationale.startsWith('[') ? `[Legacy Insight] ${player.rationale}` : player.rationale}
+                </p>
               </div>
             )}
             {player.yahooRecentNote && (
@@ -260,7 +262,7 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
                     <Sparkles className="w-3 h-3" /> AI Insights
                   </div>
                   <div className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">
-                    {p.rationale}
+                    {!p.rationale.startsWith('[') ? `[Legacy Insight] ${p.rationale}` : p.rationale}
                   </div>
                 </div>
               )}
@@ -1080,8 +1082,8 @@ export default function Home() {
                 <div className="flex-1 overflow-y-auto space-y-1 pr-2">
                   {processedPool.map((p: any) => (
                     <DraftBoardPlayerRow
-                      key={p.id}
-                      p={p}
+                      key={p.pk}
+                      p={{ ...p, rationale: aiNotes[normalizeName(p.name)] }}
                       yahooStats={yahooStats}
                       yahooPlayers={yahooPlayers}
                       updateWatchlist={updateWatchlist}
@@ -1090,6 +1092,7 @@ export default function Home() {
                       BATTING_STAT_IDS={BATTING_STAT_IDS}
                       PITCHING_STAT_IDS={PITCHING_STAT_IDS}
                       YAHOO_STAT_LABELS={YAHOO_STAT_LABELS}
+                      onAskAssistant={askAssistant}
                     />
                   ))}
                 </div>
@@ -1488,6 +1491,7 @@ export default function Home() {
                               onDragOver={handleDragOver}
                               onDragEnd={handleDragEnd}
                               onDrop={handleDrop}
+                              onAskAssistant={askAssistant}
                             />
                           );
                         })}
