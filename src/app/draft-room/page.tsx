@@ -281,7 +281,7 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
               if (isInWatchlist) {
                 updateWatchlist(myRoster.filter((r: any) => r.name !== p.name));
               } else {
-                updateWatchlist([...myRoster, { id: p.id, name: p.name, pos: p.pos, team: p.team || 'FA', adp: p.adp }]);
+                updateWatchlist([...myRoster, { id: p.id, name: p.name, pos: p.pos, team: p.team || 'FA', adp: p.adp, rationale: p.rationale }]);
               }
             }}
             className={`p-3 rounded-xl transition-all active:scale-90 ${isInWatchlist ? 'bg-indigo-600 border border-indigo-500/50 hover:bg-indigo-700' : 'bg-slate-800 hover:bg-indigo-600/50'}`}
