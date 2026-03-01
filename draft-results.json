@@ -792,11 +792,11 @@
     "isKeeper": true
   },
   {
-    "rd": 5,
+    "rd": 2,
     "pk": 89,
     "name": "Drew Rasmussen",
     "pos": "SP",
-    "tm": null,
+    "tm": "1st to 3rd",
     "playerTeam": "TB",
     "isKeeper": false
   },
@@ -2403,11 +2403,11 @@
     "isKeeper": false
   },
   {
-    "rd": 15,
+    "rd": 2,
     "pk": 268,
     "name": "Jack Leiter",
     "pos": "SP",
-    "tm": null,
+    "tm": "Hulkamania",
     "playerTeam": "TEX",
     "isKeeper": false
   },
@@ -3618,11 +3618,11 @@
     "isKeeper": false
   },
   {
-    "rd": 23,
+    "rd": 2,
     "pk": 403,
     "name": "Trent Grisham",
     "pos": "CF",
-    "tm": null,
+    "tm": "Dillweed",
     "playerTeam": "NYY",
     "isKeeper": false
   },

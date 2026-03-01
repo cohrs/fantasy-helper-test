@@ -1143,8 +1143,15 @@ export default function Home() {
                         <tbody>
                           {roundsMap[rd].map((p, i) => (
                             <tr key={p.pk} className={`border-b border-slate-800/30 transition-colors hover:bg-slate-800/30 ${i % 2 === 0 ? 'bg-slate-950/30' : 'bg-transparent'} last:border-0`}>
-                              <td className="py-2 px-5 w-16">
-                                <span className="text-[10px] font-black text-indigo-500/70 border border-indigo-500/20 bg-indigo-500/5 px-1.5 py-0.5 rounded">{(p.pk - 1) % totalTeams + 1}</span>
+                              <td className="py-2 px-5 w-24">
+                                <div className="flex items-center gap-2">
+                                  <span title={`Pick number within Round ${rd}`} className="text-[10px] font-black text-indigo-300 border border-indigo-500/20 bg-indigo-500/10 px-1.5 py-0.5 rounded">
+                                    P{(p.pk - 1) % totalTeams + 1}
+                                  </span>
+                                  <span title={`Overall Pick #${p.pk}`} className="text-[9px] font-bold text-slate-600">
+                                    (#{p.pk})
+                                  </span>
+                                </div>
                               </td>
                               <td className="py-2 px-2">
                                 <span className="font-bold text-slate-200 text-sm tracking-tight">{p.name}</span>
