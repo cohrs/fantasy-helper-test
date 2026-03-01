@@ -5,7 +5,7 @@ import {
   Search, Trophy, Circle, UserPlus, Users, Trash2,
   ChevronRight, Activity, LayoutGrid, Link as LinkIcon,
   RefreshCw, ClipboardList, Clock, ShieldCheck, Zap, BarChart3,
-  Plug, Sparkles, ChevronUp, ChevronDown, Eye, EyeOff
+  Plug, Sparkles, ChevronUp, ChevronDown, Eye, EyeOff, ListOrdered
 } from 'lucide-react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import YAHOO_STATS_DATA from '../../../yahoo-stats.json';
@@ -307,7 +307,7 @@ export default function Home() {
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   // New Layout States 
-  const [viewMode, setViewMode] = useState<'PLAYERS' | 'GRID' | 'TEAM' | 'NEEDS'>('PLAYERS');
+  const [viewMode, setViewMode] = useState<'PLAYERS' | 'GRID' | 'TEAM' | 'NEEDS' | 'WATCHLIST'>('PLAYERS');
   const [selectedTeam, setSelectedTeam] = useState(myTeamName);
 
   // Yahoo enriched player data (ranked + projected stats)
@@ -330,7 +330,7 @@ export default function Home() {
   const [assistantRecs, setAssistantRecs] = useState<any[]>([]);
   const [aiNotes, setAiNotes] = useState<Record<string, string>>({});
   const [assistantPrompt, setAssistantPrompt] = useState("");
-  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'model'; parts: { text: string }[] }[]>([]);
+  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'model'; parts: { text: string }[]; recommendations?: any[]; timestamp?: string }[]>([]);
   const [showAssistantModal, setShowAssistantModal] = useState(false);
   const assistantInputRef = useRef<{ getValue: () => string }>(null);
   const modalInputRef = useRef<{ getValue: () => string }>(null);
@@ -559,7 +559,12 @@ export default function Home() {
         setAssistantRecs(data.recommendations || []);
         // Append model reply to history for next follow-up
         if (data.assistantMessage) {
-          setChatHistory([...newHistory, { role: 'model' as const, parts: [{ text: data.assistantMessage }] }]);
+          setChatHistory([...newHistory, {
+            role: 'model' as const,
+            parts: [{ text: data.assistantMessage }],
+            recommendations: data.recommendations || [],
+            timestamp: new Date().toISOString()
+          }]);
         }
         // If we got 0 recs despite a successful call, show raw response for debugging
         if ((data.recommendations || []).length === 0 && data.assistantMessage) {
@@ -869,7 +874,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="lg:col-span-6 flex flex-col min-h-0">
+        <div className="lg:col-span-9 flex flex-col min-h-0">
           <div className="bg-slate-900 rounded-[2.5rem] p-8 border border-slate-800 flex-1 flex flex-col shadow-2xl min-h-0">
             <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-10 shrink-0">
               <h2 className="text-3xl font-black italic uppercase tracking-tighter flex items-center gap-4">
@@ -888,6 +893,9 @@ export default function Home() {
                 </button>
                 <button onClick={() => setViewMode('NEEDS')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'NEEDS' ? 'bg-orange-600 text-white shadow shadow-orange-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
                   <BarChart3 className="w-3.5 h-3.5" /> Needs
+                </button>
+                <button onClick={() => setViewMode('WATCHLIST')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'WATCHLIST' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                  <ListOrdered className="w-3.5 h-3.5" /> Watchlist
                 </button>
               </div>
             </div>
@@ -1248,152 +1256,150 @@ export default function Home() {
                 </div>
               );
             })()}
-          </div>
-        </div >
 
-        <div className="lg:col-span-3 flex flex-col min-h-0">
-          <div className="bg-slate-900 rounded-[2.5rem] p-8 border border-slate-800 flex-1 flex flex-col shadow-2xl min-h-0">
+            {viewMode === 'WATCHLIST' && (
+              <div className="flex flex-col flex-1 min-h-0">
+                {/* Watchlist Header */}
+                <div className="mb-6 shrink-0 flex items-center justify-between">
+                  <h3 className="text-sm font-black uppercase tracking-widest text-slate-500 bg-slate-800/50 px-3 py-1.5 rounded-lg flex items-center gap-2">
+                    <ListOrdered className="w-4 h-4 text-indigo-400" />
+                    Watchlist ({myRoster.length})
+                  </h3>
 
-            {/* Watchlist Header */}
-            <div className="mb-4 shrink-0">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-800/50 px-2 py-1 rounded-lg">Watchlist ({myRoster.length})</h3>
-                <div className="flex bg-slate-950 rounded-lg p-0.5 border border-slate-800 shrink-0">
-                  {(['AVAILABLE', 'DRAFTED', 'ALL'] as const).map(tab => (
-                    <button
-                      key={tab}
-                      onClick={() => setWatchlistTab(tab)}
-                      className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-md transition-all ${watchlistTab === tab ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
+                  <div className="flex bg-slate-950 rounded-lg p-1 border border-slate-800 shrink-0 shadow-inner">
+                    {(['AVAILABLE', 'DRAFTED', 'ALL'] as const).map(tab => (
+                      <button
+                        key={tab}
+                        onClick={() => setWatchlistTab(tab)}
+                        className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all ${watchlistTab === tab ? 'bg-indigo-600 text-white shadow shadow-indigo-500/30' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}
+                      >
+                        {tab}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Filters & Sorting */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 shrink-0 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
+                  <div className="flex gap-1.5 flex-wrap">
+                    {['ALL', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'SP', 'RP'].map(pos => (
+                      <button
+                        key={pos}
+                        onClick={() => setWatchlistPosFilter(pos)}
+                        className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${watchlistPosFilter === pos
+                          ? 'bg-indigo-600 text-white shadow shadow-indigo-500/30'
+                          : 'bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700'
+                          }`}
+                      >
+                        {pos}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex gap-1.5">
+                    {([['original', 'My Order'], ['rank-asc', 'Rank ↑'], ['rank-desc', 'Rank ↓']] as const).map(([val, label]) => (
+                      <button
+                        key={val}
+                        onClick={() => setWatchlistSort(val)}
+                        className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${watchlistSort === val
+                          ? 'bg-slate-700 text-slate-200 shadow'
+                          : 'bg-slate-800/40 text-slate-500 hover:text-slate-300 hover:bg-slate-700/50'
+                          }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Grid view of Watchlist items */}
+                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                  {(() => {
+                    let view = myRoster.map((p, originalIndex) => ({ p, originalIndex }));
+
+                    if (watchlistPosFilter !== 'ALL') {
+                      view = view.filter(({ p }) =>
+                        p.pos?.toUpperCase().split(/[\/,]+/).includes(watchlistPosFilter)
+                      );
+                    }
+
+                    if (watchlistSort === 'rank-asc') {
+                      view = [...view].sort((a, b) => (a.p.adp || 9999) - (b.p.adp || 9999));
+                    } else if (watchlistSort === 'rank-desc') {
+                      view = [...view].sort((a, b) => (b.p.adp || 0) - (a.p.adp || 0));
+                    }
+
+                    const visibleView = view.filter(({ p }) => {
+                      const isTaken = draftResults.some(d => (d.tm || d.pos.toLowerCase().includes('round')) && normalizeName(d.name) === normalizeName(p.name));
+                      if (watchlistTab === 'AVAILABLE') return !isTaken;
+                      if (watchlistTab === 'DRAFTED') return isTaken;
+                      return true;
+                    });
+
+                    if (visibleView.length === 0) {
+                      return <div className="flex items-center justify-center p-20 text-slate-600 text-sm font-bold uppercase tracking-widest bg-slate-950/30 rounded-2xl border border-dashed border-slate-800">No players match current filter</div>;
+                    }
+
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {visibleView.map(({ p, originalIndex }) => {
+                          const isTaken = draftResults.some(d => (d.tm || d.pos.toLowerCase().includes('round')) && normalizeName(d.name) === normalizeName(p.name));
+                          const yhPlayer = yahooPlayers.find(yh => normalizeName(yh.name) === normalizeName(p.name)) || {};
+                          const yhStats = yahooStats[p.name.toLowerCase()];
+
+                          let yahooStatsPairs = null;
+                          if (yhStats) {
+                            const isPitcher = /SP|RP|P/i.test(p.pos);
+                            const ids = isPitcher ? PITCHING_STAT_IDS : BATTING_STAT_IDS;
+                            yahooStatsPairs = ids
+                              .map(id => ({ id, label: YAHOO_STAT_LABELS[id] || id, val: yhStats[id] }))
+                              .filter(s => s.val && s.val !== '-' && s.val !== '0' && s.val !== '');
+                          }
+
+                          const enrichedPlayer = {
+                            ...p,
+                            ...yhPlayer,
+                            rationale: aiNotes[p.name.toLowerCase()] || p.rationale,
+                            yahooStatsPairs: yahooStatsPairs
+                          };
+
+                          return (
+                            <WatchlistItem
+                              key={originalIndex}
+                              player={enrichedPlayer}
+                              activeSport={activeSport}
+                              isTaken={isTaken}
+                              isFirst={originalIndex === 0}
+                              isLast={originalIndex === myRoster.length - 1}
+                              onMoveUp={() => {
+                                const newRoster = [...myRoster];
+                                [newRoster[originalIndex - 1], newRoster[originalIndex]] = [newRoster[originalIndex], newRoster[originalIndex - 1]];
+                                updateWatchlist(newRoster);
+                              }}
+                              onMoveDown={() => {
+                                const newRoster = [...myRoster];
+                                [newRoster[originalIndex + 1], newRoster[originalIndex]] = [newRoster[originalIndex], newRoster[originalIndex + 1]];
+                                updateWatchlist(newRoster);
+                              }}
+                              onDelete={() => updateWatchlist(myRoster.filter((_, idx) => idx !== originalIndex))}
+                              index={originalIndex}
+                              draggedIndex={draggedItemIndex}
+                              dragOverIndex={dragOverItemIndex}
+                              onDragStart={handleDragStart}
+                              onDragOver={handleDragOver}
+                              onDragEnd={handleDragEnd}
+                              onDrop={handleDrop}
+                            />
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
-
-              {/* Position filter pills */}
-              <div className="flex gap-1 flex-wrap mb-2">
-                {['ALL', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'SP', 'RP'].map(pos => (
-                  <button
-                    key={pos}
-                    onClick={() => setWatchlistPosFilter(pos)}
-                    className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${watchlistPosFilter === pos
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-slate-800 text-slate-500 hover:text-slate-300'
-                      }`}
-                  >
-                    {pos}
-                  </button>
-                ))}
-              </div>
-
-              {/* Sort controls */}
-              <div className="flex gap-1">
-                {([['original', 'My Order'], ['rank-asc', 'Rank ↑'], ['rank-desc', 'Rank ↓']] as const).map(([val, label]) => (
-                  <button
-                    key={val}
-                    onClick={() => setWatchlistSort(val)}
-                    className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${watchlistSort === val
-                      ? 'bg-slate-700 text-slate-200'
-                      : 'bg-slate-800/50 text-slate-600 hover:text-slate-400'
-                      }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Watchlist items — view-only sort/filter, original indices for move ops */}
-            <div className="space-y-3 flex-1 overflow-y-auto pr-2 custom-scrollbar">
-              {(() => {
-                // Build view: each item carries its original index
-                let view = myRoster.map((p, originalIndex) => ({ p, originalIndex }));
-
-                // Position filter (view-only)
-                if (watchlistPosFilter !== 'ALL') {
-                  view = view.filter(({ p }) =>
-                    p.pos?.toUpperCase().split(/[\/,]+/).includes(watchlistPosFilter)
-                  );
-                }
-
-                // Sort (view-only — does NOT affect myRoster)
-                if (watchlistSort === 'rank-asc') {
-                  view = [...view].sort((a, b) => (a.p.adp || 9999) - (b.p.adp || 9999));
-                } else if (watchlistSort === 'rank-desc') {
-                  view = [...view].sort((a, b) => (b.p.adp || 0) - (a.p.adp || 0));
-                }
-
-                // Filter by Tab (Available/Drafted/All)
-                const visibleView = view.filter(({ p }) => {
-                  const isTaken = draftResults.some(d => (d.tm || d.pos.toLowerCase().includes('round')) && normalizeName(d.name) === normalizeName(p.name));
-                  if (watchlistTab === 'AVAILABLE') return !isTaken;
-                  if (watchlistTab === 'DRAFTED') return isTaken;
-                  return true; // 'ALL'
-                });
-
-                if (visibleView.length === 0) {
-                  return <div className="text-center mt-10 text-slate-600 text-xs font-bold uppercase tracking-widest">No players match filter</div>;
-                }
-
-                return visibleView.map(({ p, originalIndex }, viewIdx) => {
-                  const isTaken = draftResults.some(d => (d.tm || d.pos.toLowerCase().includes('round')) && normalizeName(d.name) === normalizeName(p.name));
-
-                  // Enrich the watchlist player with the latest Yahoo data from state
-                  const yhPlayer = yahooPlayers.find(yh => normalizeName(yh.name) === normalizeName(p.name)) || {};
-                  const yhStats = yahooStats[p.name.toLowerCase()];
-
-                  // Pre-format stats pairs if available
-                  let yahooStatsPairs = null;
-                  if (yhStats) {
-                    const isPitcher = /SP|RP|P/i.test(p.pos);
-                    const ids = isPitcher ? PITCHING_STAT_IDS : BATTING_STAT_IDS;
-                    yahooStatsPairs = ids
-                      .map(id => ({ id, label: YAHOO_STAT_LABELS[id] || id, val: yhStats[id] }))
-                      .filter(s => s.val && s.val !== '-' && s.val !== '0' && s.val !== '');
-                  }
-
-                  const enrichedPlayer = {
-                    ...p,
-                    ...yhPlayer,
-                    rationale: aiNotes[p.name.toLowerCase()] || p.rationale,
-                    yahooStatsPairs: yahooStatsPairs
-                  };
-
-                  return (
-                    <WatchlistItem
-                      key={originalIndex}
-                      player={enrichedPlayer}
-                      activeSport={activeSport}
-                      isTaken={isTaken}
-                      // isFirst/isLast reflect original array position so move ops make sense
-                      isFirst={originalIndex === 0}
-                      isLast={originalIndex === myRoster.length - 1}
-                      onMoveUp={() => {
-                        const newRoster = [...myRoster];
-                        [newRoster[originalIndex - 1], newRoster[originalIndex]] = [newRoster[originalIndex], newRoster[originalIndex - 1]];
-                        updateWatchlist(newRoster);
-                      }}
-                      onMoveDown={() => {
-                        const newRoster = [...myRoster];
-                        [newRoster[originalIndex + 1], newRoster[originalIndex]] = [newRoster[originalIndex], newRoster[originalIndex + 1]];
-                        updateWatchlist(newRoster);
-                      }}
-                      onDelete={() => updateWatchlist(myRoster.filter((_, idx) => idx !== originalIndex))}
-                      index={originalIndex}
-                      draggedIndex={draggedItemIndex}
-                      dragOverIndex={dragOverItemIndex}
-                      onDragStart={handleDragStart}
-                      onDragOver={handleDragOver}
-                      onDragEnd={handleDragEnd}
-                      onDrop={handleDrop}
-                    />
-                  );
-                });
-              })()}
-            </div>
+            )}
           </div>
-        </div>
+        </div >
       </main >
 
       {/* Assistant Modal / Popover */}
@@ -1509,21 +1515,79 @@ export default function Home() {
                       if (!text) return null; // If message was entirely just the JSON array, render nothing
                     }
 
+                    const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
                     const isUser = msg.role === 'user';
+
                     return (
-                      <div key={idx} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[90%] rounded-2xl p-4 text-xs whitespace-pre-wrap leading-relaxed ${isUser ? 'bg-indigo-600/20 text-indigo-200 border border-indigo-500/30' : 'bg-slate-800/40 text-slate-300 border border-slate-700/50'}`}>
-                          {isUser && <div className="text-[9px] font-black uppercase text-indigo-400 mb-2 tracking-widest">You</div>}
-                          {!isUser && <div className="text-[9px] font-black uppercase text-sky-400 mb-2 tracking-widest flex items-center gap-1.5"><Sparkles className="w-3 h-3" /> Assistant</div>}
+                      <div key={idx} className={`flex flex-col gap-2 ${isUser ? 'items-end' : 'items-start'}`}>
+                        {/* Bubble */}
+                        <div className={`max-w-[90%] rounded-2xl p-4 text-xs whitespace-pre-wrap leading-relaxed shadow-lg ${isUser ? 'bg-indigo-600/20 text-indigo-200 border border-indigo-500/30' : 'bg-slate-800/40 text-slate-300 border border-slate-700/50'}`}>
+                          <div className="flex justify-between items-center gap-4 mb-2">
+                            {isUser && <div className="text-[9px] font-black uppercase text-indigo-400 tracking-widest">You</div>}
+                            {!isUser && <div className="text-[9px] font-black uppercase text-sky-400 tracking-widest flex items-center gap-1.5"><Sparkles className="w-3 h-3" /> Assistant</div>}
+                            {timeStr && <div className="text-[8px] font-bold text-slate-500">{timeStr}</div>}
+                          </div>
                           {text}
                         </div>
+
+                        {/* Inline Recommendations */}
+                        {!isUser && msg.recommendations && msg.recommendations.length > 0 && (
+                          <div className="flex flex-col gap-3 w-[95%]">
+                            {msg.recommendations.map((rec: any, i: number) => {
+                              const targetPlayer = displayPool.find(p => p.name.toLowerCase() === rec.name.toLowerCase() || p.name.includes(rec.name.split(' ')[1]));
+                              const rankToDisplay = targetPlayer ? (yahooPlayers.length > 0 && yahooPlayers.find(y => normalizeName(y.name) === normalizeName(targetPlayer.name))?.rank) : rec.rank;
+                              const posToDisplay = targetPlayer ? targetPlayer.pos : rec.pos;
+                              const teamToDisplay = targetPlayer ? targetPlayer.team : rec.team;
+
+                              return (
+                                <div key={i} className="bg-slate-950 p-4 rounded-2xl border border-slate-800/50 hover:border-sky-500/40 transition-colors shadow-lg shadow-black/50 group relative">
+                                  <div className="font-bold text-slate-100 mb-2 flex items-center justify-between gap-3 text-sm">
+                                    <div className="flex flex-col gap-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="bg-sky-500/20 text-sky-400 px-1.5 py-0.5 rounded flex items-center justify-center font-black text-[10px] border border-sky-500/20">#{i + 1}</span>
+                                        {rec.name}
+                                      </div>
+                                      <div className="flex items-center gap-2 pl-7 mt-1">
+                                        {rankToDisplay && <span className="text-[8px] font-black text-indigo-400 bg-indigo-500/10 px-1 py-0.5 rounded border border-indigo-500/20">{yahooPlayers.length > 0 ? 'AR' : 'ADP'} {rankToDisplay}</span>}
+                                        {posToDisplay && <span className="text-[9px] font-bold text-slate-400 uppercase">{posToDisplay}</span>}
+                                        {teamToDisplay && <span className="text-[9px] font-bold text-slate-500 uppercase px-1">• {teamToDisplay}</span>}
+                                      </div>
+                                    </div>
+                                    <button
+                                      onClick={() => {
+                                        const targetPlayer = displayPool.find(p =>
+                                          p.name.toLowerCase() === rec.name.toLowerCase() ||
+                                          p.name.toLowerCase().includes(rec.name.split(' ').pop()?.toLowerCase() || '')
+                                        );
+                                        const alreadyIn = myRoster.find(r => r.name.toLowerCase() === rec.name.toLowerCase());
+                                        if (!alreadyIn) {
+                                          const entry = targetPlayer
+                                            ? { ...targetPlayer, rationale: rec.rationale }
+                                            : { id: Date.now(), name: rec.name, pos: rec.pos, team: rec.team, adp: parseInt(rec.rank) || 999, rationale: rec.rationale };
+                                          updateWatchlist([...myRoster, entry]);
+                                        }
+                                      }}
+                                      className="w-6 h-6 rounded-full bg-slate-800/80 border border-slate-700 hover:bg-sky-600/30 hover:text-sky-400 hover:border-sky-500/50 transition-all flex items-center justify-center text-slate-500 md:opacity-0 group-hover:opacity-100"
+                                      title="Add to Watchlist"
+                                    >
+                                      <UserPlus className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                  <div className="text-[11px] text-slate-400 leading-relaxed italic border-l-[2px] border-sky-500/30 pl-2 py-1 mt-2">
+                                    {rec.rationale}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
                 </div>
               )}
 
-              {isAskingAssistant ? (
+              {isAskingAssistant && (
                 <div className="space-y-4 animate-pulse mt-4 border-t border-slate-800/50 pt-4">
                   {[1, 2, 3].map(i => (
                     <div key={i} className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
@@ -1533,54 +1597,6 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
-              ) : (
-                <>
-                  {assistantRecs.map((rec, i) => {
-                    const targetPlayer = displayPool.find(p => p.name.toLowerCase() === rec.name.toLowerCase() || p.name.includes(rec.name.split(' ')[1]));
-                    const rankToDisplay = targetPlayer ? (yahooPlayers.length > 0 && yahooPlayers.find(y => normalizeName(y.name) === normalizeName(targetPlayer.name))?.rank) : rec.rank;
-                    const posToDisplay = targetPlayer ? targetPlayer.pos : rec.pos;
-                    const teamToDisplay = targetPlayer ? targetPlayer.team : rec.team;
-                    return (
-                      <div key={i} className="bg-slate-950 p-5 rounded-2xl border border-slate-800/50 hover:border-sky-500/40 transition-colors shadow-lg shadow-black/50 group relative">
-                        <div className="font-bold text-slate-100 mb-2 flex items-center justify-between gap-3 text-base">
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-3">
-                              <span className="bg-sky-500/20 text-sky-400 px-2 py-0.5 rounded flex items-center justify-center font-black text-xs border border-sky-500/20">#{i + 1}</span>
-                              {rec.name}
-                            </div>
-                            <div className="flex items-center gap-2 pl-9">
-                              {rankToDisplay && <span className="text-[10px] font-black text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20">{yahooPlayers.length > 0 ? 'AR' : 'ADP'} {rankToDisplay}</span>}
-                              {posToDisplay && <span className="text-[10px] font-bold text-slate-400 uppercase">{posToDisplay}</span>}
-                              {teamToDisplay && <span className="text-[10px] font-bold text-slate-500 uppercase px-1">• {teamToDisplay}</span>}
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => {
-                              const targetPlayer = displayPool.find(p =>
-                                p.name.toLowerCase() === rec.name.toLowerCase() ||
-                                p.name.toLowerCase().includes(rec.name.split(' ').pop()?.toLowerCase() || '')
-                              );
-                              const alreadyIn = myRoster.find(r => r.name.toLowerCase() === rec.name.toLowerCase());
-                              if (!alreadyIn) {
-                                const entry = targetPlayer
-                                  ? { ...targetPlayer, rationale: rec.rationale }
-                                  : { id: Date.now(), name: rec.name, pos: rec.pos, team: rec.team, adp: parseInt(rec.rank) || 999, rationale: rec.rationale };
-                                updateWatchlist([...myRoster, entry]);
-                              }
-                            }}
-                            className="w-7 h-7 rounded-full bg-slate-800/80 border border-slate-700 hover:bg-sky-600/30 hover:text-sky-400 hover:border-sky-500/50 transition-all flex items-center justify-center text-slate-500 md:opacity-0 group-hover:opacity-100"
-                            title="Add to Watchlist"
-                          >
-                            <UserPlus className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                        <div className="text-[13px] text-slate-400 leading-relaxed italic border-l-[3px] border-sky-500/30 pl-3 py-1 mt-3">
-                          {rec.rationale}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </>
               )}
             </div>
           </div>
