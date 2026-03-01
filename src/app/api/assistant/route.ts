@@ -101,9 +101,17 @@ Respond with the recommended players as a JSON array and NOTHING ELSE. Provide 3
 
             // If parsed successfully, log these to the notes file for future feedback loops
             if (Array.isArray(recommendations) && recommendations.length > 0) {
+                const now = new Date();
+                const timeStr = now.toLocaleDateString([], { month: 'numeric', day: 'numeric', year: 'numeric' }) + ' ' + now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
                 recommendations.forEach(r => {
                     if (r.name && r.rationale) {
-                        historicalNotes[r.name.toLowerCase()] = r.rationale;
+                        const key = r.name.toLowerCase();
+                        const newNote = `[${timeStr}] ${r.rationale}`;
+                        if (historicalNotes[key]) {
+                            historicalNotes[key] = newNote + '\n\n---\n\n' + historicalNotes[key];
+                        } else {
+                            historicalNotes[key] = newNote;
+                        }
                     }
                 });
                 fs.writeFileSync(NOTES_FILE, JSON.stringify(historicalNotes, null, 2));
