@@ -48,7 +48,7 @@ export async function GET() {
                     namePart = namePart.replace(keeperMatch[0], '').trim();
                 } else {
                     // Handle Round assignments (e.g. Bubba Chandler PIT - SP - 1st Round - Amazins or 72nd Round)
-                    const roundMatch = namePart.match(/-\s*(\d+)(?:st|nd|rd|th)\s+Round\s*-\s*(.*)/i);
+                    const roundMatch = namePart.match(/(\d+)(?:st|nd|rd|th)\s+Round\s*-\s*(.*)/i);
                     if (roundMatch) {
                         forcedRound = parseInt(roundMatch[1]);
                         tm = roundMatch[2].trim();

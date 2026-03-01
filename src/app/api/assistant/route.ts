@@ -65,7 +65,7 @@ ${topBoardClipped}
 === INSTRUCTIONS ===
 Analyze the board using your expert knowledge of MLB prospects, playing time, and 7x7 category formats.
 ${customPrompt ? `\nCRITICAL USER REQUEST — MUST prioritize: "${customPrompt}"\n` : ''}
-Respond with EXACTLY 3 recommended players as a JSON array and NOTHING ELSE:
+Respond with the recommended players as a JSON array and NOTHING ELSE. Provide 3 players by default, or the specific number the user requested:
 [
   {
     "name": "Player Name",

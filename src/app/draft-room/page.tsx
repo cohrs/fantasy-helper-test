@@ -8,7 +8,7 @@ import {
   Plug, Sparkles, ChevronUp, ChevronDown, Eye, EyeOff
 } from 'lucide-react';
 import { useSession, signIn, signOut } from 'next-auth/react';
-
+import YAHOO_STATS_DATA from '../../../yahoo-stats.json';
 // Isolated component to prevent typing lag — exposes value via ref, no parent state on each keystroke
 const AssistantInput = React.forwardRef<{ getValue: () => string }, {
   onSubmit?: (val: string) => void;
@@ -40,14 +40,32 @@ AssistantInput.displayName = 'AssistantInput';
 
 
 const WatchlistItem = ({
-  player, activeSport, isTaken, isFirst, isLast, onMoveUp, onMoveDown, onDelete
+  player, activeSport, isTaken, isFirst, isLast, onMoveUp, onMoveDown, onDelete,
+  index, draggedIndex, dragOverIndex, onDragStart, onDragOver, onDragEnd, onDrop
 }: {
   player: any; activeSport: string; isTaken: boolean; isFirst: boolean; isLast: boolean;
   onMoveUp: () => void; onMoveDown: () => void; onDelete: () => void;
+  index: number; draggedIndex: number | null; dragOverIndex: number | null;
+  onDragStart: (idx: number) => void; onDragOver: (idx: number) => void; onDragEnd: () => void; onDrop: (idx: number) => void;
 }) => {
   const [showNotes, setShowNotes] = useState(false);
+
+  // Visual feedback logic
+  let borderOverride = '';
+  if (dragOverIndex === index && draggedIndex !== index) {
+    if (draggedIndex! > index) borderOverride = 'border-t-2 border-t-indigo-500';
+    else borderOverride = 'border-b-2 border-b-indigo-500';
+  }
+
   return (
-    <div className={`bg-slate-950 rounded-xl border ${isTaken ? 'border-slate-800/30 opacity-50' : 'border-slate-800/50 hover:border-slate-700/50'} group transition-all relative overflow-hidden`}>
+    <div
+      draggable
+      onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; onDragStart(index); }}
+      onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; onDragOver(index); }}
+      onDrop={(e) => { e.preventDefault(); onDrop(index); }}
+      onDragEnd={onDragEnd}
+      className={`bg-slate-950 rounded-xl border ${isTaken ? 'border-slate-800/30 opacity-50' : 'border-slate-800/50 hover:border-slate-700/50'} ${draggedIndex === index ? 'opacity-30' : ''} ${borderOverride} group transition-all relative overflow-hidden`}
+    >
       <div className={`absolute left-0 top-0 bottom-0 w-1 ${activeSport === 'MLB' ? 'bg-indigo-600' : 'bg-orange-600'} ${isTaken ? 'bg-slate-700' : ''}`} />
 
       <div className="flex justify-between items-center p-2 pl-3">
@@ -151,6 +169,74 @@ const WatchlistItem = ({
  * Functional Prototype for 18-Team Fantasy Leagues
  * Includes: MLB Draft Tracker & NBA Standings Scaffold
  */
+
+const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWatchlist, activeSport, myRoster, BATTING_STAT_IDS, PITCHING_STAT_IDS, YAHOO_STAT_LABELS }: any) => {
+  const isPitcher = /SP|RP|P/i.test(p.pos);
+  const ids = isPitcher ? PITCHING_STAT_IDS : BATTING_STAT_IDS;
+
+  return (
+    <div className={`px-4 py-3 rounded-2xl flex justify-between items-center transition-all ${p.takenBy ? 'bg-slate-900/30 border border-slate-800/20 opacity-50' : 'bg-slate-950 border border-slate-800/50 hover:border-indigo-500/40'}`}>
+      <div className="flex items-center gap-4">
+        <div className="w-10 text-center font-black text-[9px] leading-tight text-indigo-400 tabular-nums">
+          {yahooPlayers.length > 0 ? (
+            <>
+              <div className="text-[7px] text-slate-600">{p.yahooRank ? 'AR' : 'ADP'}</div>
+              <div>{p.yahooRank || p.adp}</div>
+            </>
+          ) : (
+            <>
+              <div className="text-[7px] text-slate-600">ADP</div>
+              <div>{p.adp}</div>
+            </>
+          )}
+        </div>
+        <div>
+          <div className="flex items-center gap-2">
+            <span className={`font-bold text-sm ${p.takenBy ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{p.name}</span>
+            {p.yahooStatus && <span className="text-[9px] font-black bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded-full uppercase">{p.yahooStatus}</span>}
+            {p.isKeeper && <span className="text-[9px] font-black bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded-full uppercase">K</span>}
+            {p.yahooHasNotes && !p.takenBy && <span title="Has player news" className="w-1.5 h-1.5 rounded-full bg-sky-400 inline-block" />}
+          </div>
+          <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mt-0.5">
+            {p.team}
+            <span className="text-indigo-500 ml-2">{p.pos}</span>
+            {p.yahooStatusFull && !p.takenBy && <span className="text-red-400/70 ml-2">{p.yahooStatusFull}</span>}
+            {p.takenBy && <span className="text-slate-600 ml-2">• {p.takenBy}</span>}
+          </div>
+          {p.yahooRecentNote && !p.takenBy && (
+            <div className="mt-2 text-xs text-slate-400/90 leading-snug border-l-2 border-sky-500/30 pl-2 py-0.5 italic">
+              {p.yahooRecentNote}
+            </div>
+          )}
+          {Object.keys(yahooStats).length > 0 && !p.takenBy && (() => {
+            const pStats = yahooStats[p.name.toLowerCase()];
+            if (!pStats) return null;
+            const pairs = ids
+              .map((id: string) => ({ id, label: YAHOO_STAT_LABELS[id] || id, val: pStats[id] }))
+              .filter((s: any) => s.val && s.val !== '-' && s.val !== '0' && s.val !== '');
+            if (pairs.length === 0) return null;
+            return (
+              <div className="flex gap-2 mt-1.5 flex-wrap">
+                {pairs.map((s: any) => (
+                  <span key={s.id} className="text-[9px] font-bold text-emerald-400/80 bg-emerald-500/5 border border-emerald-500/15 px-1.5 py-0.5 rounded">
+                    {s.label} {s.val}
+                  </span>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+      {!p.takenBy && (
+        <button onClick={() => updateWatchlist([...myRoster, { id: p.id, name: p.name, pos: p.pos, team: p.team || 'FA', adp: p.adp }])} className="bg-slate-800 hover:bg-indigo-600 p-3 rounded-xl transition-all active:scale-90">
+          <UserPlus className="w-4 h-4 text-white" />
+        </button>
+      )}
+    </div>
+  );
+});
+DraftBoardPlayerRow.displayName = 'DraftBoardPlayerRow';
+
 export default function Home() {
   const [activeSport, setActiveSport] = useState('MLB');
   const [searchTerm, setSearchTerm] = useState('');
@@ -160,6 +246,30 @@ export default function Home() {
   const [yahooConnected, setYahooConnected] = useState(false);
   const [watchlistPosFilter, setWatchlistPosFilter] = useState('ALL');
   const [watchlistSort, setWatchlistSort] = useState<'original' | 'rank-asc' | 'rank-desc'>('original');
+
+  const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+  const [dragOverItemIndex, setDragOverItemIndex] = useState<number | null>(null);
+
+  const handleDragStart = (idx: number) => setDraggedItemIndex(idx);
+  const handleDragOver = (idx: number) => {
+    if (draggedItemIndex === null || draggedItemIndex === idx) return;
+    setDragOverItemIndex(idx);
+  };
+  const handleDragEnd = () => {
+    setDraggedItemIndex(null);
+    setDragOverItemIndex(null);
+  };
+  const handleDrop = (idx: number) => {
+    if (draggedItemIndex === null || draggedItemIndex === idx) return;
+    const newRoster = [...myRoster];
+    const item = newRoster.splice(draggedItemIndex, 1)[0];
+    newRoster.splice(idx, 0, item);
+    updateWatchlist(newRoster);
+    handleDragEnd();
+  };
+
+
+
 
   const updateWatchlist = async (newRoster: any[]) => {
     setMyRoster(newRoster);
@@ -204,7 +314,15 @@ export default function Home() {
   const [yahooPlayers, setYahooPlayers] = useState<any[]>([]);
   const [isLoadingYahoo, setIsLoadingYahoo] = useState(false);
   // Yahoo last-season stats, keyed by lowercased player name
-  const [yahooStats, setYahooStats] = useState<Record<string, Record<string, string>>>({});
+  const [yahooStats, setYahooStats] = useState<Record<string, Record<string, string>>>(() => {
+    const initStats: Record<string, Record<string, string>> = {};
+    if (typeof YAHOO_STATS_DATA !== 'undefined' && YAHOO_STATS_DATA.players) {
+      YAHOO_STATS_DATA.players.forEach((p: any) => {
+        initStats[p.name.toLowerCase()] = p.stats || {};
+      });
+    }
+    return initStats;
+  });
   const [isLoadingStats, setIsLoadingStats] = useState(false);
 
   // Gemini Assistant
@@ -250,8 +368,8 @@ export default function Home() {
   // Backend JSON Load
   useEffect(() => {
     Promise.all([
-      fetch('/api/draft-data').then(res => res.json()).catch(() => ({})),
-      fetch('/api/assistant/notes').then(res => res.json()).catch(() => ({}))
+      fetch('/api/draft-data', { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch('/api/assistant/notes', { cache: 'no-store' }).then(res => res.json()).catch(() => ({}))
     ]).then(([draftData, notesData]) => {
       if (draftData.roster) setMyRoster(draftData.roster);
       if (draftData.draft && draftData.draft.length > 0) {
@@ -266,16 +384,6 @@ export default function Home() {
       setIsDataLoaded(true);
     });
   }, []);
-
-  useEffect(() => {
-    if (isDataLoaded) {
-      fetch('/api/draft-data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'SYNC_ROSTER', rosterData: myRoster })
-      }).catch(err => console.error("Error syncing roster:", err));
-    }
-  }, [myRoster, isDataLoaded]);
 
   const handleImport = async () => {
     setIsSyncing(true);
@@ -371,16 +479,13 @@ export default function Home() {
   const loadYahooStats = async (forceRefresh = false) => {
     setIsLoadingStats(true);
     try {
-      const res = await fetch(`/api/yahoo/stats${forceRefresh ? '?refresh=1' : ''}`);
-      const data = await res.json();
-      if (data.byName) {
-        // byName already lowercased on server
-        const map: Record<string, Record<string, string>> = {};
-        for (const [name, player] of Object.entries<any>(data.byName)) {
-          map[name] = player.stats || {};
-        }
-        setYahooStats(map);
+      const parsedStats: Record<string, Record<string, string>> = {};
+      if (YAHOO_STATS_DATA && YAHOO_STATS_DATA.players) {
+        YAHOO_STATS_DATA.players.forEach((p: any) => {
+          parsedStats[p.name.toLowerCase()] = p.stats || {};
+        });
       }
+      setYahooStats(parsedStats);
     } catch (err) {
       console.error('[Yahoo Stats] load error:', err);
     } finally {
@@ -503,6 +608,67 @@ export default function Home() {
       rationale: aiNotes[p.name.toLowerCase()]
     }));
   }, [searchTerm, myRoster, draftResults, showDrafted, positionFilter, aiNotes]);
+
+  const processedPool = useMemo(() => {
+    let copy = [...displayPool] as any[];
+
+    // 1. Enrich base Tapatalk pool
+    copy = copy.map(p => {
+      const pNorm = normalizeName(p.name);
+      const yMatch = yahooPlayers.find(y => normalizeName(y.name) === pNorm);
+      const tMatch = draftResults.find(d => d.name?.toLowerCase() === p.name.toLowerCase());
+
+      return {
+        ...p,
+        isKeeper: tMatch?.isKeeper || false,
+        yahooRank: yMatch ? yMatch.rank : null,
+        yahooStatus: yMatch ? yMatch.status : null,
+        yahooStatusFull: yMatch ? yMatch.statusFull : null,
+        yahooHasNotes: yMatch ? yMatch.hasNotes : false,
+        yahooRecentNote: yMatch ? yMatch.recentNote : null
+      };
+    });
+
+    // 2. Filter drafted
+    if (!showDrafted) {
+      copy = copy.filter(p => !p.takenBy);
+    }
+
+    // 3. Search & Pos Filter
+    copy = copy.filter(p => {
+      if (searchTerm && !p.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+      if (positionFilter !== 'ALL') {
+        const positions = p.pos.toUpperCase().split(/[\/,]+/);
+        if (!positions.includes(positionFilter)) return false;
+      }
+      return true;
+    });
+
+    // 4. Sort
+    if (statSort && Object.keys(yahooStats).length > 0) {
+      copy.sort((a, b) => {
+        const aStats = yahooStats[a.name.toLowerCase()];
+        const bStats = yahooStats[b.name.toLowerCase()];
+        const aVal = aStats ? parseFloat(aStats[statSort]) || 0 : -Infinity;
+        const bVal = bStats ? parseFloat(bStats[statSort]) || 0 : -Infinity;
+        if (aVal !== bVal) return ASCENDING_STATS.has(statSort) ? aVal - bVal : bVal - aVal;
+        if (a.yahooRank && b.yahooRank) return a.yahooRank - b.yahooRank;
+        if (a.yahooRank) return -1;
+        if (b.yahooRank) return 1;
+        return a.adp - b.adp;
+      });
+    } else if (yahooPlayers.length > 0) {
+      copy.sort((a, b) => {
+        if (a.yahooRank && b.yahooRank) return a.yahooRank - b.yahooRank;
+        if (a.yahooRank) return -1;
+        if (b.yahooRank) return 1;
+        return a.adp - b.adp;
+      });
+    }
+
+    return copy;
+  }, [displayPool, searchTerm, showDrafted, draftResults, positionFilter, statSort, yahooStats, yahooPlayers, activeSport]);
+
 
   // Standard Yahoo Roster Slots (23-man with explicit Outfielders)
   const ROSTER_SLOTS = ['C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'UTIL', 'SP', 'SP', 'SP', 'SP', 'SP', 'RP', 'RP', 'P', 'P', 'BN', 'BN', 'BN', 'BN'];
@@ -823,133 +989,20 @@ export default function Home() {
                   )}
                 </div>
                 <div className="flex-1 overflow-y-auto space-y-1 pr-2">
-                  {(() => {
-                    const search = searchTerm.toLowerCase();
-
-                    // 1. Enrich base Tapatalk pool
-                    let processedPool = displayPool.map(p => {
-                      const pNorm = normalizeName(p.name);
-                      const yMatch = yahooPlayers.find(y => normalizeName(y.name) === pNorm);
-
-                      const tMatch = draftResults.find(d => d.name?.toLowerCase() === p.name.toLowerCase());
-
-                      return {
-                        ...p,
-                        isKeeper: tMatch?.isKeeper || false,
-                        yahooRank: yMatch ? yMatch.rank : null,
-                        yahooStatus: yMatch ? yMatch.status : null,
-                        yahooStatusFull: yMatch ? yMatch.statusFull : null,
-                        yahooHasNotes: yMatch ? yMatch.hasNotes : false,
-                        yahooRecentNote: yMatch ? yMatch.recentNote : null
-                      };
-                    });
-
-                    // 2. Filter
-                    processedPool = processedPool.filter(p => {
-                      if (!p.name.toLowerCase().includes(search)) return false;
-                      if (!showDrafted && p.takenBy) return false;
-                      if (positionFilter !== 'ALL') {
-                        // Base pool has positions separated by slashes or commas
-                        const positions = p.pos.toUpperCase().split(/[\/,]+/);
-                        if (!positions.includes(positionFilter)) return false;
-                      }
-                      return true;
-                    });
-
-                    // 3. Sort
-                    if (statSort && Object.keys(yahooStats).length > 0) {
-                      processedPool.sort((a, b) => {
-                        const aStats = yahooStats[a.name.toLowerCase()];
-                        const bStats = yahooStats[b.name.toLowerCase()];
-                        const aVal = aStats ? parseFloat(aStats[statSort]) || 0 : -Infinity;
-                        const bVal = bStats ? parseFloat(bStats[statSort]) || 0 : -Infinity;
-
-                        if (aVal !== bVal) {
-                          // e.g ERA and WHIP are better when lower
-                          return ASCENDING_STATS.has(statSort) ? aVal - bVal : bVal - aVal;
-                        }
-
-                        // Fallback to rank
-                        if (a.yahooRank && b.yahooRank) return a.yahooRank - b.yahooRank;
-                        if (a.yahooRank) return -1;
-                        if (b.yahooRank) return 1;
-                        return a.adp - b.adp;
-                      });
-                    } else if (yahooPlayers.length > 0) {
-                      // If Yahoo loaded, sort by Yahoo Rank first, then ADP fallback
-                      processedPool.sort((a, b) => {
-                        if (a.yahooRank && b.yahooRank) return a.yahooRank - b.yahooRank;
-                        if (a.yahooRank) return -1;
-                        if (b.yahooRank) return 1;
-                        return a.adp - b.adp;
-                      });
-                    }
-
-                    // 4. Render
-                    return processedPool.map(p => (
-                      <div key={p.id} className={`px-4 py-3 rounded-2xl flex justify-between items-center transition-all ${p.takenBy ? 'bg-slate-900/30 border border-slate-800/20 opacity-50' : 'bg-slate-950 border border-slate-800/50 hover:border-indigo-500/40'}`}>
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 text-center font-black text-[9px] leading-tight text-indigo-400 tabular-nums">
-                            {yahooPlayers.length > 0 ? (
-                              <>
-                                <div className="text-[7px] text-slate-600">{p.yahooRank ? 'AR' : 'ADP'}</div>
-                                <div>{p.yahooRank || p.adp}</div>
-                              </>
-                            ) : (
-                              <>
-                                <div className="text-[7px] text-slate-600">ADP</div>
-                                <div>{p.adp}</div>
-                              </>
-                            )}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className={`font-bold text-sm ${p.takenBy ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{p.name}</span>
-                              {p.yahooStatus && <span className="text-[9px] font-black bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded-full uppercase">{p.yahooStatus}</span>}
-                              {p.isKeeper && <span className="text-[9px] font-black bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded-full uppercase">K</span>}
-                              {p.yahooHasNotes && !p.takenBy && <span title="Has player news" className="w-1.5 h-1.5 rounded-full bg-sky-400 inline-block" />}
-                            </div>
-                            <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mt-0.5">
-                              {p.team}
-                              <span className="text-indigo-500 ml-2">{p.pos}</span>
-                              {p.yahooStatusFull && !p.takenBy && <span className="text-red-400/70 ml-2">{p.yahooStatusFull}</span>}
-                              {p.takenBy && <span className="text-slate-600 ml-2">• {p.takenBy}</span>}
-                            </div>
-                            {p.yahooRecentNote && !p.takenBy && (
-                              <div className="mt-2 text-xs text-slate-400/90 leading-snug border-l-2 border-sky-500/30 pl-2 py-0.5 italic">
-                                {p.yahooRecentNote}
-                              </div>
-                            )}
-                            {/* 2025 season stats row */}
-                            {Object.keys(yahooStats).length > 0 && !p.takenBy && (() => {
-                              const pStats = yahooStats[p.name.toLowerCase()];
-                              if (!pStats) return null;
-                              const isPitcher = /SP|RP|P/i.test(p.pos);
-                              const ids = isPitcher ? PITCHING_STAT_IDS : BATTING_STAT_IDS;
-                              const pairs = ids
-                                .map(id => ({ id, label: YAHOO_STAT_LABELS[id] || id, val: pStats[id] }))
-                                .filter(s => s.val && s.val !== '-' && s.val !== '0' && s.val !== '');
-                              if (pairs.length === 0) return null;
-                              return (
-                                <div className="flex gap-2 mt-1.5 flex-wrap">
-                                  {pairs.map(s => (
-                                    <span key={s.id} className="text-[9px] font-bold text-emerald-400/80 bg-emerald-500/5 border border-emerald-500/15 px-1.5 py-0.5 rounded">
-                                      {s.label} {s.val}
-                                    </span>
-                                  ))}
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        </div>
-                        {!p.takenBy && (
-                          <button onClick={() => updateWatchlist([...myRoster, { id: p.id, name: p.name, pos: p.pos, team: p.team || 'FA', adp: p.adp }])} className="bg-slate-800 hover:bg-indigo-600 p-3 rounded-xl transition-all active:scale-90">
-                            <UserPlus className="w-4 h-4 text-white" />
-                          </button>
-                        )}
-                      </div>
-                    ));
-                  })()}
+                  {processedPool.map((p: any) => (
+                    <DraftBoardPlayerRow
+                      key={p.id}
+                      p={p}
+                      yahooStats={yahooStats}
+                      yahooPlayers={yahooPlayers}
+                      updateWatchlist={updateWatchlist}
+                      activeSport={activeSport}
+                      myRoster={myRoster}
+                      BATTING_STAT_IDS={BATTING_STAT_IDS}
+                      PITCHING_STAT_IDS={PITCHING_STAT_IDS}
+                      YAHOO_STAT_LABELS={YAHOO_STAT_LABELS}
+                    />
+                  ))}
                 </div>
               </>
             )}
@@ -1273,7 +1326,7 @@ export default function Home() {
 
                 // Filter by Tab (Available/Drafted/All)
                 const visibleView = view.filter(({ p }) => {
-                  const isTaken = draftResults.some(d => d.tm && normalizeName(d.name) === normalizeName(p.name));
+                  const isTaken = draftResults.some(d => (d.tm || d.pos.toLowerCase().includes('round')) && normalizeName(d.name) === normalizeName(p.name));
                   if (watchlistTab === 'AVAILABLE') return !isTaken;
                   if (watchlistTab === 'DRAFTED') return isTaken;
                   return true; // 'ALL'
@@ -1284,7 +1337,7 @@ export default function Home() {
                 }
 
                 return visibleView.map(({ p, originalIndex }, viewIdx) => {
-                  const isTaken = draftResults.some(d => d.tm && normalizeName(d.name) === normalizeName(p.name));
+                  const isTaken = draftResults.some(d => (d.tm || d.pos.toLowerCase().includes('round')) && normalizeName(d.name) === normalizeName(p.name));
 
                   // Enrich the watchlist player with the latest Yahoo data from state
                   const yhPlayer = yahooPlayers.find(yh => normalizeName(yh.name) === normalizeName(p.name)) || {};
@@ -1327,6 +1380,13 @@ export default function Home() {
                         updateWatchlist(newRoster);
                       }}
                       onDelete={() => updateWatchlist(myRoster.filter((_, idx) => idx !== originalIndex))}
+                      index={originalIndex}
+                      draggedIndex={draggedItemIndex}
+                      dragOverIndex={dragOverItemIndex}
+                      onDragStart={handleDragStart}
+                      onDragOver={handleDragOver}
+                      onDragEnd={handleDragEnd}
+                      onDrop={handleDrop}
                     />
                   );
                 });
@@ -1437,8 +1497,17 @@ export default function Home() {
                 <div className="space-y-4 mb-4">
                   {chatHistory.map((msg, idx) => {
                     // Skip displaying the hidden JSON schema system preamble
-                    const text = msg.parts[0].text;
+                    // Skip displaying the hidden JSON schema system preamble
+                    let text = msg.parts[0].text;
                     if (!text || (text.includes('You are an expert, cutthroat') && text.includes('JSON'))) return null;
+
+                    if (msg.role === 'model') {
+                      // Remove markdown code blocks containing JSON
+                      text = text.replace(/```(?:json)?\s*[\s\S]*?\s*```/ig, '').trim();
+                      // Remove raw json arrays if the model forgot the markdown block
+                      text = text.replace(/\[\s*\{[\s\S]*\}\s*\]/g, '').trim();
+                      if (!text) return null; // If message was entirely just the JSON array, render nothing
+                    }
 
                     const isUser = msg.role === 'user';
                     return (

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
+export const dynamic = 'force-dynamic';
 const DB_FILE = path.join(process.cwd(), 'draft-results.json');
 const ROSTER_FILE = path.join(process.cwd(), 'my-roster.json');
 

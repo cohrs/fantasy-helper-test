@@ -891,11 +891,11 @@
     "isKeeper": true
   },
   {
-    "rd": 6,
+    "rd": 1,
     "pk": 100,
     "name": "Byron Buxton",
     "pos": "CF",
-    "tm": null,
+    "tm": "JP",
     "playerTeam": "MIN",
     "isKeeper": false
   },
@@ -927,11 +927,11 @@
     "isKeeper": true
   },
   {
-    "rd": 6,
+    "rd": 1,
     "pk": 104,
     "name": "Tyler Glasnow",
     "pos": "SP",
-    "tm": null,
+    "tm": "No Talent Ass Clowns",
     "playerTeam": "LAD",
     "isKeeper": false
   },
@@ -972,11 +972,11 @@
     "isKeeper": true
   },
   {
-    "rd": 7,
+    "rd": 1,
     "pk": 109,
     "name": "Taylor Ward",
     "pos": "LF",
-    "tm": null,
+    "tm": "Mdub",
     "playerTeam": "BAL",
     "isKeeper": false
   },
@@ -1026,11 +1026,11 @@
     "isKeeper": true
   },
   {
-    "rd": 7,
+    "rd": 2,
     "pk": 115,
     "name": "Ryan Pepiot",
     "pos": "SP",
-    "tm": null,
+    "tm": "Amazins",
     "playerTeam": "TB",
     "isKeeper": false
   },
@@ -1323,11 +1323,11 @@
     "isKeeper": true
   },
   {
-    "rd": 9,
+    "rd": 1,
     "pk": 148,
     "name": "Matt Chapman",
     "pos": "3B",
-    "tm": null,
+    "tm": "Mountain Diehards",
     "playerTeam": "SF",
     "isKeeper": false
   },
@@ -2232,11 +2232,11 @@
     "isKeeper": false
   },
   {
-    "rd": 14,
+    "rd": 1,
     "pk": 249,
     "name": "Munetaka Murakami",
     "pos": "1B,3B",
-    "tm": null,
+    "tm": "K-Bandits",
     "playerTeam": "CWS",
     "isKeeper": false
   },

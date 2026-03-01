@@ -1,4 +1,4 @@
-const { default: axios } = require('axios');
+const axios = require('axios');
 
 (async () => {
     const { data } = await axios.get("https://www.tapatalk.com/groups/asshatrotoleagues/2026-draft-player-list-t1235.html", {
@@ -15,16 +15,11 @@ const { default: axios } = require('axios');
 
     const lines = cleanContent.split('\n');
     lines.forEach(line => {
+        if (line.toLowerCase().includes('115')) {
+            console.log("Raw line for 115:", line.trim());
+        }
         if (line.toLowerCase().includes('pepiot')) {
-            console.log("Raw line for Pepiot:", line.trim());
-            const pkMatch = line.trim().match(/(?:·*\s*)(\d+)\.\s+/);
-            if (pkMatch) {
-                const startIdx = line.trim().indexOf(pkMatch[0]) + pkMatch[0].length;
-                let namePart = line.trim().substring(startIdx);
-                console.log("namePart:", namePart);
-                const roundMatch = namePart.match(/-\s*(\d+)(?:st|nd|rd|th)\s+Round\s*-\s*(.*)/i);
-                console.log("roundMatch default regex:", roundMatch);
-            }
+            console.log("Raw line for pepiot:", line.trim());
         }
     });
 })();
