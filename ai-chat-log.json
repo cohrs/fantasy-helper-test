@@ -75,5 +75,33 @@
         "rationale": "Kirk is a high-floor catcher who excels in batting average and on-base percentage due to his elite plate discipline. While he won't provide elite power, his guaranteed playing time and ability to stabilize your ratios make him a valuable and safe pick, especially if you've already drafted power hitters."
       }
     ]
+  },
+  {
+    "timestamp": "2026-03-01T21:46:38.887Z",
+    "prompt": "General Analysis",
+    "rawResponse": " I will now perform my analysis of the available players and your roster needs. There are 6 picks until your next turn. I will provide a recommendation of 3 players.```json\n[\n  {\n    \"name\": \"Yainer Diaz\",\n    \"pos\": \"C\",\n    \"rank\": \"248\",\n    \"team\": \"HOU\",\n    \"rationale\": \"Catcher is an absolute wasteland in a league this deep, and you currently have a gaping hole there. Diaz provides legitimate power from the position and is the undisputed starter for a potent Astros lineup. Waiting any longer is a massive risk; securing Diaz now gives you a significant weekly advantage over most of your league at the thinnest position on the board.\"\n  },\n  {\n    \"name\": \"Ian Happ\",\n    \"pos\": \"LF\",\n    \"rank\": \"113\",\n    \"team\": \"CHC\",\n    \"rationale\": \"Your outfield is currently relying on the volatility of Jo Adell and the age of Mike Trout. Happ is the best, safest, and most complete outfielder available, providing a high floor with 20+ homer power, solid counting stats, and a strong on-base percentage that directly contributes to the OPS category. He immediately stabilizes your LF position with a reliable, professional bat you can set and forget.\"\n  },\n  {\n    \"name\": \"Ryan Helsley\",\n    \"pos\": \"RP\",\n    \"rank\": \"174\",\n    \"team\": \"BAL\",\n    \"rationale\": \"You have zero relievers and this format counts both saves and holds. Helsley is stepping in as the primary closer for a dominant Orioles team, offering elite strikeout numbers and a clear path to 30+ saves. In a 7x7 league, you cannot afford to punt saves, and waiting for bullpen arms to fall to you is a losing strategy; grabbing a top-tier closer now is a necessary, cutthroat move to build a competitive pitching staff.\"\n  }\n]\n```",
+    "recommendations": [
+      {
+        "name": "Yainer Diaz",
+        "pos": "C",
+        "rank": "248",
+        "team": "HOU",
+        "rationale": "Catcher is an absolute wasteland in a league this deep, and you currently have a gaping hole there. Diaz provides legitimate power from the position and is the undisputed starter for a potent Astros lineup. Waiting any longer is a massive risk; securing Diaz now gives you a significant weekly advantage over most of your league at the thinnest position on the board."
+      },
+      {
+        "name": "Ian Happ",
+        "pos": "LF",
+        "rank": "113",
+        "team": "CHC",
+        "rationale": "Your outfield is currently relying on the volatility of Jo Adell and the age of Mike Trout. Happ is the best, safest, and most complete outfielder available, providing a high floor with 20+ homer power, solid counting stats, and a strong on-base percentage that directly contributes to the OPS category. He immediately stabilizes your LF position with a reliable, professional bat you can set and forget."
+      },
+      {
+        "name": "Ryan Helsley",
+        "pos": "RP",
+        "rank": "174",
+        "team": "BAL",
+        "rationale": "You have zero relievers and this format counts both saves and holds. Helsley is stepping in as the primary closer for a dominant Orioles team, offering elite strikeout numbers and a clear path to 30+ saves. In a 7x7 league, you cannot afford to punt saves, and waiting for bullpen arms to fall to you is a losing strategy; grabbing a top-tier closer now is a necessary, cutthroat move to build a competitive pitching staff."
+      }
+    ]
   }
 ]

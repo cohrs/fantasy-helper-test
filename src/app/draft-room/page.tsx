@@ -77,8 +77,11 @@ const WatchlistItem = ({
             <div>{player.yahooRank || player.adp || player.rank || '-'}</div>
           </div>
 
-          {/* Main Player Info Row */}
-          <div className="flex-1 min-w-0 flex items-center flex-wrap gap-x-2 gap-y-1">
+          {/* Main Player Info Row - Clicking anywhere here toggles notes */}
+          <div
+            className="flex-1 min-w-0 flex items-center flex-wrap gap-x-2 gap-y-1 cursor-pointer select-none"
+            onClick={() => setShowNotes(v => !v)}
+          >
 
             {/* Name & Badges */}
             <div className="flex items-center gap-1.5 shrink-0">
@@ -109,15 +112,14 @@ const WatchlistItem = ({
               </div>
             )}
 
-            {/* Notes Toggle */}
+            {/* Notes Toggle Indicator */}
             {(player.rationale || player.yahooRecentNote) && (
-              <button
-                onClick={() => setShowNotes(v => !v)}
-                className={`ml-1 text-[8px] uppercase font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-colors ${showNotes ? 'bg-sky-500/20 text-sky-400' : 'text-sky-500/50 hover:text-sky-400 hover:bg-sky-500/10'}`}
+              <div
+                className={`ml-1 text-[8px] uppercase font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-colors ${showNotes ? 'bg-sky-500/20 text-sky-400' : 'text-sky-500/50 group-hover:text-sky-400 group-hover:bg-sky-500/10'}`}
               >
                 <Sparkles className="w-2.5 h-2.5" />
                 {showNotes ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />}
-              </button>
+              </div>
             )}
 
           </div>
