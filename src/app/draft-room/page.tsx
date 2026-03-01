@@ -81,8 +81,13 @@ const WatchlistItem = ({
 
           {/* Main Player Info Row - Clicking anywhere here toggles notes */}
           <div
-            className="flex-1 min-w-0 flex items-center flex-wrap gap-x-2 gap-y-1 cursor-pointer select-none"
-            onClick={() => setShowNotes(v => !v)}
+            className="flex-1 min-w-0 flex items-center flex-wrap gap-x-2 gap-y-1 cursor-pointer select-none group"
+            onClick={() => {
+              if (!player.rationale && !player.yahooRecentNote && !showNotes) {
+                onAskAssistant?.(`Analyze ${player.name} for my fantasy team. Give me a short rationale on why they fit or don't fit based on my current roster needs.`);
+              }
+              setShowNotes(v => !v);
+            }}
           >
 
             {/* Name & Badges */}
@@ -115,14 +120,12 @@ const WatchlistItem = ({
             )}
 
             {/* Notes Toggle Indicator */}
-            {(player.rationale || player.yahooRecentNote) && (
-              <div
-                className={`ml-1 text-[8px] uppercase font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-colors ${showNotes ? 'bg-sky-500/20 text-sky-400' : 'text-sky-500/50 group-hover:text-sky-400 group-hover:bg-sky-500/10'}`}
-              >
-                <Sparkles className="w-2.5 h-2.5" />
-                {showNotes ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />}
-              </div>
-            )}
+            <div
+              className={`ml-1 text-[8px] uppercase font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-colors ${showNotes ? 'bg-sky-500/20 text-sky-400' : 'text-sky-500/50 group-hover:text-sky-400 group-hover:bg-sky-500/10'}`}
+            >
+              <Sparkles className="w-2.5 h-2.5" />
+              {showNotes ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />}
+            </div>
 
           </div>
         </div>
@@ -155,10 +158,10 @@ const WatchlistItem = ({
       </div>
 
       {/* Inline AI rationale / Yahoo Notes — expands below, no clipping */}
-      {(player.rationale || player.yahooRecentNote) && showNotes && (
+      {showNotes && (
         <div className="px-4 pb-4 border-t border-slate-800/50">
           <div className="mt-3 flex flex-col gap-3">
-            {player.rationale && (
+            {player.rationale ? (
               <div className="bg-sky-500/5 border border-sky-500/20 rounded-xl p-3">
                 <div className="flex items-center gap-1.5 mb-2 text-sky-400 font-black text-[9px] uppercase tracking-widest">
                   <Sparkles className="w-3 h-3" /> AI Rationale
@@ -167,7 +170,13 @@ const WatchlistItem = ({
                   {!player.rationale.startsWith('[') ? `[Legacy Insight] ${player.rationale}` : player.rationale}
                 </p>
               </div>
-            )}
+            ) : !player.yahooRecentNote ? (
+              <div className="bg-slate-800/20 border border-dashed border-slate-700 rounded-xl p-3">
+                <div className="animate-pulse flex items-center gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                  <Sparkles className="w-3 h-3 text-sky-500/50" /> Generating Insights...
+                </div>
+              </div>
+            ) : null}
             {player.yahooRecentNote && (
               <div className="bg-slate-800/20 border-l-2 border-sky-500/30 pl-3 py-2 italic rounded-r-xl">
                 <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Latest News</div>
@@ -197,8 +206,13 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
   return (
     <div className={`px-4 py-3 rounded-2xl flex justify-between items-start transition-all ${p.takenBy ? 'bg-slate-900/30 border border-slate-800/20 opacity-50' : 'bg-slate-950 border border-slate-800/50 hover:border-indigo-500/40'}`}>
       <div
-        className="flex items-start gap-4 flex-1 min-w-0 cursor-pointer select-none"
-        onClick={() => setShowNotes(v => !v)}
+        className="flex items-start gap-4 flex-1 min-w-0 cursor-pointer select-none group"
+        onClick={() => {
+          if (!p.rationale && !p.yahooRecentNote && !showNotes) {
+            onAskAssistant?.(`Analyze ${p.name} for my fantasy team. Give me a short rationale on why they fit or don't fit based on my current roster needs.`);
+          }
+          setShowNotes(v => !v);
+        }}
       >
         <div className="w-10 text-center font-black text-[9px] leading-tight text-indigo-400 tabular-nums shrink-0 mt-1">
           {yahooPlayers.length > 0 ? (
@@ -222,12 +236,10 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
             {isInWatchlist && <span className="text-[9px] font-black bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-1.5 py-0.5 rounded-full uppercase flex items-center gap-1"><Eye className="w-3 h-3" /> Watched</span>}
 
             {/* Notes Toggle Indicator */}
-            {(p.rationale || p.yahooRecentNote) && (
-              <div className={`ml-auto text-[8px] uppercase font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-colors ${showNotes ? 'bg-sky-500/20 text-sky-400' : 'text-sky-500/50 group-hover:text-sky-400 group-hover:bg-sky-500/10'}`}>
-                <Sparkles className="w-2.5 h-2.5" />
-                {showNotes ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />}
-              </div>
-            )}
+            <div className={`ml-auto text-[8px] uppercase font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-colors ${showNotes ? 'bg-sky-500/20 text-sky-400' : 'text-sky-500/50 group-hover:text-sky-400 group-hover:bg-sky-500/10'}`}>
+              <Sparkles className="w-2.5 h-2.5" />
+              {showNotes ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />}
+            </div>
           </div>
           <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mt-0.5">
             {p.team}
@@ -254,9 +266,9 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
           })()}
 
           {/* Collapsible Notes Section */}
-          {(p.rationale || p.yahooRecentNote) && showNotes && (
+          {showNotes && (
             <div className="mt-3 flex flex-col gap-3 pt-2 border-t border-slate-800/50">
-              {p.rationale && (
+              {p.rationale ? (
                 <div className="bg-slate-900/40 p-3 rounded-xl border border-sky-500/20 shadow-inner">
                   <div className="flex items-center gap-1.5 mb-1.5 font-black text-[9px] uppercase tracking-widest text-sky-400">
                     <Sparkles className="w-3 h-3" /> AI Insights
@@ -265,7 +277,13 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
                     {!p.rationale.startsWith('[') ? `[Legacy Insight] ${p.rationale}` : p.rationale}
                   </div>
                 </div>
-              )}
+              ) : !p.yahooRecentNote ? (
+                <div className="bg-slate-900/40 p-3 rounded-xl border border-dashed border-slate-700">
+                  <div className="animate-pulse flex items-center gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                    <Sparkles className="w-3 h-3 text-sky-500/50" /> Generating Insights...
+                  </div>
+                </div>
+              ) : null}
               {p.yahooRecentNote && !p.takenBy && (
                 <div className="text-xs text-slate-400/90 leading-snug border-l-2 border-sky-500/30 pl-3 py-1 italic">
                   {p.yahooRecentNote}

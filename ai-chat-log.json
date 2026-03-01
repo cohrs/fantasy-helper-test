@@ -103,5 +103,33 @@
         "rationale": "You have zero relievers and this format counts both saves and holds. Helsley is stepping in as the primary closer for a dominant Orioles team, offering elite strikeout numbers and a clear path to 30+ saves. In a 7x7 league, you cannot afford to punt saves, and waiting for bullpen arms to fall to you is a losing strategy; grabbing a top-tier closer now is a necessary, cutthroat move to build a competitive pitching staff."
       }
     ]
+  },
+  {
+    "timestamp": "2026-03-01T23:05:02.416Z",
+    "prompt": "seeing the positions in need most what would you suggetst? i'd be OK punting on the catcher position for a possible backup. also see what other teams are likely to take before more next pick. i don't want to jump on someoen who i can get next roungd",
+    "rawResponse": "### 2026 Fantasy Baseball Draft Recommendations\n\nHere are your top draft targets for the upcoming picks.\n\n*Critical Update:* Initial analysis flagged Jordan Westburg as a top target. However, fresh reports from late February indicate he has a partial UCL tear and will be out through the end of April. He is a high-risk pick now and should be avoided.\n\nGiven this development and your roster needs, here is the updated, cutthroat analysis:\n\n[\n  {\n    \"name\": \"Ian Happ\",\n    \"pos\": \"LF\",\n    \"rank\": \"113\",\n    \"team\": \"CHC\",\n    \"rationale\": \"Happ is the best available player to fill a critical outfield starting spot. In a deep 18-team league, his stable floor of production across R, HR, RBI, AVG, and OPS is invaluable. With an ADP of 113, he is highly unlikely to make it back to you on the next round, making him the priority pick if you want to secure a reliable offensive contributor.\"\n  },\n  {\n    \"name\": \"Gleyber Torres\",\n    \"pos\": \"2B\",\n    \"rank\": \"126\",\n    \"team\": \"DET\",\n    \"rationale\": \"With Westburg injured, Torres becomes the clear top choice to fill your 2B hole. He's coming off a solid first season in Detroit, is expected to be ready for Opening Day after offseason sports hernia surgery, and provides a dependable source of power and run production. His ADP of 126 puts him squarely in the danger zone of being selected before your next turn.\"\n  },\n  {\n    \"name\": \"Ryan Helsley\",\n    \"pos\": \"RP\",\n    \"rank\": \"174\",\n    \"team\": \"BAL\",\n    \"rationale\": \"Your rotation is solid, but you have zero relievers. Helsley was signed by the Orioles to be their closer and immediately projects as a top-10 option with elite strikeout rates. While there were some inconsistencies in 2025, he still possesses a triple-digit fastball and is the clear ninth-inning man in Baltimore. In a 7x7 league that counts both Saves and Holds, securing a high-leverage closer who contributes massively to K's is a league-winning move.\"\n  }\n]",
+    "recommendations": [
+      {
+        "name": "Ian Happ",
+        "pos": "LF",
+        "rank": "113",
+        "team": "CHC",
+        "rationale": "Happ is the best available player to fill a critical outfield starting spot. In a deep 18-team league, his stable floor of production across R, HR, RBI, AVG, and OPS is invaluable. With an ADP of 113, he is highly unlikely to make it back to you on the next round, making him the priority pick if you want to secure a reliable offensive contributor."
+      },
+      {
+        "name": "Gleyber Torres",
+        "pos": "2B",
+        "rank": "126",
+        "team": "DET",
+        "rationale": "With Westburg injured, Torres becomes the clear top choice to fill your 2B hole. He's coming off a solid first season in Detroit, is expected to be ready for Opening Day after offseason sports hernia surgery, and provides a dependable source of power and run production. His ADP of 126 puts him squarely in the danger zone of being selected before your next turn."
+      },
+      {
+        "name": "Ryan Helsley",
+        "pos": "RP",
+        "rank": "174",
+        "team": "BAL",
+        "rationale": "Your rotation is solid, but you have zero relievers. Helsley was signed by the Orioles to be their closer and immediately projects as a top-10 option with elite strikeout rates. While there were some inconsistencies in 2025, he still possesses a triple-digit fastball and is the clear ninth-inning man in Baltimore. In a 7x7 league that counts both Saves and Holds, securing a high-leverage closer who contributes massively to K's is a league-winning move."
+      }
+    ]
   }
 ]
