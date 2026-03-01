@@ -811,10 +811,10 @@ export default function Home() {
         <div className="lg:col-span-3 flex flex-col gap-6 min-h-0">
           <div className={`bg-gradient-to-br ${activeSport === 'MLB' ? 'from-indigo-600 to-indigo-900 shadow-indigo-500/20' : 'from-orange-600 to-red-800 shadow-orange-500/20'} rounded-[2.5rem] p-8 shadow-2xl shrink-0 text-white`}>
             <h3 className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-6">Status</h3>
-            <div className="text-6xl font-black italic tracking-tighter mb-2 leading-none">
-              {activeSport === 'MLB' ? `#${currentPick}` : nbaStats.matchup.score}
+            <div className="text-5xl font-black italic tracking-tighter mb-2 leading-none">
+              {activeSport === 'MLB' ? `R${Math.floor((currentPick - 1) / totalTeams) + 1} P${((currentPick - 1) % totalTeams) + 1}` : nbaStats.matchup.score}
             </div>
-            <div className="text-xs font-bold uppercase opacity-60 mb-8">{activeSport === 'MLB' ? 'Current Pick' : `vs ${nbaStats.matchup.opp}`}</div>
+            <div className="text-xs font-bold uppercase opacity-60 mb-8">{activeSport === 'MLB' ? `Overall Pick ${currentPick}` : `vs ${nbaStats.matchup.opp}`}</div>
             <div className="bg-black/20 p-5 rounded-3xl border border-white/10 relative">
               <div className="text-4xl font-black">{activeSport === 'MLB' ? waitPicks : 'LIVE'}</div>
               <div className="text-[10px] font-bold uppercase opacity-60 tracking-tight">Picks Until New Jersey Nine</div>
