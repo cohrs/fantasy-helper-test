@@ -5,7 +5,8 @@ import {
   Search, Trophy, Circle, UserPlus, Users, Trash2,
   ChevronRight, Activity, LayoutGrid, Link as LinkIcon,
   RefreshCw, ClipboardList, Clock, ShieldCheck, Zap, BarChart3,
-  Plug, Sparkles, ChevronUp, ChevronDown, Eye, EyeOff, ListOrdered
+  Plug, Sparkles, ChevronUp, ChevronDown, Eye, EyeOff, ListOrdered,
+  Play, Maximize2, Minimize2, CheckCircle2, MessageSquare, Send, X
 } from 'lucide-react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import YAHOO_STATS_DATA from '../../../yahoo-stats.json';
@@ -175,11 +176,16 @@ const WatchlistItem = ({
 const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWatchlist, activeSport, myRoster, BATTING_STAT_IDS, PITCHING_STAT_IDS, YAHOO_STAT_LABELS }: any) => {
   const isPitcher = /SP|RP|P/i.test(p.pos);
   const ids = isPitcher ? PITCHING_STAT_IDS : BATTING_STAT_IDS;
+  const [showNotes, setShowNotes] = useState(false);
+  const isInWatchlist = myRoster.some((r: any) => r.name === p.name);
 
   return (
-    <div className={`px-4 py-3 rounded-2xl flex justify-between items-center transition-all ${p.takenBy ? 'bg-slate-900/30 border border-slate-800/20 opacity-50' : 'bg-slate-950 border border-slate-800/50 hover:border-indigo-500/40'}`}>
-      <div className="flex items-center gap-4">
-        <div className="w-10 text-center font-black text-[9px] leading-tight text-indigo-400 tabular-nums">
+    <div className={`px-4 py-3 rounded-2xl flex justify-between items-start transition-all ${p.takenBy ? 'bg-slate-900/30 border border-slate-800/20 opacity-50' : 'bg-slate-950 border border-slate-800/50 hover:border-indigo-500/40'}`}>
+      <div
+        className="flex items-start gap-4 flex-1 min-w-0 cursor-pointer select-none"
+        onClick={() => setShowNotes(v => !v)}
+      >
+        <div className="w-10 text-center font-black text-[9px] leading-tight text-indigo-400 tabular-nums shrink-0 mt-1">
           {yahooPlayers.length > 0 ? (
             <>
               <div className="text-[7px] text-slate-600">{p.yahooRank ? 'AR' : 'ADP'}</div>
@@ -192,12 +198,21 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
             </>
           )}
         </div>
-        <div>
-          <div className="flex items-center gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className={`font-bold text-sm ${p.takenBy ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{p.name}</span>
             {p.yahooStatus && <span className="text-[9px] font-black bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded-full uppercase">{p.yahooStatus}</span>}
             {p.isKeeper && <span className="text-[9px] font-black bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded-full uppercase">K</span>}
             {p.yahooHasNotes && !p.takenBy && <span title="Has player news" className="w-1.5 h-1.5 rounded-full bg-sky-400 inline-block" />}
+            {isInWatchlist && <span className="text-[9px] font-black bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-1.5 py-0.5 rounded-full uppercase flex items-center gap-1"><Eye className="w-3 h-3" /> Watched</span>}
+
+            {/* Notes Toggle Indicator */}
+            {(p.rationale || p.yahooRecentNote) && (
+              <div className={`ml-auto text-[8px] uppercase font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-colors ${showNotes ? 'bg-sky-500/20 text-sky-400' : 'text-sky-500/50 group-hover:text-sky-400 group-hover:bg-sky-500/10'}`}>
+                <Sparkles className="w-2.5 h-2.5" />
+                {showNotes ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />}
+              </div>
+            )}
           </div>
           <div className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mt-0.5">
             {p.team}
@@ -205,21 +220,6 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
             {p.yahooStatusFull && !p.takenBy && <span className="text-red-400/70 ml-2">{p.yahooStatusFull}</span>}
             {p.takenBy && <span className="text-slate-600 ml-2">• {p.takenBy}</span>}
           </div>
-          {p.yahooRecentNote && !p.takenBy && (
-            <div className="mt-2 text-xs text-slate-400/90 leading-snug border-l-2 border-sky-500/30 pl-2 py-0.5 italic">
-              {p.yahooRecentNote}
-            </div>
-          )}
-          {p.rationale && (
-            <div className="mt-3 bg-slate-900/40 p-3 rounded-xl border border-sky-500/20 shadow-inner">
-              <div className="flex items-center gap-1.5 mb-1.5 font-black text-[9px] uppercase tracking-widest text-sky-400">
-                <Sparkles className="w-3 h-3" /> AI Insights
-              </div>
-              <div className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">
-                {p.rationale}
-              </div>
-            </div>
-          )}
           {Object.keys(yahooStats).length > 0 && !p.takenBy && (() => {
             const pStats = yahooStats[p.name.toLowerCase()];
             if (!pStats) return null;
@@ -237,11 +237,41 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
               </div>
             );
           })()}
+
+          {/* Collapsible Notes Section */}
+          {(p.rationale || p.yahooRecentNote) && showNotes && (
+            <div className="mt-3 flex flex-col gap-3 pt-2 border-t border-slate-800/50">
+              {p.rationale && (
+                <div className="bg-slate-900/40 p-3 rounded-xl border border-sky-500/20 shadow-inner">
+                  <div className="flex items-center gap-1.5 mb-1.5 font-black text-[9px] uppercase tracking-widest text-sky-400">
+                    <Sparkles className="w-3 h-3" /> AI Insights
+                  </div>
+                  <div className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">
+                    {p.rationale}
+                  </div>
+                </div>
+              )}
+              {p.yahooRecentNote && !p.takenBy && (
+                <div className="text-xs text-slate-400/90 leading-snug border-l-2 border-sky-500/30 pl-3 py-1 italic">
+                  {p.yahooRecentNote}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
       {!p.takenBy && (
-        <button onClick={() => updateWatchlist([...myRoster, { id: p.id, name: p.name, pos: p.pos, team: p.team || 'FA', adp: p.adp }])} className="bg-slate-800 hover:bg-indigo-600 p-3 rounded-xl transition-all active:scale-90">
-          <UserPlus className="w-4 h-4 text-white" />
+        <button
+          onClick={() => {
+            if (isInWatchlist) {
+              updateWatchlist(myRoster.filter((r: any) => r.name !== p.name));
+            } else {
+              updateWatchlist([...myRoster, { id: p.id, name: p.name, pos: p.pos, team: p.team || 'FA', adp: p.adp }]);
+            }
+          }}
+          className={`p-3 rounded-xl transition-all active:scale-90 ml-3 shrink-0 ${isInWatchlist ? 'bg-indigo-600 border border-indigo-500/50 hover:bg-indigo-700' : 'bg-slate-800 hover:bg-indigo-600/50'}`}
+        >
+          {isInWatchlist ? <CheckCircle2 className="w-4 h-4 text-white" /> : <UserPlus className="w-4 h-4 text-white" />}
         </button>
       )}
     </div>
