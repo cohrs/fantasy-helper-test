@@ -1027,49 +1027,67 @@ export default function Home() {
               const drafted = draftResults
                 .filter(pick => pick.tm && !pick.isKeeper)
                 .sort((a, b) => a.pk - b.pk);
-              return (
-                <div className="flex-1 overflow-y-auto pr-2">
-                  {drafted.length === 0 ? (
+
+              if (drafted.length === 0) {
+                return (
+                  <div className="flex-1 overflow-y-auto pr-2">
                     <div className="text-center mt-20 opacity-50 font-black tracking-widest text-slate-500">NO DRAFT DATA SYNCED YET</div>
-                  ) : (
-                    <table className="w-full border-collapse text-sm">
-                      <thead className="sticky top-0 bg-slate-900 z-10">
-                        <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                          <th className="text-left py-3 px-4 w-14">Pick</th>
-                          <th className="text-left py-3 px-4 w-12">Rd</th>
-                          <th className="text-left py-3 px-4">Player</th>
-                          <th className="text-left py-3 px-4">Positions</th>
-                          <th className="text-left py-3 px-4">MLB Team</th>
-                          <th className="text-left py-3 px-4">Fantasy Team</th>
-                        </tr>
-                        <tr><td colSpan={6} className="pb-1"><div className="h-px bg-slate-800 w-full" /></td></tr>
-                      </thead>
-                      <tbody>
-                        {drafted.map((p, i) => (
-                          <tr key={p.pk} className={`border-b border-slate-800/50 transition-colors hover:bg-slate-800/30 ${i % 2 === 0 ? 'bg-slate-950' : 'bg-slate-900/20'}`}>
-                            <td className="py-3 px-4">
-                              <span className="text-xs font-black text-indigo-400">{p.pk}</span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <span className="text-xs font-bold text-slate-500">{p.rd}</span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <span className="font-bold text-slate-100">{p.name}</span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <span className="text-xs font-black text-indigo-400 uppercase tracking-wide">{p.pos}</span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <span className="text-xs font-bold text-slate-400">{p.playerTeam}</span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <span className="text-xs font-bold text-slate-300">{p.tm}</span>
-                            </td>
+                  </div>
+                );
+              }
+
+              // Group picks by round
+              const roundsMap = drafted.reduce((acc, pick) => {
+                const rd = pick.rd || 1;
+                if (!acc[rd]) acc[rd] = [];
+                acc[rd].push(pick);
+                return acc;
+              }, {} as Record<number, typeof drafted>);
+
+              const sortedRounds = Object.keys(roundsMap).map(Number).sort((a, b) => a - b);
+
+              return (
+                <div className="flex-1 overflow-y-auto pr-2 pb-10 space-y-8">
+                  {sortedRounds.map(rd => (
+                    <div key={`round-${rd}`} className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden">
+                      <div className="bg-slate-800/50 px-5 py-3 border-b border-slate-800/80 flex items-center justify-between sticky top-0 backdrop-blur-md z-10">
+                        <h3 className="font-black itertools tracking-widest text-indigo-400 uppercase text-xs">Round {rd}</h3>
+                        <span className="text-[10px] font-bold text-slate-500">{roundsMap[rd].length} / {totalTeams} Picks</span>
+                      </div>
+                      <table className="w-full border-collapse text-sm">
+                        <thead className="hidden">
+                          <tr>
+                            <th>Pick</th>
+                            <th>Player</th>
+                            <th>Positions</th>
+                            <th>MLB Team</th>
+                            <th>Fantasy Team</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
+                        </thead>
+                        <tbody>
+                          {roundsMap[rd].map((p, i) => (
+                            <tr key={p.pk} className={`border-b border-slate-800/30 transition-colors hover:bg-slate-800/30 ${i % 2 === 0 ? 'bg-slate-950/30' : 'bg-transparent'} last:border-0`}>
+                              <td className="py-2 px-5 w-16">
+                                <span className="text-[10px] font-black text-indigo-500/70 border border-indigo-500/20 bg-indigo-500/5 px-1.5 py-0.5 rounded">{(p.pk - 1) % totalTeams + 1}</span>
+                              </td>
+                              <td className="py-2 px-2">
+                                <span className="font-bold text-slate-200 text-sm tracking-tight">{p.name}</span>
+                              </td>
+                              <td className="py-2 px-2 w-24">
+                                <span className="text-[9px] font-black text-slate-500 bg-slate-800/50 px-1.5 py-0.5 rounded uppercase tracking-wider">{p.pos}</span>
+                              </td>
+                              <td className="py-2 px-2 w-20">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase">{p.playerTeam}</span>
+                              </td>
+                              <td className="py-2 px-5 text-right">
+                                <span className="text-[11px] font-black text-slate-300 italic tracking-wide">{p.tm}</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
                 </div>
               );
             })()}
