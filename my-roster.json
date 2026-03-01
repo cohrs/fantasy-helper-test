@@ -108,15 +108,6 @@
     "rationale": "While the White Sox are trying him as a starter, his electric stuff has always played best in high-leverage relief. If the starter experiment fails, as it has before, he immediately becomes a top candidate for saves and holds on a team that needs a reliable bullpen arm, all while retaining valuable SP eligibility."
   },
   {
-    "id": 90,
-    "name": "Pablo López",
-    "pos": "SP",
-    "team": "MIN",
-    "adp": 90,
-    "takenBy": null,
-    "rationale": "Although the Braves are currently planning for him to be in the starting rotation, he is coming off a significant 2025 shoulder injury. The team has acknowledged he is a 'nice fallback option' for the bullpen, a role where he previously excelled and could quickly return to if the starter workload proves too much, making him a great source of holds for a top team."
-  },
-  {
     "id": 330,
     "name": "Reynaldo López",
     "pos": "SP",
@@ -151,5 +142,12 @@
     "adp": 113,
     "takenBy": null,
     "rationale": "Your outfield is currently relying on the volatility of Jo Adell and the age of Mike Trout. Happ is the best, safest, and most complete outfielder available, providing a high floor with 20+ homer power, solid counting stats, and a strong on-base percentage that directly contributes to the OPS category. He immediately stabilizes your LF position with a reliable, professional bat you can set and forget."
+  },
+  {
+    "id": 90,
+    "name": "Pablo López",
+    "pos": "SP",
+    "team": "MIN",
+    "adp": 90
   }
 ]

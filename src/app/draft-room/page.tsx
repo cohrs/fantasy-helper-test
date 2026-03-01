@@ -42,12 +42,13 @@ AssistantInput.displayName = 'AssistantInput';
 
 const WatchlistItem = ({
   player, activeSport, isTaken, isFirst, isLast, onMoveUp, onMoveDown, onDelete,
-  index, draggedIndex, dragOverIndex, onDragStart, onDragOver, onDragEnd, onDrop
+  index, draggedIndex, dragOverIndex, onDragStart, onDragOver, onDragEnd, onDrop, onAskAssistant
 }: {
   player: any; activeSport: string; isTaken: boolean; isFirst: boolean; isLast: boolean;
   onMoveUp: () => void; onMoveDown: () => void; onDelete: () => void;
   index: number; draggedIndex: number | null; dragOverIndex: number | null;
   onDragStart: (idx: number) => void; onDragOver: (idx: number) => void; onDragEnd: () => void; onDrop: (idx: number) => void;
+  onAskAssistant?: (prompt: string) => void;
 }) => {
   const [showNotes, setShowNotes] = useState(false);
 
@@ -138,6 +139,18 @@ const WatchlistItem = ({
           <button onClick={onDelete} className="p-1 rounded hover:bg-red-500/20 text-slate-500 hover:text-red-400 transition-all">
             <Trash2 className="w-3 h-3" />
           </button>
+          <div className="w-px h-3 bg-slate-800 mx-0.5" />
+          <button
+            title="Ask AI about this player"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAskAssistant?.(`Analyze ${player.name} for my fantasy team. Give me a short rationale on why they fit or don't fit based on my current roster needs.`);
+              setShowNotes(true);
+            }}
+            className="p-1 rounded hover:bg-sky-500/20 text-slate-500 hover:text-sky-400 transition-all"
+          >
+            <Sparkles className="w-3 h-3" />
+          </button>
         </div>
       </div>
 
@@ -173,7 +186,7 @@ const WatchlistItem = ({
  * Includes: MLB Draft Tracker & NBA Standings Scaffold
  */
 
-const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWatchlist, activeSport, myRoster, BATTING_STAT_IDS, PITCHING_STAT_IDS, YAHOO_STAT_LABELS }: any) => {
+const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWatchlist, activeSport, myRoster, BATTING_STAT_IDS, PITCHING_STAT_IDS, YAHOO_STAT_LABELS, onAskAssistant }: any) => {
   const isPitcher = /SP|RP|P/i.test(p.pos);
   const ids = isPitcher ? PITCHING_STAT_IDS : BATTING_STAT_IDS;
   const [showNotes, setShowNotes] = useState(false);
@@ -260,20 +273,34 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
           )}
         </div>
       </div>
-      {!p.takenBy && (
+      <div className="flex flex-col items-center gap-2 ml-3 shrink-0">
+        {!p.takenBy && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isInWatchlist) {
+                updateWatchlist(myRoster.filter((r: any) => r.name !== p.name));
+              } else {
+                updateWatchlist([...myRoster, { id: p.id, name: p.name, pos: p.pos, team: p.team || 'FA', adp: p.adp }]);
+              }
+            }}
+            className={`p-3 rounded-xl transition-all active:scale-90 ${isInWatchlist ? 'bg-indigo-600 border border-indigo-500/50 hover:bg-indigo-700' : 'bg-slate-800 hover:bg-indigo-600/50'}`}
+          >
+            {isInWatchlist ? <CheckCircle2 className="w-4 h-4 text-white" /> : <UserPlus className="w-4 h-4 text-white" />}
+          </button>
+        )}
         <button
-          onClick={() => {
-            if (isInWatchlist) {
-              updateWatchlist(myRoster.filter((r: any) => r.name !== p.name));
-            } else {
-              updateWatchlist([...myRoster, { id: p.id, name: p.name, pos: p.pos, team: p.team || 'FA', adp: p.adp }]);
-            }
+          title="Ask AI about this player"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAskAssistant?.(`Analyze ${p.name} for my fantasy team. Give me a short rationale on why they fit or don't fit based on my current roster needs.`);
+            setShowNotes(true);
           }}
-          className={`p-3 rounded-xl transition-all active:scale-90 ml-3 shrink-0 ${isInWatchlist ? 'bg-indigo-600 border border-indigo-500/50 hover:bg-indigo-700' : 'bg-slate-800 hover:bg-indigo-600/50'}`}
+          className="p-2.5 rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 hover:text-sky-300 transition-colors"
         >
-          {isInWatchlist ? <CheckCircle2 className="w-4 h-4 text-white" /> : <UserPlus className="w-4 h-4 text-white" />}
+          <Sparkles className="w-3 h-3" />
         </button>
-      )}
+      </div>
     </div>
   );
 });
@@ -612,6 +639,20 @@ export default function Home() {
         if ((data.recommendations || []).length === 0 && data.assistantMessage) {
           console.warn('Gemini returned 0 recs. Raw:', data.assistantMessage);
         }
+
+        // Refetch AI notes so any new rationales are immediately rendered across the board
+        try {
+          const notesRes = await fetch('/api/assistant/notes');
+          const notesData = await notesRes.json();
+          if (notesData) {
+            const normalizedNotes: Record<string, string> = {};
+            for (const [k, v] of Object.entries(notesData)) {
+              normalizedNotes[normalizeName(k)] = v as string;
+            }
+            setAiNotes(normalizedNotes);
+          }
+        } catch (e) { console.error("Could not refresh AI Notes post-generation."); }
+
       }
     } catch (err) {
       console.error(err);
@@ -652,7 +693,7 @@ export default function Home() {
       team: p.playerTeam || 'FA',
       adp: p.pk,
       takenBy: p.tm,
-      rationale: aiNotes[p.name.toLowerCase()]
+      rationale: aiNotes[normalizeName(p.name)]
     }));
   }, [searchTerm, myRoster, draftResults, showDrafted, positionFilter, aiNotes]);
 
@@ -694,8 +735,8 @@ export default function Home() {
     // 4. Sort
     if (statSort && Object.keys(yahooStats).length > 0) {
       copy.sort((a, b) => {
-        const aStats = yahooStats[a.name.toLowerCase()];
-        const bStats = yahooStats[b.name.toLowerCase()];
+        const aStats = yahooStats[normalizeName(a.name)];
+        const bStats = yahooStats[normalizeName(b.name)];
         const aVal = aStats ? parseFloat(aStats[statSort]) || 0 : -Infinity;
         const bVal = bStats ? parseFloat(bStats[statSort]) || 0 : -Infinity;
         if (aVal !== bVal) return ASCENDING_STATS.has(statSort) ? aVal - bVal : bVal - aVal;
@@ -1417,7 +1458,7 @@ export default function Home() {
                           const enrichedPlayer = {
                             ...p,
                             ...yhPlayer,
-                            rationale: aiNotes[p.name.toLowerCase()] || p.rationale,
+                            rationale: aiNotes[normalizeName(p.name)] || p.rationale,
                             yahooStatsPairs: yahooStatsPairs
                           };
 
