@@ -1,40 +1,54 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { getDraftPicks, getWatchlist, saveWatchlist } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
-const DB_FILE = path.join(process.cwd(), 'draft-results.json');
-const ROSTER_FILE = path.join(process.cwd(), 'my-roster.json');
 
 export async function GET() {
-    let draft: any[] = [];
-    let roster: any[] = [];
     try {
-        if (fs.existsSync(DB_FILE)) {
-            draft = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
-        }
-        if (fs.existsSync(ROSTER_FILE)) {
-            roster = JSON.parse(fs.readFileSync(ROSTER_FILE, 'utf-8'));
-        }
+        const [draftPicks, watchlist] = await Promise.all([
+            getDraftPicks(),
+            getWatchlist()
+        ]);
+        
+        // Transform database format to match expected format
+        const draft = draftPicks.map((pick: any) => ({
+            rd: pick.round,
+            pk: pick.pick,
+            name: pick.player_name,
+            pos: pick.position,
+            playerTeam: pick.team_abbr,
+            tm: pick.drafted_by,
+            isKeeper: pick.is_keeper
+        }));
+        
+        const roster = watchlist.map((item: any) => ({
+            id: item.id,
+            name: item.player_name,
+            pos: item.position,
+            team: item.team_abbr,
+            adp: item.adp,
+            rationale: item.rationale
+        }));
+        
+        return NextResponse.json({ draft, roster });
     } catch (err) {
-        console.error("Error reading JSON DB files:", err);
+        console.error("Error reading from database:", err);
+        return NextResponse.json({ draft: [], roster: [] });
     }
-    return NextResponse.json({ draft, roster });
 }
 
 export async function POST(req: Request) {
     try {
-        const { action, player, rosterData } = await req.json();
+        const { action, rosterData } = await req.json();
 
-        // Support direct roster overwrite
         if (action === 'SYNC_ROSTER') {
-            fs.writeFileSync(ROSTER_FILE, JSON.stringify(rosterData, null, 2));
+            await saveWatchlist(rosterData);
             return NextResponse.json({ success: true });
         }
 
         return NextResponse.json({ success: false, error: "Invalid action" });
     } catch (err) {
-        console.error("Error writing JSON DB file:", err);
+        console.error("Error writing to database:", err);
         return NextResponse.json({ success: false, error: String(err) }, { status: 500 });
     }
 }

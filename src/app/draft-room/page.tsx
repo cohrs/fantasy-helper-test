@@ -9,7 +9,7 @@ import {
   Play, Maximize2, Minimize2, CheckCircle2, MessageSquare, Send, X
 } from 'lucide-react';
 import { useSession, signIn, signOut } from 'next-auth/react';
-import YAHOO_STATS_DATA from '../../../yahoo-stats.json';
+
 // Isolated component to prevent typing lag — exposes value via ref, no parent state on each keystroke
 const AssistantInput = React.forwardRef<{ getValue: () => string }, {
   onSubmit?: (val: string) => void;
@@ -523,15 +523,7 @@ export default function Home() {
   const [yahooPlayers, setYahooPlayers] = useState<any[]>([]);
   const [isLoadingYahoo, setIsLoadingYahoo] = useState(false);
   // Yahoo last-season stats, keyed by lowercased player name
-  const [yahooStats, setYahooStats] = useState<Record<string, Record<string, string>>>(() => {
-    const initStats: Record<string, Record<string, string>> = {};
-    if (typeof YAHOO_STATS_DATA !== 'undefined' && YAHOO_STATS_DATA.players) {
-      YAHOO_STATS_DATA.players.forEach((p: any) => {
-        initStats[p.name.toLowerCase()] = p.stats || {};
-      });
-    }
-    return initStats;
-  });
+  const [yahooStats, setYahooStats] = useState<Record<string, Record<string, string>>>({});
   const [isLoadingStats, setIsLoadingStats] = useState(false);
 
   // Gemini Assistant
@@ -578,8 +570,9 @@ export default function Home() {
   useEffect(() => {
     Promise.all([
       fetch('/api/draft-data', { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch('/api/assistant/notes', { cache: 'no-store' }).then(res => res.json()).catch(() => ({}))
-    ]).then(([draftData, notesData]) => {
+      fetch('/api/assistant/notes', { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch('/api/player-stats?season=2025', { cache: 'no-store' }).then(res => res.json()).catch(() => ({}))
+    ]).then(([draftData, notesData, statsData]) => {
       if (draftData.roster) setMyRoster(draftData.roster);
       if (draftData.draft && draftData.draft.length > 0) {
         setDraftResults(draftData.draft);
@@ -595,6 +588,9 @@ export default function Home() {
           normalizedNotes[normalizeName(k)] = v as string;
         }
         setAiNotes(normalizedNotes);
+      }
+      if (statsData) {
+        setYahooStats(statsData);
       }
       setIsDataLoaded(true);
     }).catch(err => {
@@ -698,13 +694,9 @@ export default function Home() {
   const loadYahooStats = async (forceRefresh = false) => {
     setIsLoadingStats(true);
     try {
-      const parsedStats: Record<string, Record<string, string>> = {};
-      if (YAHOO_STATS_DATA && YAHOO_STATS_DATA.players) {
-        YAHOO_STATS_DATA.players.forEach((p: any) => {
-          parsedStats[p.name.toLowerCase()] = p.stats || {};
-        });
-      }
-      setYahooStats(parsedStats);
+      const stats = await fetch('/api/player-stats?season=2025', { cache: forceRefresh ? 'no-store' : 'default' })
+        .then(res => res.json());
+      setYahooStats(stats);
     } catch (err) {
       console.error('[Yahoo Stats] load error:', err);
     } finally {

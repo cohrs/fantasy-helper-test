@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
-import fs from 'fs';
-import path from 'path';
+import { saveDraftPicks } from '@/lib/db';
 
 const TARGET_URL = "https://www.tapatalk.com/groups/asshatrotoleagues/2026-draft-player-list-t1235.html";
-const DB_FILE = path.join(process.cwd(), 'draft-results.json');
 
 export async function GET() {
     try {
@@ -78,8 +76,8 @@ export async function GET() {
         // Sort by pick number
         uniquePicks.sort((a, b) => a.pk - b.pk);
 
-        // Save to local JSON "DB"
-        fs.writeFileSync(DB_FILE, JSON.stringify(uniquePicks, null, 2));
+        // Save to database
+        await saveDraftPicks(uniquePicks);
 
         return NextResponse.json({ success: true, count: uniquePicks.length, picks: uniquePicks });
     } catch (error) {

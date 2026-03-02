@@ -1,19 +1,14 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { getPlayerNotes } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        const notesFile = path.join(process.cwd(), 'ai-notes.json');
-        if (fs.existsSync(notesFile)) {
-            const data = JSON.parse(fs.readFileSync(notesFile, 'utf-8'));
-            return NextResponse.json(data);
-        }
-        return NextResponse.json({});
+        const notes = await getPlayerNotes();
+        return NextResponse.json(notes);
     } catch (err) {
-        console.error("Error reading AI notes map:", err);
+        console.error("Error reading AI notes from database:", err);
         return NextResponse.json({});
     }
 }

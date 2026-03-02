@@ -1,11 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-
-import fs from 'fs';
-import path from 'path';
-
-const NOTES_FILE = path.join(process.cwd(), 'ai-notes.json');
-const CHAT_LOG_FILE = path.join(process.cwd(), 'ai-chat-log.json');
+import { getPlayerNotes, savePlayerNote, saveChatHistory } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
     try {
@@ -20,16 +15,13 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { myTeam, openSlots, availablePool, picksUntilTurn, customPrompt, chatHistory = [], allDrafted = [] } = body;
 
-        // Feedback Loop: Read historical AI notes and see if any targets were drafted
-        let historicalNotes: Record<string, string> = {};
-        if (fs.existsSync(NOTES_FILE)) {
-            historicalNotes = JSON.parse(fs.readFileSync(NOTES_FILE, 'utf-8'));
-        }
+        // Feedback Loop: Read historical AI notes from database
+        const historicalNotes = await getPlayerNotes();
 
         let feedbackContext = '';
         if (Object.keys(historicalNotes).length > 0 && allDrafted.length > 0) {
             const draftedTargets = allDrafted.filter((d: any) =>
-                d.name && historicalNotes[d.name.toLowerCase()]
+                d.name && historicalNotes[normalizeName(d.name)]
             );
             if (draftedTargets.length > 0) {
                 feedbackContext = `\n=== PAST PREDICTION EVALUATION ===\nYou recently recommended these players who have since been DRAFTED by other teams. Use this feedback to adjust your understanding of how the room values players:\n`;
@@ -39,18 +31,17 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Build RECENT DRAFT TRENDS: compare actual pick vs projection to identify reaches/falls
+        // Build RECENT DRAFT TRENDS
         let draftTrendsContext = '';
         const recentPicks = [...(allDrafted || [])].sort((a: any, b: any) => b.pk - a.pk).slice(0, 20);
         if (recentPicks.length > 0) {
-            draftTrendsContext = '\n=== RECENT DRAFT TRENDS (last 20 picks) ===\nUse this to calibrate how aggressively this room is drafting each position. A positive number = reached early, negative = fell later than expected.\n';
+            draftTrendsContext = '\n=== RECENT DRAFT TRENDS (last 20 picks) ===\nUse this to calibrate how aggressively this room is drafting each position.\n';
             recentPicks.forEach((d: any) => {
                 const projection = d.yahooRank || d.adp;
                 if (projection && d.pk) {
                     const diff = d.pk - projection;
                     const label = diff < -10 ? `[REACHED ${Math.abs(diff)} picks early]` :
-                        diff > 10 ? `[FELL ${diff} picks late]` :
-                            `[On value]`;
+                        diff > 10 ? `[FELL ${diff} picks late]` : `[On value]`;
                     draftTrendsContext += `- Pick #${d.pk}: ${d.name} (${d.pos}) — Projected ${projection}, Actual ${d.pk} ${label}\n`;
                 } else {
                     draftTrendsContext += `- Pick #${d.pk}: ${d.name} (${d.pos}) — No projection data\n`;
@@ -58,7 +49,6 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // Build a compact representation of the full available pool
         const topBoardClipped = (availablePool || []).map((p: any) =>
             `${p.yahooRank || p.adp}. ${p.name} (${p.team} - ${p.pos})`
         ).join('\n');
@@ -98,8 +88,7 @@ If the user is asking for player recommendations, draft advice, or "who should I
 
 If the user is asking a general question about players, injuries, news, or strategy (not asking for specific recommendations), respond conversationally in plain text to answer their question. You can still provide insights and analysis, just don't force it into the JSON format.`;
 
-        // Build multi-turn conversation: system bootstrap + prior history + current request
-        // Strip out extra fields (recommendations, timestamp) that Gemini doesn't accept
+        // Build multi-turn conversation
         const cleanedHistory = chatHistory.map((msg: any) => ({
             role: msg.role,
             parts: msg.parts
@@ -121,66 +110,60 @@ If the user is asking a general question about players, injuries, news, or strat
 
         const text = response.response.text();
         let recommendations: any[] = [];
+        
         try {
-            // Extract JSON from anywhere in the text - handles leading/trailing markdown fences and whitespace
+            // Extract JSON from response
             const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/) || text.match(/```\s*([\s\S]*?)\s*```/) || text.match(/(\[\s*\{[\s\S]*\}\s*\])/);
             const cleaned = jsonMatch ? jsonMatch[1].trim() : text.trim();
             recommendations = JSON.parse(cleaned || "[]");
 
-            // If parsed successfully, log these to the notes file for future feedback loops
+            // Save recommendations to database
             if (Array.isArray(recommendations) && recommendations.length > 0) {
                 const now = new Date();
                 const timeStr = now.toLocaleDateString([], { month: 'numeric', day: 'numeric', year: 'numeric' }) + ' ' + now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-                recommendations.forEach(r => {
+                
+                for (const r of recommendations) {
                     if (r.name && r.rationale) {
-                        const key = r.name.toLowerCase();
+                        const normalized = normalizeName(r.name);
                         const newNote = `[${timeStr}] ${r.rationale}`;
-                        if (historicalNotes[key]) {
-                            historicalNotes[key] = newNote + '\n\n---\n\n' + historicalNotes[key];
-                        } else {
-                            historicalNotes[key] = newNote;
-                        }
+                        const existingNote = historicalNotes[normalized];
+                        const combinedNote = existingNote 
+                            ? newNote + '\n\n---\n\n' + existingNote
+                            : newNote;
+                        
+                        await savePlayerNote(r.name, normalized, combinedNote);
                     }
-                });
-                fs.writeFileSync(NOTES_FILE, JSON.stringify(historicalNotes, null, 2));
+                }
             } else if (customPrompt && text) {
-                // Handle conversational player-specific queries (e.g., "Analyze Pablo López")
-                // Check if the prompt mentions a specific player name
+                // Handle conversational player-specific queries
                 const playerNameMatch = customPrompt.match(/(?:analyze|about|why|tell me about|what about)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i);
                 if (playerNameMatch) {
                     const playerName = playerNameMatch[1].trim();
-                    const key = playerName.toLowerCase();
+                    const normalized = normalizeName(playerName);
                     const now = new Date();
                     const timeStr = now.toLocaleDateString([], { month: 'numeric', day: 'numeric', year: 'numeric' }) + ' ' + now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
                     const newNote = `[${timeStr}] ${text}`;
+                    const existingNote = historicalNotes[normalized];
+                    const combinedNote = existingNote 
+                        ? newNote + '\n\n---\n\n' + existingNote
+                        : newNote;
                     
-                    if (historicalNotes[key]) {
-                        historicalNotes[key] = newNote + '\n\n---\n\n' + historicalNotes[key];
-                    } else {
-                        historicalNotes[key] = newNote;
-                    }
-                    fs.writeFileSync(NOTES_FILE, JSON.stringify(historicalNotes, null, 2));
+                    await savePlayerNote(playerName, normalized, combinedNote);
                 }
             }
         } catch (e) {
             console.error("Failed to parse Gemini JSON:", text);
         }
 
-        // Append the entire payload+text result into a persistent chat log to ensure no drafts are lost
+        // Save chat history to database
         try {
-            let chatLogs = [];
-            if (fs.existsSync(CHAT_LOG_FILE)) {
-                chatLogs = JSON.parse(fs.readFileSync(CHAT_LOG_FILE, 'utf-8'));
-            }
-            chatLogs.push({
-                timestamp: new Date().toISOString(),
-                prompt: customPrompt || "General Analysis",
-                rawResponse: text,
+            await saveChatHistory(
+                customPrompt || "General Analysis",
+                text,
                 recommendations
-            });
-            fs.writeFileSync(CHAT_LOG_FILE, JSON.stringify(chatLogs, null, 2));
+            );
         } catch (e) {
-            console.error("Failed to write to chat log");
+            console.error("Failed to save chat history:", e);
         }
 
         return NextResponse.json({ recommendations, assistantMessage: text });
@@ -191,4 +174,16 @@ If the user is asking a general question about players, injuries, news, or strat
             { status: 500 }
         );
     }
+}
+
+// Helper function to normalize player names
+function normalizeName(name: string) {
+    return name
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z\s]/g, '')
+        .replace(/\s+(jr|sr|ii|iii)$/, '')
+        .trim()
+        .replace(/\s+/g, '');
 }
