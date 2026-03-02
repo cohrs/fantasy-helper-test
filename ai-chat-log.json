@@ -131,5 +131,47 @@
         "rationale": "Your rotation is solid, but you have zero relievers. Helsley was signed by the Orioles to be their closer and immediately projects as a top-10 option with elite strikeout rates. While there were some inconsistencies in 2025, he still possesses a triple-digit fastball and is the clear ninth-inning man in Baltimore. In a 7x7 league that counts both Saves and Holds, securing a high-leverage closer who contributes massively to K's is a league-winning move."
       }
     ]
+  },
+  {
+    "timestamp": "2026-03-02T04:42:05.690Z",
+    "prompt": "who are the best players availible no matter the position....give me 5",
+    "rawResponse": "```json\n[\n  {\n    \"name\": \"Aaron Nola\",\n    \"pos\": \"SP\",\n    \"rank\": \"134\",\n    \"team\": \"PHI\",\n    \"rationale\": \"It's criminal that a workhorse ace like Nola is still on the board. After an injury-plagued 2025, he's primed for a major bounce-back and is expected to be ready for opening day. Adding another top-tier starter to a rotation that already includes Burnes, Fried, and Gray will make your pitching staff an unstoppable force and give you a massive advantage in W, K, and QS.\"\n  },\n  {\n    \"name\": \"Marcus Semien\",\n    \"pos\": \"2B\",\n    \"rank\": \"241\",\n    \"team\": \"NYM\",\n    \"rationale\": \"You have a gaping hole at 2B and Semien is the clear-cut best player available to fill it. He's a durable, multi-category contributor who will be hitting in the heart of the Mets lineup. Despite a down year offensively in 2025, he's showing strong signs in spring training and is motivated to regain his MVP form, making him a high-floor, high-upside pick that solidifies your infield.\"\n  },\n  {\n    \"name\": \"Yainer Diaz\",\n    \"pos\": \"C\",\n    \"rank\": \"248\",\n    \"team\": \"HOU\",\n    \"rationale\": \"Don't overthink this. You need a catcher, and Diaz is a top-10 option at a notoriously shallow position who provides rare power and run production. He's entering his age-27 season and is the everyday backstop for a potent Astros lineup; securing him now solves a major roster problem with a player who can single-handedly win you HR and RBI in certain weeks.\"\n  },\n  {\n    \"name\": \"Ryan Helsley\",\n    \"pos\": \"RP\",\n    \"rank\": \"174\",\n    \"team\": \"BAL\",\n    \"rationale\": \"Your team is desperate for relief pitching, and Helsley is an elite closer who can anchor your bullpen. In a 7x7 league that counts both Saves and Holds, having a top-tier fireman is essential. He will provide elite strikeout numbers and ratios while locking down one of your two empty RP slots with guaranteed production.\"\n  },\n  {\n    \"name\": \"Roki Sasaki\",\n    \"pos\": \"SP\",\n    \"rank\": \"308\",\n    \"team\": \"LAD\",\n    \"rationale\": \"This is your league-winning upside pick. Sasaki is a much-hyped, 24-year-old flamethrower who showed elite flashes for the Dodgers in their championship run. He's competing for a rotation spot and is focused on developing a third pitch, which could unlock another level. In a deep keeper league, drafting a talent like this is how you build a dynasty, and the potential reward massively outweighs the risk.\"\n  }\n]\n```",
+    "recommendations": [
+      {
+        "name": "Aaron Nola",
+        "pos": "SP",
+        "rank": "134",
+        "team": "PHI",
+        "rationale": "It's criminal that a workhorse ace like Nola is still on the board. After an injury-plagued 2025, he's primed for a major bounce-back and is expected to be ready for opening day. Adding another top-tier starter to a rotation that already includes Burnes, Fried, and Gray will make your pitching staff an unstoppable force and give you a massive advantage in W, K, and QS."
+      },
+      {
+        "name": "Marcus Semien",
+        "pos": "2B",
+        "rank": "241",
+        "team": "NYM",
+        "rationale": "You have a gaping hole at 2B and Semien is the clear-cut best player available to fill it. He's a durable, multi-category contributor who will be hitting in the heart of the Mets lineup. Despite a down year offensively in 2025, he's showing strong signs in spring training and is motivated to regain his MVP form, making him a high-floor, high-upside pick that solidifies your infield."
+      },
+      {
+        "name": "Yainer Diaz",
+        "pos": "C",
+        "rank": "248",
+        "team": "HOU",
+        "rationale": "Don't overthink this. You need a catcher, and Diaz is a top-10 option at a notoriously shallow position who provides rare power and run production. He's entering his age-27 season and is the everyday backstop for a potent Astros lineup; securing him now solves a major roster problem with a player who can single-handedly win you HR and RBI in certain weeks."
+      },
+      {
+        "name": "Ryan Helsley",
+        "pos": "RP",
+        "rank": "174",
+        "team": "BAL",
+        "rationale": "Your team is desperate for relief pitching, and Helsley is an elite closer who can anchor your bullpen. In a 7x7 league that counts both Saves and Holds, having a top-tier fireman is essential. He will provide elite strikeout numbers and ratios while locking down one of your two empty RP slots with guaranteed production."
+      },
+      {
+        "name": "Roki Sasaki",
+        "pos": "SP",
+        "rank": "308",
+        "team": "LAD",
+        "rationale": "This is your league-winning upside pick. Sasaki is a much-hyped, 24-year-old flamethrower who showed elite flashes for the Dodgers in their championship run. He's competing for a rotation spot and is focused on developing a third pitch, which could unlock another level. In a deep keeper league, drafting a talent like this is how you build a dynasty, and the potential reward massively outweighs the risk."
+      }
+    ]
   }
 ]

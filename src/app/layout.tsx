@@ -23,6 +23,7 @@ export default function RootLayout({
     <html lang="en" className="dark" suppressHydrationWarning>
       <body
         className={`${outfit.variable} font-sans bg-zinc-950 text-white antialiased selection:bg-indigo-500/30`}
+        suppressHydrationWarning
       >
         <Providers>
           {children}

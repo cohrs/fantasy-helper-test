@@ -864,11 +864,11 @@
     "isKeeper": true
   },
   {
-    "rd": 6,
+    "rd": 2,
     "pk": 97,
     "name": "Ranger Suárez",
     "pos": "SP",
-    "tm": null,
+    "tm": "The Papelboners",
     "playerTeam": "BOS",
     "isKeeper": false
   },
@@ -1506,7 +1506,7 @@
     "rd": 10,
     "pk": 168,
     "name": "Trevor Rogers",
-    "pos": "SP",
+    "pos": "SP 2 nd Round",
     "tm": null,
     "playerTeam": "BAL",
     "isKeeper": false
@@ -2460,7 +2460,7 @@
     "rd": 16,
     "pk": 274,
     "name": "Lawrence Butler",
-    "pos": "CF,RF",
+    "pos": "CF,RF 2 nd round",
     "tm": null,
     "playerTeam": "ATH",
     "isKeeper": false

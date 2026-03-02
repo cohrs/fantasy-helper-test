@@ -463,8 +463,10 @@ export default function Home() {
       if (draftData.roster) setMyRoster(draftData.roster);
       if (draftData.draft && draftData.draft.length > 0) {
         setDraftResults(draftData.draft);
-        const draftedCount = draftData.draft.filter((p: any) => p.tm && !p.isKeeper).length;
-        setCurrentPick(draftedCount + 1);
+        // Use max pk from non-keeper drafted picks to get correct overall pick number
+        const nonKeeperPicks = draftData.draft.filter((p: any) => p.tm && !p.isKeeper);
+        const maxPk = nonKeeperPicks.length > 0 ? Math.max(...nonKeeperPicks.map((p: any) => p.pk)) : 0;
+        setCurrentPick(maxPk + 1);
       }
       if (notesData) setAiNotes(notesData);
       setIsDataLoaded(true);
@@ -482,9 +484,10 @@ export default function Home() {
 
       if (data.success && data.picks && data.picks.length > 0) {
         setDraftResults(data.picks);
-        // Only count non-keeper picks to determine current draft position
-        const draftedCount = data.picks.filter((p: any) => p.tm && !p.isKeeper).length;
-        setCurrentPick(draftedCount + 1);
+        // Use max pk from non-keeper drafted picks to get correct overall pick number
+        const nonKeeperPicks = data.picks.filter((p: any) => p.tm && !p.isKeeper);
+        const maxPk = nonKeeperPicks.length > 0 ? Math.max(...nonKeeperPicks.map((p: any) => p.pk)) : 0;
+        setCurrentPick(maxPk + 1);
       } else {
         alert("Failed to sync Draft! No picks parsed or thread is empty.");
       }
@@ -683,9 +686,16 @@ export default function Home() {
   };
 
   const waitPicks = useMemo(() => {
-    const rd = Math.floor((currentPick - 1) / totalTeams) + 1;
-    let next = ((rd - 1) * totalTeams) + myDraftPosition;
-    if (next < currentPick) next = (rd * totalTeams) + myDraftPosition;
+    let next = 0;
+    // Fantasy drafts snake, so even rounds reverse the pick order (18-1)
+    for (let r = 1; r <= 60; r++) {
+      const posThisRound = (r % 2 === 0) ? (totalTeams - myDraftPosition + 1) : myDraftPosition;
+      const overallPick = ((r - 1) * totalTeams) + posThisRound;
+      if (overallPick >= currentPick) {
+        next = overallPick;
+        break;
+      }
+    }
     return next - currentPick;
   }, [currentPick, totalTeams, myDraftPosition]);
 
@@ -708,6 +718,7 @@ export default function Home() {
       return true;
     }).map(p => ({
       id: p.pk,
+      pk: p.pk,
       name: p.name,
       pos: p.pos,
       team: p.playerTeam || 'FA',
@@ -900,635 +911,579 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="max-w-7xl w-full mx-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-0">
-        <div className="lg:col-span-3 flex flex-col gap-6 min-h-0">
-          <div className={`bg-gradient-to-br ${activeSport === 'MLB' ? 'from-indigo-600 to-indigo-900 shadow-indigo-500/20' : 'from-orange-600 to-red-800 shadow-orange-500/20'} rounded-[2.5rem] p-8 shadow-2xl shrink-0 text-white`}>
-            <h3 className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-6">Status</h3>
-            <div className="text-5xl font-black italic tracking-tighter mb-2 leading-none">
-              {activeSport === 'MLB' ? `R${Math.floor((currentPick - 1) / totalTeams) + 1} P${((currentPick - 1) % totalTeams) + 1}` : nbaStats.matchup.score}
-            </div>
-            <div className="text-xs font-bold uppercase opacity-60 mb-8">{activeSport === 'MLB' ? `Overall Pick ${currentPick}` : `vs ${nbaStats.matchup.opp}`}</div>
-            <div className="bg-black/20 p-5 rounded-3xl border border-white/10 relative">
-              <div className="text-4xl font-black">{activeSport === 'MLB' ? waitPicks : 'LIVE'}</div>
-              <div className="text-[10px] font-bold uppercase opacity-60 tracking-tight">Picks Until New Jersey Nine</div>
-            </div>
+      {/* Compact Status Strip */}
+      {activeSport === 'MLB' && (
+        <div className={`max-w-7xl w-full mx-auto shrink-0 mb-4 rounded-2xl px-5 py-3 flex items-center gap-6 border ${waitPicks === 0 ? 'bg-green-500/10 border-green-500/30 text-green-300' : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-300'}`}>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Pick</span>
+            <span className="font-black text-lg tracking-tight">
+              R{Math.floor((currentPick - 1) / totalTeams) + 1} P{((currentPick - 1) % totalTeams) + 1}
+            </span>
+            <span className="text-[10px] font-bold opacity-50">(#{currentPick})</span>
           </div>
-
-          <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 flex-1 overflow-hidden flex flex-col min-h-0">
-            <h4 className="text-[10px] font-black text-slate-500 uppercase mb-4 tracking-widest shrink-0">Live Roster Tracker</h4>
-            <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-              {Object.entries(
-                draftResults
-                  .filter(pick => pick.tm)
-                  .reduce((acc, pick) => {
-                    const tmName = pick.tm as string;
-                    if (!acc[tmName]) acc[tmName] = [];
-                    acc[tmName].push(pick);
-                    return acc;
-                  }, {} as Record<string, typeof draftResults>)
-              )
-                // Sort to ensure "New Jersey Nine" is first
-                .sort(([teamA], [teamB]) => {
-                  if (teamA === myTeamName) return -1;
-                  if (teamB === myTeamName) return 1;
-                  return teamA.localeCompare(teamB);
-                })
-                .map(([team, picks]) => {
-                  const roster = getTeamRoster(picks);
-                  const missing = getMissingSlots(roster);
-                  return (
-                    <div key={team} className={`p-4 rounded-2xl border ${team === myTeamName ? 'bg-indigo-500/10 border-indigo-500/30 shadow-inner' : 'bg-slate-950 border-slate-800'}`}>
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="font-black text-sm text-slate-100">{team}</div>
-                        <div className="text-[10px] font-bold text-slate-500">{missing.length === 0 ? <span className="text-green-500">FULL</span> : `${missing.length} OPEN`}</div>
-                      </div>
-                      {missing.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-3">
-                          {missing.map((slot, i) => (
-                            <span key={i} className="text-[9px] font-black bg-orange-500/10 text-orange-400 border border-orange-500/20 px-1.5 py-0.5 rounded uppercase">{slot}</span>
-                          ))}
-                        </div>
-                      )}
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-                        {roster.map((r, i) => (
-                          <div key={i} className={`text-[10px] flex items-start gap-2 min-w-0 ${r.player ? 'text-slate-200' : 'text-slate-600 italic'}`}>
-                            <span className="font-black w-6 flex-shrink-0 text-indigo-400 mt-[2px]">{r.slot}</span>
-                            <div className="flex-1 min-w-0 flex flex-col leading-tight overflow-hidden">
-                              <span className="truncate w-full">{r.player ? r.player.name : 'Empty'}</span>
-                              {r.player && (
-                                <span className="text-[8px] text-slate-500 font-bold tracking-widest uppercase truncate w-full">
-                                  {r.player.pos} • {r.player.isKeeper ? '(K)' : `RD ${r.player.rd}`}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-
-              {draftResults.length === 0 && (
-                <div className="text-center text-slate-600 text-sm mt-10 italic">
-                  No rosters synced yet.
-                </div>
-              )}
-            </div>
-          </div>
+          <div className="w-px h-5 bg-current opacity-20" />
+          {waitPicks === 0 ? (
+            <span className="text-sm font-black animate-pulse">🟢 YOUR PICK NOW!</span>
+          ) : (
+            <span className="text-sm font-bold">
+              <span className="font-black text-lg">{waitPicks}</span>
+              <span className="text-[10px] uppercase opacity-60 ml-1">picks until {myTeamName}</span>
+            </span>
+          )}
         </div>
+      )}
 
-        <div className="lg:col-span-9 flex flex-col min-h-0">
-          <div className="bg-slate-900 rounded-[2.5rem] p-8 border border-slate-800 flex-1 flex flex-col shadow-2xl min-h-0">
-            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-10 shrink-0">
-              <h2 className="text-3xl font-black italic uppercase tracking-tighter flex items-center gap-4">
-                <LayoutGrid className={`w-8 h-8 ${activeSport === 'MLB' ? 'text-indigo-500' : 'text-orange-500'}`} />
-                {activeSport === 'MLB' ? 'Draft Board' : 'NBA Stats'}
-              </h2>
-              <div className="flex bg-slate-950 w-fit rounded-xl p-1 border border-slate-800 shadow-inner">
-                <button onClick={() => setViewMode('PLAYERS')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'PLAYERS' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
-                  <Search className="w-3.5 h-3.5" /> Pool
-                </button>
-                <button onClick={() => setViewMode('GRID')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'GRID' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
-                  <LayoutGrid className="w-3.5 h-3.5" /> Grid
-                </button>
-                <button onClick={() => setViewMode('TEAM')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'TEAM' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
-                  <Users className="w-3.5 h-3.5" /> Team
-                </button>
-                <button onClick={() => setViewMode('NEEDS')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'NEEDS' ? 'bg-orange-600 text-white shadow shadow-orange-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
-                  <BarChart3 className="w-3.5 h-3.5" /> Needs
-                </button>
-                <button onClick={() => setViewMode('WATCHLIST')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'WATCHLIST' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
-                  <ListOrdered className="w-3.5 h-3.5" /> Watchlist
-                </button>
-              </div>
+      <main className="max-w-7xl w-full mx-auto flex-1 flex flex-col min-h-0">
+        <div className="bg-slate-900 rounded-[2.5rem] p-8 border border-slate-800 flex-1 flex flex-col shadow-2xl min-h-0">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-10 shrink-0">
+            <h2 className="text-3xl font-black italic uppercase tracking-tighter flex items-center gap-4">
+              <LayoutGrid className={`w-8 h-8 ${activeSport === 'MLB' ? 'text-indigo-500' : 'text-orange-500'}`} />
+              {activeSport === 'MLB' ? 'Draft Board' : 'NBA Stats'}
+            </h2>
+            <div className="flex bg-slate-950 w-fit rounded-xl p-1 border border-slate-800 shadow-inner">
+              <button onClick={() => setViewMode('PLAYERS')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'PLAYERS' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                <Search className="w-3.5 h-3.5" /> Pool
+              </button>
+              <button onClick={() => setViewMode('GRID')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'GRID' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                <LayoutGrid className="w-3.5 h-3.5" /> Grid
+              </button>
+              <button onClick={() => setViewMode('TEAM')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'TEAM' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                <Users className="w-3.5 h-3.5" /> Team
+              </button>
+              <button onClick={() => setViewMode('NEEDS')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'NEEDS' ? 'bg-orange-600 text-white shadow shadow-orange-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                <BarChart3 className="w-3.5 h-3.5" /> Needs
+              </button>
+              <button onClick={() => setViewMode('WATCHLIST')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'WATCHLIST' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                <ListOrdered className="w-3.5 h-3.5" /> Watchlist
+              </button>
             </div>
+          </div>
 
-            {/* === GLOBAL ROW: Assistant controls === */}
-            {session && (
-              <div className="flex items-center gap-2 mb-4 shrink-0 flex-wrap">
-                <div className="flex items-center gap-1.5 bg-sky-500/5 border border-sky-500/20 rounded-2xl px-3 py-2 flex-1 min-w-0">
-                  {/* Toggle panel open/close without firing a query */}
-                  <button
-                    onClick={() => setShowAssistantModal(v => !v)}
-                    title={showAssistantModal ? 'Close panel' : 'Open panel'}
-                    className="shrink-0 text-sky-400/60 hover:text-sky-400 transition-colors"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <AssistantInput
-                      ref={assistantInputRef}
-                      isAskingAssistant={isAskingAssistant}
-                      onSubmit={(val) => askAssistant(val, true)}
-                      placeholder="Ask assistant: focus on closers, need a SS..."
-                    />
-                  </div>
-                </div>
+          {/* === GLOBAL ROW: Assistant controls === */}
+          {session && (
+            <div className="flex items-center gap-2 mb-4 shrink-0 flex-wrap">
+              <div className="flex items-center gap-1.5 bg-sky-500/5 border border-sky-500/20 rounded-2xl px-3 py-2 flex-1 min-w-0">
+                {/* Toggle panel open/close without firing a query */}
                 <button
-                  onClick={() => askAssistant(assistantInputRef.current?.getValue() || '', true)}
-                  disabled={isAskingAssistant}
-                  className="px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-sky-500/20 text-sky-400 border border-sky-500/30 hover:bg-sky-500/30 disabled:opacity-50 flex items-center gap-2 transition-all whitespace-nowrap"
+                  onClick={() => setShowAssistantModal(v => !v)}
+                  title={showAssistantModal ? 'Close panel' : 'Open panel'}
+                  className="shrink-0 text-sky-400/60 hover:text-sky-400 transition-colors"
                 >
-                  <Sparkles className={`w-4 h-4 ${isAskingAssistant ? 'animate-spin' : ''}`} />
-                  {isAskingAssistant ? 'Analyzing...' : 'Ask Assistant'}
+                  <Sparkles className="w-4 h-4" />
                 </button>
+                <div className="flex-1 min-w-0">
+                  <AssistantInput
+                    ref={assistantInputRef}
+                    isAskingAssistant={isAskingAssistant}
+                    onSubmit={(val) => askAssistant(val, true)}
+                    placeholder="Ask assistant: focus on closers, need a SS..."
+                  />
+                </div>
               </div>
-            )}
+              <button
+                onClick={() => askAssistant(assistantInputRef.current?.getValue() || '', true)}
+                disabled={isAskingAssistant}
+                className="px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-sky-500/20 text-sky-400 border border-sky-500/30 hover:bg-sky-500/30 disabled:opacity-50 flex items-center gap-2 transition-all whitespace-nowrap"
+              >
+                <Sparkles className={`w-4 h-4 ${isAskingAssistant ? 'animate-spin' : ''}`} />
+                {isAskingAssistant ? 'Analyzing...' : 'Ask Assistant'}
+              </button>
+            </div>
+          )}
 
-            {viewMode === 'PLAYERS' && (
-              <>
-                {/* === SECONDARY ROW: Search + position filters + misc === */}
-                <div className="relative mb-3 group shrink-0">
-                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-indigo-500 transition-colors" />
-                  <input type="text" placeholder="Search players..." className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-6 py-3 text-sm focus:ring-2 focus:ring-indigo-500/40 focus:outline-none transition-all" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                </div>
+          {viewMode === 'PLAYERS' && (
+            <>
+              {/* === SECONDARY ROW: Search + position filters + misc === */}
+              <div className="relative mb-3 group shrink-0">
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-indigo-500 transition-colors" />
+                <input type="text" placeholder="Search players..." className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-6 py-3 text-sm focus:ring-2 focus:ring-indigo-500/40 focus:outline-none transition-all" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              </div>
 
-                <div className="flex items-center gap-3 mb-5 shrink-0 flex-wrap">
-                  {/* Position filters */}
-                  <div className="flex gap-1.5 overflow-x-auto pb-1 flex-1 min-w-0">
-                    {['ALL', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'UTIL', 'SP', 'RP'].map(pos => (
-                      <button
-                        key={pos}
-                        onClick={() => setPositionFilter(pos)}
-                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black tracking-widest whitespace-nowrap transition-all shrink-0 ${positionFilter === pos ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-950 text-slate-500 border border-slate-800 hover:text-slate-300 hover:border-slate-700'}`}
-                      >
-                        {pos}
-                      </button>
-                    ))}
-                  </div>
-                  <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 cursor-pointer whitespace-nowrap shrink-0">
-                    <input type="checkbox" checked={showDrafted} onChange={(e) => setShowDrafted(e.target.checked)} className="rounded border-slate-700 bg-slate-900 text-indigo-500 focus:ring-offset-slate-900" />
-                    DRAFTED
-                  </label>
-                  {session && (
-                    <>
-                      <button
-                        onClick={loadYahooPlayers}
-                        disabled={isLoadingYahoo}
-                        className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/20 disabled:opacity-50 flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0"
-                      >
-                        <Zap className={`w-3 h-3 ${isLoadingYahoo ? 'animate-pulse' : ''}`} />
-                        {isLoadingYahoo ? '...' : yahooPlayers.length > 0 ? `AR:${yahooPlayers.length}` : 'YAHOO'}
-                      </button>
-                      <button
-                        onClick={() => loadYahooStats()}
-                        disabled={isLoadingStats}
-                        title={Object.keys(yahooStats).length > 0 ? `${Object.keys(yahooStats).length} players' stats loaded — click to refresh` : 'Load 2025 season stats from Yahoo'}
-                        className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-50 flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0"
-                      >
-                        <BarChart3 className={`w-3 h-3 ${isLoadingStats ? 'animate-pulse' : ''}`} />
-                        {isLoadingStats ? 'Loading...' : Object.keys(yahooStats).length > 0 ? `Stats:${Object.keys(yahooStats).length}` : 'Stats'}
-                      </button>
-                      {Object.keys(yahooStats).length > 0 && (
-                        <select
-                          value={statSort || ''}
-                          onChange={(e) => setStatSort(e.target.value || null)}
-                          className="bg-slate-950 border border-slate-800 text-slate-300 text-[10px] font-bold uppercase tracking-widest rounded-xl px-2 py-1.5 focus:ring-1 focus:ring-emerald-500/50 outline-none"
-                        >
-                          <option value="">Sort by Rank</option>
-                          <optgroup label="Batting">
-                            {BATTING_STAT_IDS.map(id => <option key={`b-${id}`} value={id}>{YAHOO_STAT_LABELS[id] || id}</option>)}
-                          </optgroup>
-                          <optgroup label="Pitching">
-                            {PITCHING_STAT_IDS.map(id => <option key={`p-${id}`} value={id}>{YAHOO_STAT_LABELS[id] || id}</option>)}
-                          </optgroup>
-                        </select>
-                      )}
-                    </>
-                  )}
-                </div>
-                <div className="flex-1 overflow-y-auto space-y-1 pr-2">
-                  {processedPool.map((p: any) => (
-                    <DraftBoardPlayerRow
-                      key={p.pk}
-                      p={{ ...p, rationale: aiNotes[normalizeName(p.name)] }}
-                      yahooStats={yahooStats}
-                      yahooPlayers={yahooPlayers}
-                      updateWatchlist={updateWatchlist}
-                      activeSport={activeSport}
-                      myRoster={myRoster}
-                      BATTING_STAT_IDS={BATTING_STAT_IDS}
-                      PITCHING_STAT_IDS={PITCHING_STAT_IDS}
-                      YAHOO_STAT_LABELS={YAHOO_STAT_LABELS}
-                      onAskAssistant={askAssistant}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-
-            {viewMode === 'GRID' && (() => {
-              const drafted = draftResults
-                .filter(pick => pick.tm && !pick.isKeeper)
-                .sort((a, b) => a.pk - b.pk);
-
-              if (drafted.length === 0) {
-                return (
-                  <div className="flex-1 overflow-y-auto pr-2">
-                    <div className="text-center mt-20 opacity-50 font-black tracking-widest text-slate-500">NO DRAFT DATA SYNCED YET</div>
-                  </div>
-                );
-              }
-
-              // Group picks by round
-              const roundsMap = drafted.reduce((acc, pick) => {
-                const rd = pick.rd || 1;
-                if (!acc[rd]) acc[rd] = [];
-                acc[rd].push(pick);
-                return acc;
-              }, {} as Record<number, typeof drafted>);
-
-              const sortedRounds = Object.keys(roundsMap).map(Number).sort((a, b) => a - b);
-
-              return (
-                <div className="flex-1 overflow-y-auto pr-2 pb-10 space-y-8">
-                  {sortedRounds.map(rd => (
-                    <div key={`round-${rd}`} className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden">
-                      <div className="bg-slate-800/50 px-5 py-3 border-b border-slate-800/80 flex items-center justify-between sticky top-0 backdrop-blur-md z-10">
-                        <h3 className="font-black itertools tracking-widest text-indigo-400 uppercase text-xs">Round {rd}</h3>
-                        <span className="text-[10px] font-bold text-slate-500">{roundsMap[rd].length} / {totalTeams} Picks</span>
-                      </div>
-                      <table className="w-full border-collapse text-sm">
-                        <thead className="hidden">
-                          <tr>
-                            <th>Pick</th>
-                            <th>Player</th>
-                            <th>Positions</th>
-                            <th>MLB Team</th>
-                            <th>Fantasy Team</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {roundsMap[rd].map((p, i) => (
-                            <tr key={p.pk} className={`border-b border-slate-800/30 transition-colors hover:bg-slate-800/30 ${i % 2 === 0 ? 'bg-slate-950/30' : 'bg-transparent'} last:border-0`}>
-                              <td className="py-2 px-5 w-24">
-                                <div className="flex items-center gap-2">
-                                  <span title={`Pick number within Round ${rd}`} className="text-[10px] font-black text-indigo-300 border border-indigo-500/20 bg-indigo-500/10 px-1.5 py-0.5 rounded">
-                                    P{(p.pk - 1) % totalTeams + 1}
-                                  </span>
-                                  <span title={`Overall Pick #${p.pk}`} className="text-[9px] font-bold text-slate-600">
-                                    (#{p.pk})
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="py-2 px-2">
-                                <span className="font-bold text-slate-200 text-sm tracking-tight">{p.name}</span>
-                              </td>
-                              <td className="py-2 px-2 w-24">
-                                <span className="text-[9px] font-black text-slate-500 bg-slate-800/50 px-1.5 py-0.5 rounded uppercase tracking-wider">{p.pos}</span>
-                              </td>
-                              <td className="py-2 px-2 w-20">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase">{p.playerTeam}</span>
-                              </td>
-                              <td className="py-2 px-5 text-right">
-                                <span className="text-[11px] font-black text-slate-300 italic tracking-wide">{p.tm}</span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ))}
-                </div>
-              );
-            })()}
-
-            {viewMode === 'TEAM' && (
-              <div className="flex-1 flex gap-6 overflow-hidden">
-                {/* Team sidebar */}
-                <div className="w-44 shrink-0 flex flex-col gap-1 overflow-y-auto pr-2 border-r border-slate-800">
-                  <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 sticky top-0 bg-slate-900 py-2">Franchise</div>
-                  {Array.from(new Set(draftResults.filter(p => p.tm).map(p => p.tm as string))).sort((a, b) => {
-                    if (a === myTeamName) return -1;
-                    if (b === myTeamName) return 1;
-                    return a.localeCompare(b);
-                  }).map(team => (
+              <div className="flex items-center gap-3 mb-5 shrink-0 flex-wrap">
+                {/* Position filters */}
+                <div className="flex gap-1.5 overflow-x-auto pb-1 flex-1 min-w-0">
+                  {['ALL', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'UTIL', 'SP', 'RP'].map(pos => (
                     <button
-                      key={team}
-                      onClick={() => setSelectedTeam(team)}
-                      className={`text-left px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${selectedTeam === team ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
+                      key={pos}
+                      onClick={() => setPositionFilter(pos)}
+                      className={`px-3 py-1.5 rounded-xl text-[10px] font-black tracking-widest whitespace-nowrap transition-all shrink-0 ${positionFilter === pos ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-950 text-slate-500 border border-slate-800 hover:text-slate-300 hover:border-slate-700'}`}
                     >
-                      {team === myTeamName ? `★ ${team}` : team}
+                      {pos}
                     </button>
                   ))}
                 </div>
-
-                {/* Roster table */}
-                <div className="flex-1 overflow-y-auto">
-                  <div className="flex items-baseline gap-3 mb-4">
-                    <h3 className="text-lg font-black italic tracking-tighter text-indigo-400">{selectedTeam}</h3>
-                    {(() => {
-                      const teamPicks = draftResults.filter(p => p.tm === selectedTeam);
-                      const roster = getTeamRoster(teamPicks);
-                      const missing = getMissingSlots(roster);
-                      return missing.length > 0
-                        ? <span className="text-[10px] font-black text-orange-400 uppercase tracking-wider">{missing.length} open slots</span>
-                        : <span className="text-[10px] font-black text-green-400 uppercase tracking-wider">Roster Full</span>;
-                    })()}
-                  </div>
-                  <table className="w-full border-collapse text-sm">
-                    <thead className="sticky top-0 bg-slate-900 z-10">
-                      <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                        <th className="text-left py-2 px-3 w-14">Slot</th>
-                        <th className="text-left py-2 px-3">Player</th>
-                        <th className="text-left py-2 px-3 w-12">Team</th>
-                        <th className="text-left py-2 px-3 w-24">Pos</th>
-                        <th className="text-left py-2 px-3 w-24">Pick</th>
-                      </tr>
-                      <tr><td colSpan={5}><div className="h-px bg-slate-800 w-full" /></td></tr>
-                    </thead>
-                    <tbody>
-                      {getTeamRoster(draftResults.filter(p => p.tm === selectedTeam)).map((r, i) => (
-                        <tr key={i} className={`border-b border-slate-800/30 ${r.player ? (i % 2 === 0 ? 'bg-slate-950' : 'bg-slate-900/20') : 'opacity-40'}`}>
-                          <td className="py-2 px-3">
-                            <span className={`text-[10px] font-black uppercase ${r.player ? 'text-indigo-400' : 'text-slate-600 italic'}`}>{r.slot}</span>
-                          </td>
-                          <td className="py-2 px-3">
-                            {r.player
-                              ? <span className="font-bold text-sm text-slate-100">{r.player.name}</span>
-                              : <span className="text-xs text-slate-600 italic">Empty</span>
-                            }
-                          </td>
-                          <td className="py-2 px-3">
-                            <span className="text-[10px] text-slate-500 font-bold">{r.player?.playerTeam || ''}</span>
-                          </td>
-                          <td className="py-2 px-3">
-                            <span className="text-[10px] text-indigo-400 font-bold uppercase">{r.player?.pos || ''}</span>
-                          </td>
-                          <td className="py-2 px-3">
-                            {r.player && (
-                              <span className="text-[10px] text-slate-500 font-bold">
-                                {r.player.isKeeper ? 'KEEPER' : `#${r.player.pk} Rd ${r.player.rd}`}
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 cursor-pointer whitespace-nowrap shrink-0">
+                  <input type="checkbox" checked={showDrafted} onChange={(e) => setShowDrafted(e.target.checked)} className="rounded border-slate-700 bg-slate-900 text-indigo-500 focus:ring-offset-slate-900" />
+                  DRAFTED
+                </label>
+                {session && (
+                  <>
+                    <button
+                      onClick={loadYahooPlayers}
+                      disabled={isLoadingYahoo}
+                      className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 hover:bg-yellow-500/20 disabled:opacity-50 flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0"
+                    >
+                      <Zap className={`w-3 h-3 ${isLoadingYahoo ? 'animate-pulse' : ''}`} />
+                      {isLoadingYahoo ? '...' : yahooPlayers.length > 0 ? `AR:${yahooPlayers.length}` : 'YAHOO'}
+                    </button>
+                    <button
+                      onClick={() => loadYahooStats()}
+                      disabled={isLoadingStats}
+                      title={Object.keys(yahooStats).length > 0 ? `${Object.keys(yahooStats).length} players' stats loaded — click to refresh` : 'Load 2025 season stats from Yahoo'}
+                      className="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 disabled:opacity-50 flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0"
+                    >
+                      <BarChart3 className={`w-3 h-3 ${isLoadingStats ? 'animate-pulse' : ''}`} />
+                      {isLoadingStats ? 'Loading...' : Object.keys(yahooStats).length > 0 ? `Stats:${Object.keys(yahooStats).length}` : 'Stats'}
+                    </button>
+                    {Object.keys(yahooStats).length > 0 && (
+                      <select
+                        value={statSort || ''}
+                        onChange={(e) => setStatSort(e.target.value || null)}
+                        className="bg-slate-950 border border-slate-800 text-slate-300 text-[10px] font-bold uppercase tracking-widest rounded-xl px-2 py-1.5 focus:ring-1 focus:ring-emerald-500/50 outline-none"
+                      >
+                        <option value="">Sort by Rank</option>
+                        <optgroup label="Batting">
+                          {BATTING_STAT_IDS.map(id => <option key={`b-${id}`} value={id}>{YAHOO_STAT_LABELS[id] || id}</option>)}
+                        </optgroup>
+                        <optgroup label="Pitching">
+                          {PITCHING_STAT_IDS.map(id => <option key={`p-${id}`} value={id}>{YAHOO_STAT_LABELS[id] || id}</option>)}
+                        </optgroup>
+                      </select>
+                    )}
+                  </>
+                )}
               </div>
-            )}
+              <div className="flex-1 overflow-y-auto space-y-1 pr-2">
+                {processedPool.map((p: any) => (
+                  <DraftBoardPlayerRow
+                    key={p.pk}
+                    p={{ ...p, rationale: aiNotes[normalizeName(p.name)] }}
+                    yahooStats={yahooStats}
+                    yahooPlayers={yahooPlayers}
+                    updateWatchlist={updateWatchlist}
+                    activeSport={activeSport}
+                    myRoster={myRoster}
+                    BATTING_STAT_IDS={BATTING_STAT_IDS}
+                    PITCHING_STAT_IDS={PITCHING_STAT_IDS}
+                    YAHOO_STAT_LABELS={YAHOO_STAT_LABELS}
+                    onAskAssistant={askAssistant}
+                  />
+                ))}
+              </div>
+            </>
+          )}
 
-            {viewMode === 'NEEDS' && (() => {
-              // Build a sorted list of all teams with their missing positions
-              const teamMap = draftResults
-                .filter(p => p.tm)
-                .reduce((acc, p) => {
-                  const t = p.tm as string;
-                  if (!acc[t]) acc[t] = [];
-                  acc[t].push(p);
-                  return acc;
-                }, {} as Record<string, typeof draftResults>);
+          {viewMode === 'GRID' && (() => {
+            const drafted = draftResults
+              .filter(pick => pick.tm && !pick.isKeeper)
+              .sort((a, b) => a.pk - b.pk);
 
-              const teamNeeds = Object.entries(teamMap).map(([team, picks]) => {
-                const roster = getTeamRoster(picks);
-                const missing = getMissingSlots(roster);
-                return { team, missing, openCount: missing.length };
-              }).sort((a, b) => {
-                // Put my team first, then sort by most needs
-                if (a.team === myTeamName) return -1;
-                if (b.team === myTeamName) return 1;
-                return b.openCount - a.openCount;
-              });
-
-              // Count how many teams need each position
-              const positionDemand: Record<string, number> = {};
-              const totalTeams = teamNeeds.length;
-              teamNeeds.forEach(t => {
-                t.missing.forEach(slot => {
-                  positionDemand[slot] = (positionDemand[slot] || 0) + 1;
-                });
-              });
-              const demandSorted = Object.entries(positionDemand).sort((a, b) => b[1] - a[1]);
-              const maxDemand = demandSorted[0]?.[1] || 1;
-
+            if (drafted.length === 0) {
               return (
-                <div className="flex-1 flex flex-col overflow-hidden gap-4">
+                <div className="flex-1 overflow-y-auto pr-2">
+                  <div className="text-center mt-20 opacity-50 font-black tracking-widest text-slate-500">NO DRAFT DATA SYNCED YET</div>
+                </div>
+              );
+            }
 
-                  {/* Position Demand Summary */}
-                  {demandSorted.length > 0 && (
-                    <div className="shrink-0">
-                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Position Demand — Teams Still Needing</div>
-                      <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-                        {demandSorted.map(([pos, count]) => {
-                          const pct = (count / maxDemand) * 100;
-                          const isHot = count >= maxDemand * 0.75;
-                          const isWarm = count >= maxDemand * 0.45;
-                          const barColor = isHot ? 'bg-red-500' : isWarm ? 'bg-orange-500' : 'bg-slate-600';
-                          const textColor = isHot ? 'text-red-400' : isWarm ? 'text-orange-400' : 'text-slate-500';
-                          return (
-                            <div key={pos} className="flex items-center gap-2">
-                              <span className={`text-[9px] font-black w-7 shrink-0 text-right ${textColor}`}>{pos}</span>
-                              <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
-                              </div>
-                              <span className={`text-[9px] font-black tabular-nums w-8 shrink-0 ${textColor}`}>{count}/{totalTeams}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <div className="h-px bg-slate-800 mt-4 mb-2" />
+            // Group picks by round
+            const roundsMap = drafted.reduce((acc, pick) => {
+              const rd = pick.rd || 1;
+              if (!acc[rd]) acc[rd] = [];
+              acc[rd].push(pick);
+              return acc;
+            }, {} as Record<number, typeof drafted>);
+
+            const sortedRounds = Object.keys(roundsMap).map(Number).sort((a, b) => a - b);
+
+            return (
+              <div className="flex-1 overflow-y-auto pr-2 pb-10 space-y-8">
+                {sortedRounds.map(rd => (
+                  <div key={`round-${rd}`} className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden">
+                    <div className="bg-slate-800/50 px-5 py-3 border-b border-slate-800/80 flex items-center justify-between sticky top-0 backdrop-blur-md z-10">
+                      <h3 className="font-black itertools tracking-widest text-indigo-400 uppercase text-xs">Round {rd}</h3>
+                      <span className="text-[10px] font-bold text-slate-500">{roundsMap[rd].length} / {totalTeams} Picks</span>
                     </div>
-                  )}
-
-                  {/* Team needs table */}
-                  <div className="flex-1 overflow-y-auto">
                     <table className="w-full border-collapse text-sm">
-                      <thead className="sticky top-0 bg-slate-900 z-10">
-                        <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                          <th className="text-left py-3 px-4">Team</th>
-                          <th className="text-left py-3 px-4 w-16">Open</th>
-                          <th className="text-left py-3 px-4">Needs</th>
+                      <thead className="hidden">
+                        <tr>
+                          <th>Pick</th>
+                          <th>Player</th>
+                          <th>Positions</th>
+                          <th>MLB Team</th>
+                          <th>Fantasy Team</th>
                         </tr>
-                        <tr><td colSpan={3} className="pb-1"><div className="h-px bg-slate-800 w-full" /></td></tr>
                       </thead>
                       <tbody>
-                        {teamNeeds.map((t, i) => (
-                          <tr
-                            key={t.team}
-                            onClick={() => { setSelectedTeam(t.team); setViewMode('TEAM'); }}
-                            className={`border-b border-slate-800/50 cursor-pointer transition-colors hover:bg-slate-800/30 ${t.team === myTeamName ? 'bg-indigo-500/5' : i % 2 === 0 ? 'bg-slate-950' : 'bg-slate-900/20'}`}
-                          >
-                            <td className="py-3 px-4">
-                              <span className={`font-bold text-sm ${t.team === myTeamName ? 'text-indigo-300' : 'text-slate-200'}`}>{t.team}</span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <span className={`text-xs font-black ${t.openCount === 0 ? 'text-green-400' : 'text-orange-400'}`}>
-                                {t.openCount === 0 ? 'FULL' : t.openCount}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="flex flex-wrap gap-1">
-                                {t.missing.map((slot, j) => (
-                                  <span key={j} className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase border
-                                  ${slot.includes('SP') || slot.includes('RP') ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                                      slot.includes('LF') || slot.includes('CF') || slot.includes('RF') ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                                        slot === 'UTIL' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                                          'bg-orange-500/10 text-orange-400 border-orange-500/20'
-                                    }`}
-                                  >{slot}</span>
-                                ))}
-                                {t.openCount === 0 && <span className="text-[9px] text-green-500 italic">Roster Complete</span>}
+                        {roundsMap[rd].map((p, i) => (
+                          <tr key={p.pk} className={`border-b border-slate-800/30 transition-colors hover:bg-slate-800/30 ${i % 2 === 0 ? 'bg-slate-950/30' : 'bg-transparent'} last:border-0`}>
+                            <td className="py-2 px-5 w-24">
+                              <div className="flex items-center gap-2">
+                                <span title={`Pick number within Round ${rd}`} className="text-[10px] font-black text-indigo-300 border border-indigo-500/20 bg-indigo-500/10 px-1.5 py-0.5 rounded">
+                                  P{(p.pk - 1) % totalTeams + 1}
+                                </span>
+                                <span title={`Overall Pick #${p.pk}`} className="text-[9px] font-bold text-slate-600">
+                                  (#{p.pk})
+                                </span>
                               </div>
+                            </td>
+                            <td className="py-2 px-2">
+                              <span className="font-bold text-slate-200 text-sm tracking-tight">{p.name}</span>
+                            </td>
+                            <td className="py-2 px-2 w-24">
+                              <span className="text-[9px] font-black text-slate-500 bg-slate-800/50 px-1.5 py-0.5 rounded uppercase tracking-wider">{p.pos}</span>
+                            </td>
+                            <td className="py-2 px-2 w-20">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase">{p.playerTeam}</span>
+                            </td>
+                            <td className="py-2 px-5 text-right">
+                              <span className="text-[11px] font-black text-slate-300 italic tracking-wide">{p.tm}</span>
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                    {teamNeeds.length === 0 && (
-                      <div className="text-center mt-20 opacity-50 font-black tracking-widest text-slate-500">NO DRAFT DATA YET</div>
-                    )}
                   </div>
-                </div>
-              );
-            })()}
+                ))}
+              </div>
+            );
+          })()}
 
-            {viewMode === 'WATCHLIST' && (
-              <div className="flex flex-col flex-1 min-h-0">
-                {/* Watchlist Header */}
-                <div className="mb-6 shrink-0 flex items-center justify-between">
-                  <h3 className="text-sm font-black uppercase tracking-widest text-slate-500 bg-slate-800/50 px-3 py-1.5 rounded-lg flex items-center gap-2">
-                    <ListOrdered className="w-4 h-4 text-indigo-400" />
-                    Watchlist ({myRoster.length})
-                  </h3>
+          {viewMode === 'TEAM' && (
+            <div className="flex-1 flex gap-6 overflow-hidden">
+              {/* Team sidebar */}
+              <div className="w-44 shrink-0 flex flex-col gap-1 overflow-y-auto pr-2 border-r border-slate-800">
+                <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 sticky top-0 bg-slate-900 py-2">Franchise</div>
+                {Array.from(new Set(draftResults.filter(p => p.tm).map(p => p.tm as string))).sort((a, b) => {
+                  if (a === myTeamName) return -1;
+                  if (b === myTeamName) return 1;
+                  return a.localeCompare(b);
+                }).map(team => (
+                  <button
+                    key={team}
+                    onClick={() => setSelectedTeam(team)}
+                    className={`text-left px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${selectedTeam === team ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
+                  >
+                    {team === myTeamName ? `★ ${team}` : team}
+                  </button>
+                ))}
+              </div>
 
-                  <div className="flex bg-slate-950 rounded-lg p-1 border border-slate-800 shrink-0 shadow-inner">
-                    {(['AVAILABLE', 'DRAFTED', 'ALL'] as const).map(tab => (
-                      <button
-                        key={tab}
-                        onClick={() => setWatchlistTab(tab)}
-                        className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all ${watchlistTab === tab ? 'bg-indigo-600 text-white shadow shadow-indigo-500/30' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}
-                      >
-                        {tab}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Filters & Sorting */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 shrink-0 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
-                  <div className="flex gap-1.5 flex-wrap">
-                    {['ALL', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'SP', 'RP'].map(pos => (
-                      <button
-                        key={pos}
-                        onClick={() => setWatchlistPosFilter(pos)}
-                        className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${watchlistPosFilter === pos
-                          ? 'bg-indigo-600 text-white shadow shadow-indigo-500/30'
-                          : 'bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700'
-                          }`}
-                      >
-                        {pos}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-1.5">
-                    {([['original', 'My Order'], ['rank-asc', 'Rank ↑'], ['rank-desc', 'Rank ↓']] as const).map(([val, label]) => (
-                      <button
-                        key={val}
-                        onClick={() => setWatchlistSort(val)}
-                        className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${watchlistSort === val
-                          ? 'bg-slate-700 text-slate-200 shadow'
-                          : 'bg-slate-800/40 text-slate-500 hover:text-slate-300 hover:bg-slate-700/50'
-                          }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Grid view of Watchlist items */}
-                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+              {/* Roster table */}
+              <div className="flex-1 overflow-y-auto">
+                <div className="flex items-baseline gap-3 mb-4">
+                  <h3 className="text-lg font-black italic tracking-tighter text-indigo-400">{selectedTeam}</h3>
                   {(() => {
-                    let view = myRoster.map((p, originalIndex) => ({ p, originalIndex }));
-
-                    if (watchlistPosFilter !== 'ALL') {
-                      view = view.filter(({ p }) =>
-                        p.pos?.toUpperCase().split(/[\/,]+/).includes(watchlistPosFilter)
-                      );
-                    }
-
-                    if (watchlistSort === 'rank-asc') {
-                      view = [...view].sort((a, b) => (a.p.adp || 9999) - (b.p.adp || 9999));
-                    } else if (watchlistSort === 'rank-desc') {
-                      view = [...view].sort((a, b) => (b.p.adp || 0) - (a.p.adp || 0));
-                    }
-
-                    const visibleView = view.filter(({ p }) => {
-                      const isTaken = draftResults.some(d => (d.tm || d.pos.toLowerCase().includes('round')) && normalizeName(d.name) === normalizeName(p.name));
-                      if (watchlistTab === 'AVAILABLE') return !isTaken;
-                      if (watchlistTab === 'DRAFTED') return isTaken;
-                      return true;
-                    });
-
-                    if (visibleView.length === 0) {
-                      return <div className="flex items-center justify-center p-20 text-slate-600 text-sm font-bold uppercase tracking-widest bg-slate-950/30 rounded-2xl border border-dashed border-slate-800">No players match current filter</div>;
-                    }
-
-                    return (
-                      <div className="flex flex-col gap-4 max-w-4xl mx-auto w-full">
-                        {visibleView.map(({ p, originalIndex }) => {
-                          const isTaken = draftResults.some(d => (d.tm || d.pos.toLowerCase().includes('round')) && normalizeName(d.name) === normalizeName(p.name));
-                          const yhPlayer = yahooPlayers.find(yh => normalizeName(yh.name) === normalizeName(p.name)) || {};
-                          const yhStats = yahooStats[p.name.toLowerCase()];
-
-                          let yahooStatsPairs = null;
-                          if (yhStats) {
-                            const isPitcher = /SP|RP|P/i.test(p.pos);
-                            const ids = isPitcher ? PITCHING_STAT_IDS : BATTING_STAT_IDS;
-                            yahooStatsPairs = ids
-                              .map(id => ({ id, label: YAHOO_STAT_LABELS[id] || id, val: yhStats[id] }))
-                              .filter(s => s.val && s.val !== '-' && s.val !== '0' && s.val !== '');
-                          }
-
-                          const enrichedPlayer = {
-                            ...p,
-                            ...yhPlayer,
-                            rationale: aiNotes[normalizeName(p.name)] || p.rationale,
-                            yahooStatsPairs: yahooStatsPairs
-                          };
-
-                          return (
-                            <WatchlistItem
-                              key={originalIndex}
-                              player={enrichedPlayer}
-                              activeSport={activeSport}
-                              isTaken={isTaken}
-                              isFirst={originalIndex === 0}
-                              isLast={originalIndex === myRoster.length - 1}
-                              onMoveUp={() => {
-                                const newRoster = [...myRoster];
-                                [newRoster[originalIndex - 1], newRoster[originalIndex]] = [newRoster[originalIndex], newRoster[originalIndex - 1]];
-                                updateWatchlist(newRoster);
-                              }}
-                              onMoveDown={() => {
-                                const newRoster = [...myRoster];
-                                [newRoster[originalIndex + 1], newRoster[originalIndex]] = [newRoster[originalIndex], newRoster[originalIndex + 1]];
-                                updateWatchlist(newRoster);
-                              }}
-                              onDelete={() => updateWatchlist(myRoster.filter((_, idx) => idx !== originalIndex))}
-                              index={originalIndex}
-                              draggedIndex={draggedItemIndex}
-                              dragOverIndex={dragOverItemIndex}
-                              onDragStart={handleDragStart}
-                              onDragOver={handleDragOver}
-                              onDragEnd={handleDragEnd}
-                              onDrop={handleDrop}
-                              onAskAssistant={askAssistant}
-                            />
-                          );
-                        })}
-                      </div>
-                    );
+                    const teamPicks = draftResults.filter(p => p.tm === selectedTeam);
+                    const roster = getTeamRoster(teamPicks);
+                    const missing = getMissingSlots(roster);
+                    return missing.length > 0
+                      ? <span className="text-[10px] font-black text-orange-400 uppercase tracking-wider">{missing.length} open slots</span>
+                      : <span className="text-[10px] font-black text-green-400 uppercase tracking-wider">Roster Full</span>;
                   })()}
                 </div>
+                <table className="w-full border-collapse text-sm">
+                  <thead className="sticky top-0 bg-slate-900 z-10">
+                    <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                      <th className="text-left py-2 px-3 w-14">Slot</th>
+                      <th className="text-left py-2 px-3">Player</th>
+                      <th className="text-left py-2 px-3 w-12">Team</th>
+                      <th className="text-left py-2 px-3 w-24">Pos</th>
+                      <th className="text-left py-2 px-3 w-24">Pick</th>
+                    </tr>
+                    <tr><td colSpan={5}><div className="h-px bg-slate-800 w-full" /></td></tr>
+                  </thead>
+                  <tbody>
+                    {getTeamRoster(draftResults.filter(p => p.tm === selectedTeam)).map((r, i) => (
+                      <tr key={i} className={`border-b border-slate-800/30 ${r.player ? (i % 2 === 0 ? 'bg-slate-950' : 'bg-slate-900/20') : 'opacity-40'}`}>
+                        <td className="py-2 px-3">
+                          <span className={`text-[10px] font-black uppercase ${r.player ? 'text-indigo-400' : 'text-slate-600 italic'}`}>{r.slot}</span>
+                        </td>
+                        <td className="py-2 px-3">
+                          {r.player
+                            ? <span className="font-bold text-sm text-slate-100">{r.player.name}</span>
+                            : <span className="text-xs text-slate-600 italic">Empty</span>
+                          }
+                        </td>
+                        <td className="py-2 px-3">
+                          <span className="text-[10px] text-slate-500 font-bold">{r.player?.playerTeam || ''}</span>
+                        </td>
+                        <td className="py-2 px-3">
+                          <span className="text-[10px] text-indigo-400 font-bold uppercase">{r.player?.pos || ''}</span>
+                        </td>
+                        <td className="py-2 px-3">
+                          {r.player && (
+                            <span className="text-[10px] text-slate-500 font-bold">
+                              {r.player.isKeeper ? 'KEEPER' : `#${r.player.pk} Rd ${r.player.rd}`}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            )}
-          </div>
-        </div >
-      </main >
+            </div>
+          )}
+
+          {viewMode === 'NEEDS' && (() => {
+            // Build a sorted list of all teams with their missing positions
+            const teamMap = draftResults
+              .filter(p => p.tm)
+              .reduce((acc, p) => {
+                const t = p.tm as string;
+                if (!acc[t]) acc[t] = [];
+                acc[t].push(p);
+                return acc;
+              }, {} as Record<string, typeof draftResults>);
+
+            const teamNeeds = Object.entries(teamMap).map(([team, picks]) => {
+              const roster = getTeamRoster(picks);
+              const missing = getMissingSlots(roster);
+              return { team, missing, openCount: missing.length };
+            }).sort((a, b) => {
+              // Put my team first, then sort by most needs
+              if (a.team === myTeamName) return -1;
+              if (b.team === myTeamName) return 1;
+              return b.openCount - a.openCount;
+            });
+
+            // Count how many teams need each position
+            const positionDemand: Record<string, number> = {};
+            const totalTeams = teamNeeds.length;
+            teamNeeds.forEach(t => {
+              t.missing.forEach(slot => {
+                positionDemand[slot] = (positionDemand[slot] || 0) + 1;
+              });
+            });
+            const demandSorted = Object.entries(positionDemand).sort((a, b) => b[1] - a[1]);
+            const maxDemand = demandSorted[0]?.[1] || 1;
+
+            return (
+              <div className="flex-1 flex flex-col overflow-hidden gap-4">
+
+                {/* Position Demand Summary */}
+                {demandSorted.length > 0 && (
+                  <div className="shrink-0">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Position Demand — Teams Still Needing</div>
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-2">
+                      {demandSorted.map(([pos, count]) => {
+                        const pct = (count / maxDemand) * 100;
+                        const isHot = count >= maxDemand * 0.75;
+                        const isWarm = count >= maxDemand * 0.45;
+                        const barColor = isHot ? 'bg-red-500' : isWarm ? 'bg-orange-500' : 'bg-slate-600';
+                        const textColor = isHot ? 'text-red-400' : isWarm ? 'text-orange-400' : 'text-slate-500';
+                        return (
+                          <div key={pos} className="flex items-center gap-2">
+                            <span className={`text-[9px] font-black w-7 shrink-0 text-right ${textColor}`}>{pos}</span>
+                            <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
+                            </div>
+                            <span className={`text-[9px] font-black tabular-nums w-8 shrink-0 ${textColor}`}>{count}/{totalTeams}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="h-px bg-slate-800 mt-4 mb-2" />
+                  </div>
+                )}
+
+                {/* Team needs table */}
+                <div className="flex-1 overflow-y-auto">
+                  <table className="w-full border-collapse text-sm">
+                    <thead className="sticky top-0 bg-slate-900 z-10">
+                      <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                        <th className="text-left py-3 px-4">Team</th>
+                        <th className="text-left py-3 px-4 w-16">Open</th>
+                        <th className="text-left py-3 px-4">Needs</th>
+                      </tr>
+                      <tr><td colSpan={3} className="pb-1"><div className="h-px bg-slate-800 w-full" /></td></tr>
+                    </thead>
+                    <tbody>
+                      {teamNeeds.map((t, i) => (
+                        <tr
+                          key={t.team}
+                          onClick={() => { setSelectedTeam(t.team); setViewMode('TEAM'); }}
+                          className={`border-b border-slate-800/50 cursor-pointer transition-colors hover:bg-slate-800/30 ${t.team === myTeamName ? 'bg-indigo-500/5' : i % 2 === 0 ? 'bg-slate-950' : 'bg-slate-900/20'}`}
+                        >
+                          <td className="py-3 px-4">
+                            <span className={`font-bold text-sm ${t.team === myTeamName ? 'text-indigo-300' : 'text-slate-200'}`}>{t.team}</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`text-xs font-black ${t.openCount === 0 ? 'text-green-400' : 'text-orange-400'}`}>
+                              {t.openCount === 0 ? 'FULL' : t.openCount}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex flex-wrap gap-1">
+                              {t.missing.map((slot, j) => (
+                                <span key={j} className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase border
+                                  ${slot.includes('SP') || slot.includes('RP') ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                    slot.includes('LF') || slot.includes('CF') || slot.includes('RF') ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                      slot === 'UTIL' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                                        'bg-orange-500/10 text-orange-400 border-orange-500/20'
+                                  }`}
+                                >{slot}</span>
+                              ))}
+                              {t.openCount === 0 && <span className="text-[9px] text-green-500 italic">Roster Complete</span>}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {teamNeeds.length === 0 && (
+                    <div className="text-center mt-20 opacity-50 font-black tracking-widest text-slate-500">NO DRAFT DATA YET</div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
+          {viewMode === 'WATCHLIST' && (
+            <div className="flex flex-col flex-1 min-h-0">
+              {/* Watchlist Header */}
+              <div className="mb-6 shrink-0 flex items-center justify-between">
+                <h3 className="text-sm font-black uppercase tracking-widest text-slate-500 bg-slate-800/50 px-3 py-1.5 rounded-lg flex items-center gap-2">
+                  <ListOrdered className="w-4 h-4 text-indigo-400" />
+                  Watchlist ({myRoster.length})
+                </h3>
+
+                <div className="flex bg-slate-950 rounded-lg p-1 border border-slate-800 shrink-0 shadow-inner">
+                  {(['AVAILABLE', 'DRAFTED', 'ALL'] as const).map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setWatchlistTab(tab)}
+                      className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all ${watchlistTab === tab ? 'bg-indigo-600 text-white shadow shadow-indigo-500/30' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Filters & Sorting */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 shrink-0 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
+                <div className="flex gap-1.5 flex-wrap">
+                  {['ALL', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'SP', 'RP'].map(pos => (
+                    <button
+                      key={pos}
+                      onClick={() => setWatchlistPosFilter(pos)}
+                      className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${watchlistPosFilter === pos
+                        ? 'bg-indigo-600 text-white shadow shadow-indigo-500/30'
+                        : 'bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700'
+                        }`}
+                    >
+                      {pos}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex gap-1.5">
+                  {([['original', 'My Order'], ['rank-asc', 'Rank ↑'], ['rank-desc', 'Rank ↓']] as const).map(([val, label]) => (
+                    <button
+                      key={val}
+                      onClick={() => setWatchlistSort(val)}
+                      className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${watchlistSort === val
+                        ? 'bg-slate-700 text-slate-200 shadow'
+                        : 'bg-slate-800/40 text-slate-500 hover:text-slate-300 hover:bg-slate-700/50'
+                        }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Grid view of Watchlist items */}
+              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                {(() => {
+                  let view = myRoster.map((p, originalIndex) => ({ p, originalIndex }));
+
+                  if (watchlistPosFilter !== 'ALL') {
+                    view = view.filter(({ p }) =>
+                      p.pos?.toUpperCase().split(/[\/,]+/).includes(watchlistPosFilter)
+                    );
+                  }
+
+                  if (watchlistSort === 'rank-asc') {
+                    view = [...view].sort((a, b) => (a.p.adp || 9999) - (b.p.adp || 9999));
+                  } else if (watchlistSort === 'rank-desc') {
+                    view = [...view].sort((a, b) => (b.p.adp || 0) - (a.p.adp || 0));
+                  }
+
+                  const visibleView = view.filter(({ p }) => {
+                    const isTaken = draftResults.some(d => (d.tm || d.pos.toLowerCase().includes('round')) && normalizeName(d.name) === normalizeName(p.name));
+                    if (watchlistTab === 'AVAILABLE') return !isTaken;
+                    if (watchlistTab === 'DRAFTED') return isTaken;
+                    return true;
+                  });
+
+                  if (visibleView.length === 0) {
+                    return <div className="flex items-center justify-center p-20 text-slate-600 text-sm font-bold uppercase tracking-widest bg-slate-950/30 rounded-2xl border border-dashed border-slate-800">No players match current filter</div>;
+                  }
+
+                  return (
+                    <div className="flex flex-col gap-4 max-w-4xl mx-auto w-full">
+                      {visibleView.map(({ p, originalIndex }) => {
+                        const isTaken = draftResults.some(d => (d.tm || d.pos.toLowerCase().includes('round')) && normalizeName(d.name) === normalizeName(p.name));
+                        const yhPlayer = yahooPlayers.find(yh => normalizeName(yh.name) === normalizeName(p.name)) || {};
+                        const yhStats = yahooStats[p.name.toLowerCase()];
+
+                        let yahooStatsPairs = null;
+                        if (yhStats) {
+                          const isPitcher = /SP|RP|P/i.test(p.pos);
+                          const ids = isPitcher ? PITCHING_STAT_IDS : BATTING_STAT_IDS;
+                          yahooStatsPairs = ids
+                            .map(id => ({ id, label: YAHOO_STAT_LABELS[id] || id, val: yhStats[id] }))
+                            .filter(s => s.val && s.val !== '-' && s.val !== '0' && s.val !== '');
+                        }
+
+                        const enrichedPlayer = {
+                          ...p,
+                          ...yhPlayer,
+                          rationale: aiNotes[normalizeName(p.name)] || p.rationale,
+                          yahooStatsPairs: yahooStatsPairs
+                        };
+
+                        return (
+                          <WatchlistItem
+                            key={originalIndex}
+                            player={enrichedPlayer}
+                            activeSport={activeSport}
+                            isTaken={isTaken}
+                            isFirst={originalIndex === 0}
+                            isLast={originalIndex === myRoster.length - 1}
+                            onMoveUp={() => {
+                              const newRoster = [...myRoster];
+                              [newRoster[originalIndex - 1], newRoster[originalIndex]] = [newRoster[originalIndex], newRoster[originalIndex - 1]];
+                              updateWatchlist(newRoster);
+                            }}
+                            onMoveDown={() => {
+                              const newRoster = [...myRoster];
+                              [newRoster[originalIndex + 1], newRoster[originalIndex]] = [newRoster[originalIndex], newRoster[originalIndex + 1]];
+                              updateWatchlist(newRoster);
+                            }}
+                            onDelete={() => updateWatchlist(myRoster.filter((_, idx) => idx !== originalIndex))}
+                            index={originalIndex}
+                            draggedIndex={draggedItemIndex}
+                            dragOverIndex={dragOverItemIndex}
+                            onDragStart={handleDragStart}
+                            onDragOver={handleDragOver}
+                            onDragEnd={handleDragEnd}
+                            onDrop={handleDrop}
+                            onAskAssistant={askAssistant}
+                          />
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
 
       {/* Assistant Modal / Popover */}
       {

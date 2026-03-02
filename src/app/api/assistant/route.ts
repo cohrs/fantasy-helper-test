@@ -39,6 +39,25 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        // Build RECENT DRAFT TRENDS: compare actual pick vs projection to identify reaches/falls
+        let draftTrendsContext = '';
+        const recentPicks = [...(allDrafted || [])].sort((a: any, b: any) => b.pk - a.pk).slice(0, 20);
+        if (recentPicks.length > 0) {
+            draftTrendsContext = '\n=== RECENT DRAFT TRENDS (last 20 picks) ===\nUse this to calibrate how aggressively this room is drafting each position. A positive number = reached early, negative = fell later than expected.\n';
+            recentPicks.forEach((d: any) => {
+                const projection = d.yahooRank || d.adp;
+                if (projection && d.pk) {
+                    const diff = d.pk - projection;
+                    const label = diff < -10 ? `[REACHED ${Math.abs(diff)} picks early]` :
+                        diff > 10 ? `[FELL ${diff} picks late]` :
+                            `[On value]`;
+                    draftTrendsContext += `- Pick #${d.pk}: ${d.name} (${d.pos}) — Projected ${projection}, Actual ${d.pk} ${label}\n`;
+                } else {
+                    draftTrendsContext += `- Pick #${d.pk}: ${d.name} (${d.pos}) — No projection data\n`;
+                }
+            });
+        }
+
         // Build a compact representation of the full available pool
         const topBoardClipped = (availablePool || []).map((p: any) =>
             `${p.yahooRank || p.adp}. ${p.name} (${p.team} - ${p.pos})`
@@ -50,7 +69,7 @@ Because 10 players are kept per team (180 total elite players off the board), th
 
 === IMPORTANT GROUNDING RULE ===
 You MUST use your Google Search tool to verify the most recent 2026 spring training news, injury statuses, and positional changes before recommending any player. Real-time accuracy is critical.
-${feedbackContext}
+${feedbackContext}${draftTrendsContext}
 === MY ROSTER CONTEXT ===
 ${JSON.stringify(myTeam, null, 2)}
 
