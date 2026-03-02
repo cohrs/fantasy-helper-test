@@ -100,7 +100,7 @@ If the user is asking a general question about players, injuries, news, or strat
 
         // Build multi-turn conversation: system bootstrap + prior history + current request
         // Strip out extra fields (recommendations, timestamp) that Gemini doesn't accept
-        const cleanedHistory = chatHistory.map(msg => ({
+        const cleanedHistory = chatHistory.map((msg: any) => ({
             role: msg.role,
             parts: msg.parts
         }));
