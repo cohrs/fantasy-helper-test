@@ -583,10 +583,10 @@ export default function Home() {
       if (draftData.roster) setMyRoster(draftData.roster);
       if (draftData.draft && draftData.draft.length > 0) {
         setDraftResults(draftData.draft);
-        // Use max pk from non-keeper drafted picks to get correct overall pick number
-        const nonKeeperPicks = draftData.draft.filter((p: any) => p.tm && !p.isKeeper);
-        const maxPk = nonKeeperPicks.length > 0 ? Math.max(...nonKeeperPicks.map((p: any) => p.pk)) : 0;
-        setCurrentPick(maxPk + 1);
+        // Calculate current pick: count keepers + non-keeper picks with teams
+        const keeperCount = draftData.draft.filter((p: any) => p.isKeeper).length;
+        const nonKeeperPicks = draftData.draft.filter((p: any) => p.tm && !p.isKeeper).length;
+        setCurrentPick(keeperCount + nonKeeperPicks + 1);
       }
       if (notesData) {
         // Normalize keys so they match the normalizeName function used for lookups
@@ -611,10 +611,10 @@ export default function Home() {
 
       if (data.success && data.picks && data.picks.length > 0) {
         setDraftResults(data.picks);
-        // Use max pk from non-keeper drafted picks to get correct overall pick number
-        const nonKeeperPicks = data.picks.filter((p: any) => p.tm && !p.isKeeper);
-        const maxPk = nonKeeperPicks.length > 0 ? Math.max(...nonKeeperPicks.map((p: any) => p.pk)) : 0;
-        setCurrentPick(maxPk + 1);
+        // Calculate current pick: count keepers + non-keeper picks with teams
+        const keeperCount = data.picks.filter((p: any) => p.isKeeper).length;
+        const nonKeeperPicks = data.picks.filter((p: any) => p.tm && !p.isKeeper).length;
+        setCurrentPick(keeperCount + nonKeeperPicks + 1);
       } else {
         alert("Failed to sync Draft! No picks parsed or thread is empty.");
       }
