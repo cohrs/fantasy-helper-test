@@ -17,7 +17,6 @@ export const authOptions: NextAuthOptions = {
                 url: "https://api.login.yahoo.com/oauth2/request_auth",
                 params: {
                     client_id: process.env.YAHOO_CLIENT_ID,
-                    redirect_uri: process.env.NEXTAUTH_URL + "/api/auth/callback/yahoo",
                     response_type: "code",
                 }
             },
