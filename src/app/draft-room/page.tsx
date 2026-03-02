@@ -833,14 +833,17 @@ export default function Home() {
       const response = await fetch('/api/scrape-draft');
       const data = await response.json();
 
-      if (data.success && data.picks && data.picks.length > 0) {
-        setDraftResults(data.picks);
-        // Current pick = number of non-keeper picks made + 1
-        // (Keepers don't count as draft picks)
-        const nonKeeperPicks = data.picks.filter((p: any) => p.tm && !p.isKeeper).length;
-        setCurrentPick(nonKeeperPicks + 1);
+      if (data.success) {
+        if (data.picks && data.picks.length > 0) {
+          setDraftResults(data.picks);
+          // Current pick = number of non-keeper picks made + 1
+          // (Keepers don't count as draft picks)
+          const nonKeeperPicks = data.picks.filter((p: any) => p.tm && !p.isKeeper).length;
+          setCurrentPick(nonKeeperPicks + 1);
+        }
+        // Success even if no new picks - don't show error
       } else {
-        alert("Failed to sync Draft! No picks parsed or thread is empty.");
+        alert("Failed to sync Draft! " + (data.error || "Unknown error"));
       }
     } catch (err) {
       console.error(err);
