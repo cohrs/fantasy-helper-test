@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Fantasy Baseball Draft Assistant
+
+A Next.js application for managing an 18-team fantasy baseball draft with AI-powered player analysis and real-time draft tracking.
+
+## Features
+
+- **Live Draft Tracking** - Scrapes draft picks from Tapatalk forum threads
+- **AI Player Analysis** - Gemini-powered insights for draft decisions
+- **Yahoo Integration** - Fetches player rankings, stats, and news
+- **Watchlist Management** - Drag-and-drop priority ranking of target players
+- **Draft Board** - Filterable player pool with stats and availability
+- **Position Tracking** - Visual roster builder showing open slots
+
+## Tech Stack
+
+- Next.js 15 (App Router)
+- TypeScript
+- Tailwind CSS
+- NextAuth.js (Yahoo OAuth)
+- Google Gemini API
+- Axios for web scraping
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- pnpm
+
+### Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create a `.env.local` file with:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+NEXTAUTH_URL=https://localhost:3000
+NEXTAUTH_SECRET=your_secret_here
+YAHOO_CLIENT_ID=your_yahoo_client_id
+YAHOO_CLIENT_SECRET=your_yahoo_client_secret
+YAHOO_LEAGUE_ID=your_league_id
+GEMINI_API_KEY=your_gemini_api_key
+```
 
-## Learn More
+### Development
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+pnpm dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open [https://localhost:3000](https://localhost:3000) (uses HTTPS for Yahoo OAuth)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+- `/src/app/api/assistant` - Gemini AI integration
+- `/src/app/api/yahoo` - Yahoo Fantasy Sports API
+- `/src/app/api/scrape-draft` - Tapatalk draft thread scraper
+- `/src/app/draft-room` - Main draft interface
+- `*.json` - Local data storage (draft results, watchlist, AI notes)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## League Configuration
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- 18 teams
+- 7x7 categories (R, H, HR, RBI, SB, AVG, OPS × W, SV, K, HLD, ERA, WHIP, QS)
+- 10 keepers per team
+- Linear draft (not snake)
+- Draft position: 11
+
+## Roadmap
+
+- [ ] Migrate to database (Vercel Postgres/Supabase)
+- [ ] Multi-user support
+- [ ] Real-time draft updates
+- [ ] Trade analyzer
+- [ ] Waiver wire assistant
+
+## License
+
+Private project
