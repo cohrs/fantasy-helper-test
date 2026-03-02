@@ -320,17 +320,6 @@ const WatchlistItem = ({
                     </p>
                   )}
                   
-                  {yahooNews.playerOutlook && (
-                    <div className="mt-2 p-2 bg-slate-800/30 rounded border border-emerald-500/10">
-                      <div className="text-[9px] font-bold text-emerald-400 mb-1 uppercase tracking-wider">
-                        2026 Player Outlook
-                      </div>
-                      <p className="text-[10px] text-slate-300 leading-relaxed">
-                        {yahooNews.playerOutlook}
-                      </p>
-                    </div>
-                  )}
-                  
                   {yahooNews.notes && yahooNews.notes.length > 0 ? (
                     <div className="space-y-2 mt-2">
                       {yahooNews.notes.map((note: any, idx: number) => (
@@ -567,17 +556,6 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
                       <p className="text-[10px] text-slate-400 italic">
                         {yahooNews.statusFull}
                       </p>
-                    )}
-                    
-                    {yahooNews.playerOutlook && (
-                      <div className="mt-2 p-2 bg-slate-800/30 rounded border border-emerald-500/10">
-                        <div className="text-[9px] font-bold text-emerald-400 mb-1 uppercase tracking-wider">
-                          2026 Player Outlook
-                        </div>
-                        <p className="text-[10px] text-slate-300 leading-relaxed">
-                          {yahooNews.playerOutlook}
-                        </p>
-                      </div>
                     )}
                     
                     {yahooNews.notes && yahooNews.notes.length > 0 ? (

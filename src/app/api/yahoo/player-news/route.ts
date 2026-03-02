@@ -20,8 +20,8 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Player name required' }, { status: 400 });
         }
 
-        // Search for player by name - request all available editorial content
-        const searchUrl = `https://fantasysports.yahooapis.com/fantasy/v2/league/${LEAGUE_KEY}/players;search=${encodeURIComponent(playerName)};out=player_notes,editorial?format=json`;
+        // Search for player by name - request player notes only (editorial not supported)
+        const searchUrl = `https://fantasysports.yahooapis.com/fantasy/v2/league/${LEAGUE_KEY}/players;search=${encodeURIComponent(playerName)};out=player_notes?format=json`;
 
         const response = await fetch(searchUrl, {
             headers: {
@@ -72,13 +72,6 @@ export async function GET(request: Request) {
         const mlbTeam = findField('editorial_team_abbr') || 'FA';
         const imageUrl = findField('image_url') || null;
         const hasNotes = !!findField('has_player_notes');
-        
-        // Try to get editorial content (player outlook)
-        const editorial = findField('editorial') || null;
-        let playerOutlook = null;
-        if (editorial) {
-            playerOutlook = editorial.player_outlook || editorial.analysis || null;
-        }
 
         // Parse player notes
         const notes: any[] = [];
@@ -107,10 +100,8 @@ export async function GET(request: Request) {
                 statusFull,
                 imageUrl,
                 hasNotes,
-                playerOutlook,
                 notes
-            },
-            debug: editorial // Include raw editorial data for debugging
+            }
         });
 
     } catch (error) {
