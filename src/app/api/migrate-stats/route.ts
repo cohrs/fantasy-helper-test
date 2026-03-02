@@ -1,20 +1,26 @@
 import { NextResponse } from 'next/server';
-import { savePlayerStats } from '@/lib/db';
+import { neon } from '@neondatabase/serverless';
+import fs from 'fs';
+import path from 'path';
 
 // This endpoint migrates stats from the static JSON file to the database
 // Call it once after deployment to populate the database
 export async function POST(request: Request) {
     try {
         // Check for a secret key to prevent unauthorized access
-        const { secret } = await request.json();
+        const body = await request.json();
+        const { secret } = body;
         
         if (secret !== process.env.NEXTAUTH_SECRET) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Import the stats JSON file
-        const YAHOO_STATS_DATA = await import('../../../../yahoo-stats.json');
-        const players = YAHOO_STATS_DATA.default?.players || YAHOO_STATS_DATA.players || [];
+        const sql = neon(process.env.POSTGRES_URL!);
+        
+        // Read the stats JSON file
+        const statsPath = path.join(process.cwd(), 'yahoo-stats.json');
+        const statsData = JSON.parse(fs.readFileSync(statsPath, 'utf-8'));
+        const players = statsData.players || [];
         
         if (players.length === 0) {
             return NextResponse.json({ 
@@ -22,13 +28,44 @@ export async function POST(request: Request) {
             }, { status: 400 });
         }
         
-        // Save to database
-        await savePlayerStats(players, 2025);
+        // Save to database using the same logic as the migration script
+        let inserted = 0;
+        for (const player of players) {
+            const normalized = player.name
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .replace(/[^a-z\s]/g, '')
+                .replace(/\s+(jr|sr|ii|iii)$/, '')
+                .trim()
+                .replace(/\s+/g, '');
+            
+            await sql`
+                INSERT INTO player_stats (player_name, player_name_normalized, team_abbr, position, stats, season, updated_at)
+                VALUES (
+                    ${player.name}, 
+                    ${normalized}, 
+                    ${player.team || null}, 
+                    ${player.pos || null}, 
+                    ${JSON.stringify(player.stats)}, 
+                    2025,
+                    CURRENT_TIMESTAMP
+                )
+                ON CONFLICT (player_name_normalized)
+                DO UPDATE SET 
+                    stats = ${JSON.stringify(player.stats)},
+                    team_abbr = ${player.team || null},
+                    position = ${player.pos || null},
+                    season = 2025,
+                    updated_at = CURRENT_TIMESTAMP
+            `;
+            inserted++;
+        }
         
         return NextResponse.json({ 
             success: true,
-            message: `Migrated ${players.length} player stats for 2025 season`,
-            count: players.length
+            message: `Migrated ${inserted} player stats for 2025 season`,
+            count: inserted
         });
         
     } catch (error) {
@@ -43,8 +80,7 @@ export async function POST(request: Request) {
 // GET endpoint to check migration status
 export async function GET() {
     try {
-        const { getDb } = await import('@/lib/db');
-        const sql = getDb();
+        const sql = neon(process.env.POSTGRES_URL!);
         
         const result = await sql`SELECT COUNT(*) as count FROM player_stats WHERE season = 2025`;
         const count = result[0]?.count || 0;
