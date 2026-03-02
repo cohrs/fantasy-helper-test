@@ -84,7 +84,8 @@ ${topBoardClipped}
 === INSTRUCTIONS ===
 Analyze the board using your expert knowledge of MLB prospects, playing time, and 7x7 category formats.
 ${customPrompt ? `\nCRITICAL USER REQUEST — MUST prioritize: "${customPrompt}"\n` : ''}
-Respond with the recommended players as a JSON array and NOTHING ELSE. Provide 3 players by default, or the specific number the user requested:
+
+If the user is asking for player recommendations, draft advice, or "who should I pick", respond with a JSON array of recommended players:
 [
   {
     "name": "Player Name",
@@ -93,13 +94,21 @@ Respond with the recommended players as a JSON array and NOTHING ELSE. Provide 3
     "team": "Team Abbreviation",
     "rationale": "2-3 sentences on why they fit this roster right now vs waiting."
   }
-]`;
+]
+
+If the user is asking a general question about players, injuries, news, or strategy (not asking for specific recommendations), respond conversationally in plain text to answer their question. You can still provide insights and analysis, just don't force it into the JSON format.`;
 
         // Build multi-turn conversation: system bootstrap + prior history + current request
+        // Strip out extra fields (recommendations, timestamp) that Gemini doesn't accept
+        const cleanedHistory = chatHistory.map(msg => ({
+            role: msg.role,
+            parts: msg.parts
+        }));
+        
         const contents = [
             { role: 'user' as const, parts: [{ text: systemContext }] },
             { role: 'model' as const, parts: [{ text: 'Understood. Ready to analyze with live 2026 data.' }] },
-            ...chatHistory,
+            ...cleanedHistory,
         ];
 
         const response = await model.generateContent({
@@ -134,6 +143,24 @@ Respond with the recommended players as a JSON array and NOTHING ELSE. Provide 3
                     }
                 });
                 fs.writeFileSync(NOTES_FILE, JSON.stringify(historicalNotes, null, 2));
+            } else if (customPrompt && text) {
+                // Handle conversational player-specific queries (e.g., "Analyze Pablo López")
+                // Check if the prompt mentions a specific player name
+                const playerNameMatch = customPrompt.match(/(?:analyze|about|why|tell me about|what about)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i);
+                if (playerNameMatch) {
+                    const playerName = playerNameMatch[1].trim();
+                    const key = playerName.toLowerCase();
+                    const now = new Date();
+                    const timeStr = now.toLocaleDateString([], { month: 'numeric', day: 'numeric', year: 'numeric' }) + ' ' + now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                    const newNote = `[${timeStr}] ${text}`;
+                    
+                    if (historicalNotes[key]) {
+                        historicalNotes[key] = newNote + '\n\n---\n\n' + historicalNotes[key];
+                    } else {
+                        historicalNotes[key] = newNote;
+                    }
+                    fs.writeFileSync(NOTES_FILE, JSON.stringify(historicalNotes, null, 2));
+                }
             }
         } catch (e) {
             console.error("Failed to parse Gemini JSON:", text);

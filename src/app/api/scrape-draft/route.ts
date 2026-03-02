@@ -48,7 +48,8 @@ export async function GET() {
                     namePart = namePart.replace(keeperMatch[0], '').trim();
                 } else {
                     // Handle Round assignments (e.g. "2nd Round" or "2 nd Round" or "3 rd Round")
-                    const roundMatch = namePart.match(/(\d+)\s*(?:st|nd|rd|th)\s+Round\s*-\s*(.*)/i);
+                    // Allow flexible spacing: "2nd", "2 nd", "2  nd", etc.
+                    const roundMatch = namePart.match(/(\d+)\s*(?:st|nd|rd|th)\s*Round\s*-\s*(.*)/i);
                     if (roundMatch) {
                         forcedRound = parseInt(roundMatch[1]);
                         tm = roundMatch[2].trim();

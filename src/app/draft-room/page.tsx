@@ -51,6 +51,7 @@ const WatchlistItem = ({
   onAskAssistant?: (prompt: string) => void;
 }) => {
   const [showNotes, setShowNotes] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   // Visual feedback logic
   let borderOverride = '';
@@ -58,6 +59,12 @@ const WatchlistItem = ({
     if (draggedIndex! > index) borderOverride = 'border-t-2 border-t-indigo-500';
     else borderOverride = 'border-b-2 border-b-indigo-500';
   }
+
+  const handleAskAI = () => {
+    setShowConfirm(false);
+    onAskAssistant?.(`Analyze ${player.name} for my fantasy team. Give me a short rationale on why they fit or don't fit based on my current roster needs.`);
+    setShowNotes(true);
+  };
 
   return (
     <div
@@ -79,15 +86,10 @@ const WatchlistItem = ({
             <div>{player.yahooRank || player.adp || player.rank || '-'}</div>
           </div>
 
-          {/* Main Player Info Row - Clicking anywhere here toggles notes */}
+          {/* Main Player Info Row - Clicking toggles notes view only */}
           <div
             className="flex-1 min-w-0 flex items-center flex-wrap gap-x-2 gap-y-1 cursor-pointer select-none group"
-            onClick={() => {
-              if (!player.rationale && !player.yahooRecentNote && !showNotes) {
-                onAskAssistant?.(`Analyze ${player.name} for my fantasy team. Give me a short rationale on why they fit or don't fit based on my current roster needs.`);
-              }
-              setShowNotes(v => !v);
-            }}
+            onClick={() => setShowNotes(v => !v)}
           >
 
             {/* Name & Badges */}
@@ -144,11 +146,10 @@ const WatchlistItem = ({
           </button>
           <div className="w-px h-3 bg-slate-800 mx-0.5" />
           <button
-            title="Ask AI about this player"
+            title="Ask AI to analyze this player"
             onClick={(e) => {
               e.stopPropagation();
-              onAskAssistant?.(`Analyze ${player.name} for my fantasy team. Give me a short rationale on why they fit or don't fit based on my current roster needs.`);
-              setShowNotes(true);
+              setShowConfirm(true);
             }}
             className="p-1 rounded hover:bg-sky-500/20 text-slate-500 hover:text-sky-400 transition-all"
           >
@@ -157,26 +158,85 @@ const WatchlistItem = ({
         </div>
       </div>
 
+      {/* Confirmation Dialog for AI Request */}
+      {showConfirm && (
+        <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
+          <div className="bg-slate-900 border border-sky-500/30 rounded-xl p-4 max-w-xs mx-4 shadow-xl">
+            <div className="flex items-center gap-2 mb-3 text-sky-400 font-bold text-sm">
+              <Sparkles className="w-4 h-4" />
+              Request AI Analysis?
+            </div>
+            <p className="text-xs text-slate-400 mb-4">
+              This will use your Gemini API quota to analyze <span className="text-white font-bold">{player.name}</span>.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleAskAI}
+                className="flex-1 px-3 py-2 bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 rounded-lg text-xs font-bold transition-all"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowConfirm(false);
+                }}
+                className="flex-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg text-xs font-bold transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Inline AI rationale / Yahoo Notes — expands below, no clipping */}
       {showNotes && (
         <div className="px-4 pb-4 border-t border-slate-800/50">
           <div className="mt-3 flex flex-col gap-3">
             {player.rationale ? (
-              <div className="bg-sky-500/5 border border-sky-500/20 rounded-xl p-3">
-                <div className="flex items-center gap-1.5 mb-2 text-sky-400 font-black text-[9px] uppercase tracking-widest">
-                  <Sparkles className="w-3 h-3" /> AI Rationale
+              <>
+                <div className="bg-sky-500/5 border border-sky-500/20 rounded-xl p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5 text-sky-400 font-black text-[9px] uppercase tracking-widest">
+                      <Sparkles className="w-3 h-3" /> AI Rationale
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowConfirm(true);
+                      }}
+                      className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/20 transition-all"
+                    >
+                      Refresh
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">
+                    {!player.rationale.startsWith('[') ? `[Legacy Insight] ${player.rationale}` : player.rationale}
+                  </p>
                 </div>
-                <p className="text-[11px] text-slate-300 leading-relaxed">
-                  {!player.rationale.startsWith('[') ? `[Legacy Insight] ${player.rationale}` : player.rationale}
+              </>
+            ) : (
+              <div className="bg-slate-800/20 border border-dashed border-slate-700 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                    <Sparkles className="w-3 h-3 text-sky-500/50" /> No AI Insights Yet
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-500 mb-3">
+                  Request an AI analysis to get personalized insights for {player.name}.
                 </p>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowConfirm(true);
+                  }}
+                  className="w-full px-3 py-2 bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 rounded-lg text-[10px] font-bold transition-all flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-3 h-3" /> Request AI Analysis
+                </button>
               </div>
-            ) : !player.yahooRecentNote ? (
-              <div className="bg-slate-800/20 border border-dashed border-slate-700 rounded-xl p-3">
-                <div className="animate-pulse flex items-center gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                  <Sparkles className="w-3 h-3 text-sky-500/50" /> Generating Insights...
-                </div>
-              </div>
-            ) : null}
+            )}
             {player.yahooRecentNote && (
               <div className="bg-slate-800/20 border-l-2 border-sky-500/30 pl-3 py-2 italic rounded-r-xl">
                 <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Latest News</div>
@@ -201,18 +261,20 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
   const isPitcher = /SP|RP|P/i.test(p.pos);
   const ids = isPitcher ? PITCHING_STAT_IDS : BATTING_STAT_IDS;
   const [showNotes, setShowNotes] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const isInWatchlist = myRoster.some((r: any) => r.name === p.name);
 
+  const handleAskAI = () => {
+    setShowConfirm(false);
+    onAskAssistant?.(`Analyze ${p.name} for my fantasy team. Give me a short rationale on why they fit or don't fit based on my current roster needs.`);
+    setShowNotes(true);
+  };
+
   return (
-    <div className={`px-4 py-3 rounded-2xl flex justify-between items-start transition-all ${p.takenBy ? 'bg-slate-900/30 border border-slate-800/20 opacity-50' : 'bg-slate-950 border border-slate-800/50 hover:border-indigo-500/40'}`}>
+    <div className={`px-4 py-3 rounded-2xl flex justify-between items-start transition-all relative ${p.takenBy ? 'bg-slate-900/30 border border-slate-800/20 opacity-50' : 'bg-slate-950 border border-slate-800/50 hover:border-indigo-500/40'}`}>
       <div
         className="flex items-start gap-4 flex-1 min-w-0 cursor-pointer select-none group"
-        onClick={() => {
-          if (!p.rationale && !p.yahooRecentNote && !showNotes) {
-            onAskAssistant?.(`Analyze ${p.name} for my fantasy team. Give me a short rationale on why they fit or don't fit based on my current roster needs.`);
-          }
-          setShowNotes(v => !v);
-        }}
+        onClick={() => setShowNotes(v => !v)}
       >
         <div className="w-10 text-center font-black text-[9px] leading-tight text-indigo-400 tabular-nums shrink-0 mt-1">
           {yahooPlayers.length > 0 ? (
@@ -269,21 +331,48 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
           {showNotes && (
             <div className="mt-3 flex flex-col gap-3 pt-2 border-t border-slate-800/50">
               {p.rationale ? (
-                <div className="bg-slate-900/40 p-3 rounded-xl border border-sky-500/20 shadow-inner">
-                  <div className="flex items-center gap-1.5 mb-1.5 font-black text-[9px] uppercase tracking-widest text-sky-400">
-                    <Sparkles className="w-3 h-3" /> AI Insights
+                <>
+                  <div className="bg-slate-900/40 p-3 rounded-xl border border-sky-500/20 shadow-inner">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5 font-black text-[9px] uppercase tracking-widest text-sky-400">
+                        <Sparkles className="w-3 h-3" /> AI Insights
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowConfirm(true);
+                        }}
+                        className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/20 transition-all"
+                      >
+                        Refresh
+                      </button>
+                    </div>
+                    <div className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">
+                      {!p.rationale.startsWith('[') ? `[Legacy Insight] ${p.rationale}` : p.rationale}
+                    </div>
                   </div>
-                  <div className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">
-                    {!p.rationale.startsWith('[') ? `[Legacy Insight] ${p.rationale}` : p.rationale}
+                </>
+              ) : (
+                <div className="bg-slate-900/40 p-4 rounded-xl border border-dashed border-slate-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                      <Sparkles className="w-3 h-3 text-sky-500/50" /> No AI Insights Yet
+                    </div>
                   </div>
+                  <p className="text-[10px] text-slate-500 mb-3">
+                    Request an AI analysis to get personalized insights for {p.name}.
+                  </p>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowConfirm(true);
+                    }}
+                    className="w-full px-3 py-2 bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 rounded-lg text-[10px] font-bold transition-all flex items-center justify-center gap-2"
+                  >
+                    <Sparkles className="w-3 h-3" /> Request AI Analysis
+                  </button>
                 </div>
-              ) : !p.yahooRecentNote ? (
-                <div className="bg-slate-900/40 p-3 rounded-xl border border-dashed border-slate-700">
-                  <div className="animate-pulse flex items-center gap-2 text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                    <Sparkles className="w-3 h-3 text-sky-500/50" /> Generating Insights...
-                  </div>
-                </div>
-              ) : null}
+              )}
               {p.yahooRecentNote && !p.takenBy && (
                 <div className="text-xs text-slate-400/90 leading-snug border-l-2 border-sky-500/30 pl-3 py-1 italic">
                   {p.yahooRecentNote}
@@ -310,17 +399,48 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
           </button>
         )}
         <button
-          title="Ask AI about this player"
+          title="Ask AI to analyze this player"
           onClick={(e) => {
             e.stopPropagation();
-            onAskAssistant?.(`Analyze ${p.name} for my fantasy team. Give me a short rationale on why they fit or don't fit based on my current roster needs.`);
-            setShowNotes(true);
+            setShowConfirm(true);
           }}
           className="p-2.5 rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 hover:text-sky-300 transition-colors"
         >
           <Sparkles className="w-3 h-3" />
         </button>
       </div>
+
+      {/* Confirmation Dialog for AI Request */}
+      {showConfirm && (
+        <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-sm z-10 flex items-center justify-center rounded-2xl">
+          <div className="bg-slate-900 border border-sky-500/30 rounded-xl p-4 max-w-xs mx-4 shadow-xl">
+            <div className="flex items-center gap-2 mb-3 text-sky-400 font-bold text-sm">
+              <Sparkles className="w-4 h-4" />
+              Request AI Analysis?
+            </div>
+            <p className="text-xs text-slate-400 mb-4">
+              This will use your Gemini API quota to analyze <span className="text-white font-bold">{p.name}</span>.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleAskAI}
+                className="flex-1 px-3 py-2 bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 rounded-lg text-xs font-bold transition-all"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowConfirm(false);
+                }}
+                className="flex-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg text-xs font-bold transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 });
@@ -468,7 +588,14 @@ export default function Home() {
         const maxPk = nonKeeperPicks.length > 0 ? Math.max(...nonKeeperPicks.map((p: any) => p.pk)) : 0;
         setCurrentPick(maxPk + 1);
       }
-      if (notesData) setAiNotes(notesData);
+      if (notesData) {
+        // Normalize keys so they match the normalizeName function used for lookups
+        const normalizedNotes: Record<string, string> = {};
+        for (const [k, v] of Object.entries(notesData)) {
+          normalizedNotes[normalizeName(k)] = v as string;
+        }
+        setAiNotes(normalizedNotes);
+      }
       setIsDataLoaded(true);
     }).catch(err => {
       console.error("Error loading initial data:", err);
@@ -1407,9 +1534,23 @@ export default function Home() {
                   }
 
                   if (watchlistSort === 'rank-asc') {
-                    view = [...view].sort((a, b) => (a.p.adp || 9999) - (b.p.adp || 9999));
+                    view = [...view].sort((a, b) => {
+                      // Enrich with Yahoo rank for sorting
+                      const aYahoo = yahooPlayers.find(yh => normalizeName(yh.name) === normalizeName(a.p.name));
+                      const bYahoo = yahooPlayers.find(yh => normalizeName(yh.name) === normalizeName(b.p.name));
+                      const aRank = aYahoo?.rank || a.p.adp || 9999;
+                      const bRank = bYahoo?.rank || b.p.adp || 9999;
+                      return aRank - bRank;
+                    });
                   } else if (watchlistSort === 'rank-desc') {
-                    view = [...view].sort((a, b) => (b.p.adp || 0) - (a.p.adp || 0));
+                    view = [...view].sort((a, b) => {
+                      // Enrich with Yahoo rank for sorting
+                      const aYahoo = yahooPlayers.find(yh => normalizeName(yh.name) === normalizeName(a.p.name));
+                      const bYahoo = yahooPlayers.find(yh => normalizeName(yh.name) === normalizeName(b.p.name));
+                      const aRank = aYahoo?.rank || a.p.adp || 0;
+                      const bRank = bYahoo?.rank || b.p.adp || 0;
+                      return bRank - aRank;
+                    });
                   }
 
                   const visibleView = view.filter(({ p }) => {
