@@ -64,6 +64,8 @@ const WatchlistItem = ({
 }) => {
   const [showNotes, setShowNotes] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [yahooNews, setYahooNews] = useState<any>(null);
+  const [loadingNews, setLoadingNews] = useState(false);
 
   // Visual feedback logic
   let borderOverride = '';
@@ -76,6 +78,23 @@ const WatchlistItem = ({
     setShowConfirm(false);
     onAskAssistant?.(`Analyze ${player.name} for my fantasy team. Give me a short rationale on why they fit or don't fit based on my current roster needs.`);
     setShowNotes(true);
+  };
+
+  const handleFetchYahooNews = async () => {
+    setLoadingNews(true);
+    try {
+      const response = await fetch(`/api/yahoo/player-news?name=${encodeURIComponent(player.name)}`);
+      const data = await response.json();
+      if (data.success) {
+        setYahooNews(data.player);
+      } else {
+        setYahooNews({ error: data.error || 'Failed to fetch news' });
+      }
+    } catch (error) {
+      setYahooNews({ error: 'Network error' });
+    } finally {
+      setLoadingNews(false);
+    }
   };
 
   return (
@@ -249,6 +268,100 @@ const WatchlistItem = ({
                 </button>
               </div>
             )}
+            
+            {/* Yahoo News Section */}
+            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5 text-emerald-400 font-black text-[9px] uppercase tracking-widest">
+                  <Activity className="w-3 h-3" /> Yahoo News
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleFetchYahooNews();
+                  }}
+                  disabled={loadingNews}
+                  className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-all disabled:opacity-50"
+                >
+                  {loadingNews ? 'Loading...' : yahooNews ? 'Refresh' : 'Fetch News'}
+                </button>
+              </div>
+              
+              {!yahooNews && !loadingNews && (
+                <p className="text-[10px] text-slate-500">
+                  Click "Fetch News" to get the latest injury updates and news from Yahoo.
+                </p>
+              )}
+              
+              {yahooNews?.error && (
+                <p className="text-[10px] text-red-400">
+                  {yahooNews.error}
+                </p>
+              )}
+              
+              {yahooNews && !yahooNews.error && (
+                <div className="space-y-2">
+                  {yahooNews.status && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-bold text-slate-500 uppercase">Status:</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                        yahooNews.status === 'Healthy' ? 'bg-green-500/20 text-green-400' :
+                        yahooNews.status.includes('IL') ? 'bg-red-500/20 text-red-400' :
+                        'bg-yellow-500/20 text-yellow-400'
+                      }`}>
+                        {yahooNews.status}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {yahooNews.statusFull && (
+                    <p className="text-[10px] text-slate-400 italic">
+                      {yahooNews.statusFull}
+                    </p>
+                  )}
+                  
+                  {yahooNews.playerOutlook && (
+                    <div className="mt-2 p-2 bg-slate-800/30 rounded border border-emerald-500/10">
+                      <div className="text-[9px] font-bold text-emerald-400 mb-1 uppercase tracking-wider">
+                        2026 Player Outlook
+                      </div>
+                      <p className="text-[10px] text-slate-300 leading-relaxed">
+                        {yahooNews.playerOutlook}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {yahooNews.notes && yahooNews.notes.length > 0 ? (
+                    <div className="space-y-2 mt-2">
+                      {yahooNews.notes.map((note: any, idx: number) => (
+                        <div key={idx} className="border-l-2 border-emerald-500/30 pl-2">
+                          {note.title && (
+                            <div className="text-[9px] font-bold text-emerald-400 mb-1">
+                              {note.title}
+                            </div>
+                          )}
+                          {note.summary && (
+                            <p className="text-[10px] text-slate-300 leading-relaxed">
+                              {note.summary}
+                            </p>
+                          )}
+                          {note.timestamp && (
+                            <div className="text-[8px] text-slate-600 mt-1">
+                              {new Date(note.timestamp * 1000).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-slate-500 italic">
+                      No recent news available
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+            
             {player.yahooRecentNote && (
               <div className="bg-slate-800/20 border-l-2 border-sky-500/30 pl-3 py-2 italic rounded-r-xl">
                 <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Latest News</div>
@@ -274,12 +387,31 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
   const ids = isPitcher ? PITCHING_STAT_IDS : BATTING_STAT_IDS;
   const [showNotes, setShowNotes] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [yahooNews, setYahooNews] = useState<any>(null);
+  const [loadingNews, setLoadingNews] = useState(false);
   const isInWatchlist = myRoster.some((r: any) => r.name === p.name);
 
   const handleAskAI = () => {
     setShowConfirm(false);
     onAskAssistant?.(`Analyze ${p.name} for my fantasy team. Give me a short rationale on why they fit or don't fit based on my current roster needs.`);
     setShowNotes(true);
+  };
+
+  const handleFetchYahooNews = async () => {
+    setLoadingNews(true);
+    try {
+      const response = await fetch(`/api/yahoo/player-news?name=${encodeURIComponent(p.name)}`);
+      const data = await response.json();
+      if (data.success) {
+        setYahooNews(data.player);
+      } else {
+        setYahooNews({ error: data.error || 'Failed to fetch news' });
+      }
+    } catch (error) {
+      setYahooNews({ error: 'Network error' });
+    } finally {
+      setLoadingNews(false);
+    }
   };
 
   return (
@@ -385,6 +517,100 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
                   </button>
                 </div>
               )}
+              
+              {/* Yahoo News Section */}
+              <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5 text-emerald-400 font-black text-[9px] uppercase tracking-widest">
+                    <Activity className="w-3 h-3" /> Yahoo News
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFetchYahooNews();
+                    }}
+                    disabled={loadingNews}
+                    className="text-[8px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-all disabled:opacity-50"
+                  >
+                    {loadingNews ? 'Loading...' : yahooNews ? 'Refresh' : 'Fetch News'}
+                  </button>
+                </div>
+                
+                {!yahooNews && !loadingNews && (
+                  <p className="text-[10px] text-slate-500">
+                    Click "Fetch News" to get the latest injury updates and news from Yahoo.
+                  </p>
+                )}
+                
+                {yahooNews?.error && (
+                  <p className="text-[10px] text-red-400">
+                    {yahooNews.error}
+                  </p>
+                )}
+                
+                {yahooNews && !yahooNews.error && (
+                  <div className="space-y-2">
+                    {yahooNews.status && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-bold text-slate-500 uppercase">Status:</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                          yahooNews.status === 'Healthy' ? 'bg-green-500/20 text-green-400' :
+                          yahooNews.status.includes('IL') ? 'bg-red-500/20 text-red-400' :
+                          'bg-yellow-500/20 text-yellow-400'
+                        }`}>
+                          {yahooNews.status}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {yahooNews.statusFull && (
+                      <p className="text-[10px] text-slate-400 italic">
+                        {yahooNews.statusFull}
+                      </p>
+                    )}
+                    
+                    {yahooNews.playerOutlook && (
+                      <div className="mt-2 p-2 bg-slate-800/30 rounded border border-emerald-500/10">
+                        <div className="text-[9px] font-bold text-emerald-400 mb-1 uppercase tracking-wider">
+                          2026 Player Outlook
+                        </div>
+                        <p className="text-[10px] text-slate-300 leading-relaxed">
+                          {yahooNews.playerOutlook}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {yahooNews.notes && yahooNews.notes.length > 0 ? (
+                      <div className="space-y-2 mt-2">
+                        {yahooNews.notes.map((note: any, idx: number) => (
+                          <div key={idx} className="border-l-2 border-emerald-500/30 pl-2">
+                            {note.title && (
+                              <div className="text-[9px] font-bold text-emerald-400 mb-1">
+                                {note.title}
+                              </div>
+                            )}
+                            {note.summary && (
+                              <p className="text-[10px] text-slate-300 leading-relaxed">
+                                {note.summary}
+                              </p>
+                            )}
+                            {note.timestamp && (
+                              <div className="text-[8px] text-slate-600 mt-1">
+                                {new Date(note.timestamp * 1000).toLocaleDateString()}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[10px] text-slate-500 italic">
+                        No recent news available
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+              
               {p.yahooRecentNote && !p.takenBy && (
                 <div className="text-xs text-slate-400/90 leading-snug border-l-2 border-sky-500/30 pl-3 py-1 italic">
                   {p.yahooRecentNote}
