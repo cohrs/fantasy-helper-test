@@ -71,30 +71,21 @@ export async function saveDraftPicks(picks: any[]) {
   
   if (newPicks.length === 0) return 0;
   
-  // Batch insert only new picks
-  const values = newPicks.map(pick => [
-    pick.rd,
-    pick.pk,
-    pick.name,
-    pick.pos,
-    pick.playerTeam || null,
-    pick.tm || null,
-    pick.isKeeper || false
-  ]);
-  
-  // Use unnest for efficient batch insert
-  await sql`
-    INSERT INTO draft_picks (round, pick, player_name, position, team_abbr, drafted_by, is_keeper)
-    SELECT * FROM UNNEST(
-      ${sql.array(values.map(v => v[0]))},
-      ${sql.array(values.map(v => v[1]))},
-      ${sql.array(values.map(v => v[2]))},
-      ${sql.array(values.map(v => v[3]))},
-      ${sql.array(values.map(v => v[4]))},
-      ${sql.array(values.map(v => v[5]))},
-      ${sql.array(values.map(v => v[6]))}
-    ) AS t(round, pick, player_name, position, team_abbr, drafted_by, is_keeper)
-  `;
+  // Insert new picks one by one (Neon doesn't support batch UNNEST)
+  for (const pick of newPicks) {
+    await sql`
+      INSERT INTO draft_picks (round, pick, player_name, position, team_abbr, drafted_by, is_keeper)
+      VALUES (
+        ${pick.rd}, 
+        ${pick.pk}, 
+        ${pick.name}, 
+        ${pick.pos}, 
+        ${pick.playerTeam || null}, 
+        ${pick.tm || null}, 
+        ${pick.isKeeper || false}
+      )
+    `;
+  }
   
   return newPicks.length;
 }
@@ -116,27 +107,21 @@ export async function saveWatchlist(players: any[]) {
   
   if (players.length === 0) return;
   
-  // Batch insert all players
-  const values = players.map((player, index) => [
-    player.name,
-    player.pos,
-    player.team || null,
-    player.adp || null,
-    player.rationale || null,
-    index
-  ]);
-  
-  await sql`
-    INSERT INTO watchlist (player_name, position, team_abbr, adp, rationale, sort_order)
-    SELECT * FROM UNNEST(
-      ${sql.array(values.map(v => v[0]))},
-      ${sql.array(values.map(v => v[1]))},
-      ${sql.array(values.map(v => v[2]))},
-      ${sql.array(values.map(v => v[3]))},
-      ${sql.array(values.map(v => v[4]))},
-      ${sql.array(values.map(v => v[5]))}
-    ) AS t(player_name, position, team_abbr, adp, rationale, sort_order)
-  `;
+  // Insert all players one by one
+  for (let index = 0; index < players.length; index++) {
+    const player = players[index];
+    await sql`
+      INSERT INTO watchlist (player_name, position, team_abbr, adp, rationale, sort_order)
+      VALUES (
+        ${player.name}, 
+        ${player.pos}, 
+        ${player.team || null}, 
+        ${player.adp || null}, 
+        ${player.rationale || null}, 
+        ${index}
+      )
+    `;
+  }
 }
 
 
