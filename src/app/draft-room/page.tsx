@@ -310,7 +310,7 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
             {p.takenBy && <span className="text-slate-600 ml-2">• {p.takenBy}</span>}
           </div>
           {Object.keys(yahooStats).length > 0 && !p.takenBy && (() => {
-            const pStats = yahooStats[p.name.toLowerCase()];
+            const pStats = yahooStats[normalizeName(p.name)];
             if (!pStats) return null;
             const pairs = ids
               .map((id: string) => ({ id, label: YAHOO_STAT_LABELS[id] || id, val: pStats[id] }))
@@ -1568,7 +1568,7 @@ export default function Home() {
                       {visibleView.map(({ p, originalIndex }) => {
                         const isTaken = draftResults.some(d => (d.tm || d.pos.toLowerCase().includes('round')) && normalizeName(d.name) === normalizeName(p.name));
                         const yhPlayer = yahooPlayers.find(yh => normalizeName(yh.name) === normalizeName(p.name)) || {};
-                        const yhStats = yahooStats[p.name.toLowerCase()];
+                        const yhStats = yahooStats[normalizeName(p.name)];
 
                         let yahooStatsPairs = null;
                         if (yhStats) {
