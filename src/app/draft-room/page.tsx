@@ -583,10 +583,10 @@ export default function Home() {
       if (draftData.roster) setMyRoster(draftData.roster);
       if (draftData.draft && draftData.draft.length > 0) {
         setDraftResults(draftData.draft);
-        // Calculate current pick: count keepers + non-keeper picks with teams
-        const keeperCount = draftData.draft.filter((p: any) => p.isKeeper).length;
+        // Current pick = number of non-keeper picks made + 1
+        // (Keepers don't count as draft picks)
         const nonKeeperPicks = draftData.draft.filter((p: any) => p.tm && !p.isKeeper).length;
-        setCurrentPick(keeperCount + nonKeeperPicks + 1);
+        setCurrentPick(nonKeeperPicks + 1);
       }
       if (notesData) {
         // Normalize keys so they match the normalizeName function used for lookups
@@ -611,10 +611,10 @@ export default function Home() {
 
       if (data.success && data.picks && data.picks.length > 0) {
         setDraftResults(data.picks);
-        // Calculate current pick: count keepers + non-keeper picks with teams
-        const keeperCount = data.picks.filter((p: any) => p.isKeeper).length;
+        // Current pick = number of non-keeper picks made + 1
+        // (Keepers don't count as draft picks)
         const nonKeeperPicks = data.picks.filter((p: any) => p.tm && !p.isKeeper).length;
-        setCurrentPick(keeperCount + nonKeeperPicks + 1);
+        setCurrentPick(nonKeeperPicks + 1);
       } else {
         alert("Failed to sync Draft! No picks parsed or thread is empty.");
       }
@@ -818,9 +818,14 @@ export default function Home() {
     const currentRound = Math.floor((currentPick - 1) / totalTeams) + 1;
     const pickInRound = ((currentPick - 1) % totalTeams) + 1;
     
+    // If current pick is yours, return 0
+    if (pickInRound === myDraftPosition) {
+      return 0;
+    }
+    
     // Find next pick where you're at position 11
     let nextRound = currentRound;
-    if (pickInRound >= myDraftPosition) {
+    if (pickInRound > myDraftPosition) {
       nextRound = currentRound + 1; // Already passed your pick this round
     }
     
