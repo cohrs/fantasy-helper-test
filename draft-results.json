@@ -1503,11 +1503,11 @@
     "isKeeper": true
   },
   {
-    "rd": 10,
+    "rd": 2,
     "pk": 168,
     "name": "Trevor Rogers",
-    "pos": "SP 2 nd Round",
-    "tm": null,
+    "pos": "SP",
+    "tm": "K- Bandits",
     "playerTeam": "BAL",
     "isKeeper": false
   },
@@ -2457,11 +2457,11 @@
     "isKeeper": false
   },
   {
-    "rd": 16,
+    "rd": 2,
     "pk": 274,
     "name": "Lawrence Butler",
-    "pos": "CF,RF 2 nd round",
-    "tm": null,
+    "pos": "CF,RF",
+    "tm": "Pirates Baseball",
     "playerTeam": "ATH",
     "isKeeper": false
   },

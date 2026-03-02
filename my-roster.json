@@ -135,19 +135,25 @@
     "rationale": "Catcher is an absolute wasteland in a league this deep, and you currently have a gaping hole there. Diaz provides legitimate power from the position and is the undisputed starter for a potent Astros lineup. Waiting any longer is a massive risk; securing Diaz now gives you a significant weekly advantage over most of your league at the thinnest position on the board."
   },
   {
-    "id": 113,
-    "name": "Ian Happ",
-    "pos": "LF",
-    "team": "CHC",
-    "adp": 113,
-    "takenBy": null,
-    "rationale": "Your outfield is currently relying on the volatility of Jo Adell and the age of Mike Trout. Happ is the best, safest, and most complete outfielder available, providing a high floor with 20+ homer power, solid counting stats, and a strong on-base percentage that directly contributes to the OPS category. He immediately stabilizes your LF position with a reliable, professional bat you can set and forget."
-  },
-  {
     "id": 90,
     "name": "Pablo López",
     "pos": "SP",
     "team": "MIN",
     "adp": 90
+  },
+  {
+    "id": 113,
+    "name": "Ian Happ",
+    "pos": "LF",
+    "team": "CHC",
+    "adp": 113,
+    "rationale": "[3/1/2026 6:05 PM] Happ is the best available player to fill a critical outfield starting spot. In a deep 18-team league, his stable floor of production across R, HR, RBI, AVG, and OPS is invaluable. With an ADP of 113, he is highly unlikely to make it back to you on the next round, making him the priority pick if you want to secure a reliable offensive contributor.\n\n---\n\n[3/1/2026 4:46 PM] Your outfield is currently relying on the volatility of Jo Adell and the age of Mike Trout. Happ is the best, safest, and most complete outfielder available, providing a high floor with 20+ homer power, solid counting stats, and a strong on-base percentage that directly contributes to the OPS category. He immediately stabilizes your LF position with a reliable, professional bat you can set and forget."
+  },
+  {
+    "id": 112,
+    "name": "Shane McClanahan",
+    "pos": "SP",
+    "team": "TB",
+    "adp": 112
   }
 ]
