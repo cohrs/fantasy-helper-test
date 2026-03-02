@@ -76,10 +76,18 @@ export async function GET() {
         // Sort by pick number
         uniquePicks.sort((a, b) => a.pk - b.pk);
 
-        // Save to database
-        await saveDraftPicks(uniquePicks);
+        // Save to database (only inserts new picks)
+        const newPicksCount = await saveDraftPicks(uniquePicks);
 
-        return NextResponse.json({ success: true, count: uniquePicks.length, picks: uniquePicks });
+        return NextResponse.json({ 
+            success: true, 
+            totalPicks: uniquePicks.length,
+            newPicks: newPicksCount,
+            picks: uniquePicks,
+            message: newPicksCount > 0 
+                ? `Added ${newPicksCount} new picks (${uniquePicks.length} total)` 
+                : `No new picks (${uniquePicks.length} total)`
+        });
     } catch (error) {
         console.error("Scraper Error:", error);
         return NextResponse.json({ success: false, error: "Failed to scrape draft data" }, { status: 500 });

@@ -60,23 +60,43 @@ export async function getDraftPicks() {
 export async function saveDraftPicks(picks: any[]) {
   const sql = getDb();
   
-  // Clear existing picks and insert new ones
-  await sql`DELETE FROM draft_picks`;
+  if (picks.length === 0) return 0;
   
-  for (const pick of picks) {
-    await sql`
-      INSERT INTO draft_picks (round, pick, player_name, position, team_abbr, drafted_by, is_keeper)
-      VALUES (
-        ${pick.rd}, 
-        ${pick.pk}, 
-        ${pick.name}, 
-        ${pick.pos}, 
-        ${pick.playerTeam}, 
-        ${pick.tm}, 
-        ${pick.isKeeper}
-      )
-    `;
-  }
+  // Get existing pick numbers to avoid duplicates
+  const existing = await sql`SELECT pick FROM draft_picks`;
+  const existingPicks = new Set(existing.map((row: any) => row.pick));
+  
+  // Filter to only new picks
+  const newPicks = picks.filter(pick => !existingPicks.has(pick.pk));
+  
+  if (newPicks.length === 0) return 0;
+  
+  // Batch insert only new picks
+  const values = newPicks.map(pick => [
+    pick.rd,
+    pick.pk,
+    pick.name,
+    pick.pos,
+    pick.playerTeam || null,
+    pick.tm || null,
+    pick.isKeeper || false
+  ]);
+  
+  // Use unnest for efficient batch insert
+  await sql`
+    INSERT INTO draft_picks (round, pick, player_name, position, team_abbr, drafted_by, is_keeper)
+    SELECT * FROM UNNEST(
+      ${sql.array(values.map(v => v[0]))},
+      ${sql.array(values.map(v => v[1]))},
+      ${sql.array(values.map(v => v[2]))},
+      ${sql.array(values.map(v => v[3]))},
+      ${sql.array(values.map(v => v[4]))},
+      ${sql.array(values.map(v => v[5]))},
+      ${sql.array(values.map(v => v[6]))}
+    ) AS t(round, pick, player_name, position, team_abbr, drafted_by, is_keeper)
+  `;
+  
+  return newPicks.length;
 }
 
 // Watchlist
@@ -91,22 +111,32 @@ export async function getWatchlist() {
 export async function saveWatchlist(players: any[]) {
   const sql = getDb();
   
-  // Clear existing watchlist and insert new ones
+  // Clear existing watchlist
   await sql`DELETE FROM watchlist`;
   
-  players.forEach(async (player, index) => {
-    await sql`
-      INSERT INTO watchlist (player_name, position, team_abbr, adp, rationale, sort_order)
-      VALUES (
-        ${player.name}, 
-        ${player.pos}, 
-        ${player.team}, 
-        ${player.adp}, 
-        ${player.rationale || null}, 
-        ${index}
-      )
-    `;
-  });
+  if (players.length === 0) return;
+  
+  // Batch insert all players
+  const values = players.map((player, index) => [
+    player.name,
+    player.pos,
+    player.team || null,
+    player.adp || null,
+    player.rationale || null,
+    index
+  ]);
+  
+  await sql`
+    INSERT INTO watchlist (player_name, position, team_abbr, adp, rationale, sort_order)
+    SELECT * FROM UNNEST(
+      ${sql.array(values.map(v => v[0]))},
+      ${sql.array(values.map(v => v[1]))},
+      ${sql.array(values.map(v => v[2]))},
+      ${sql.array(values.map(v => v[3]))},
+      ${sql.array(values.map(v => v[4]))},
+      ${sql.array(values.map(v => v[5]))}
+    ) AS t(player_name, position, team_abbr, adp, rationale, sort_order)
+  `;
 }
 
 

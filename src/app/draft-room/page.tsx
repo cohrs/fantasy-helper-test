@@ -10,6 +10,18 @@ import {
 } from 'lucide-react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 
+// Utility function to normalize player names for consistent lookups
+function normalizeName(name: string) {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, '')
+    .replace(/\s+(jr|sr|ii|iii)$/, '')
+    .trim()
+    .replace(/\s+/g, '');
+}
+
 // Isolated component to prevent typing lag — exposes value via ref, no parent state on each keystroke
 const AssistantInput = React.forwardRef<{ getValue: () => string }, {
   onSubmit?: (val: string) => void;
@@ -491,16 +503,6 @@ export default function Home() {
     } catch (err) {
       console.error('Failed to sync watchlist to JSON', err);
     }
-  };
-
-  const normalizeName = (name: string) => {
-    return name
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .replace(/[^a-z\s]/g, '')
-      .replace(/\s+(jr|sr|ii|iii)$/, '')
-      .trim();
   };
 
   const leagueName = "Asshat Roto League";
