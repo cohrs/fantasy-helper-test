@@ -813,17 +813,19 @@ export default function Home() {
   };
 
   const waitPicks = useMemo(() => {
-    let next = 0;
-    // Fantasy drafts snake, so even rounds reverse the pick order (18-1)
-    for (let r = 1; r <= 60; r++) {
-      const posThisRound = (r % 2 === 0) ? (totalTeams - myDraftPosition + 1) : myDraftPosition;
-      const overallPick = ((r - 1) * totalTeams) + posThisRound;
-      if (overallPick >= currentPick) {
-        next = overallPick;
-        break;
-      }
+    // Standard linear draft (not snake) - each round goes 1-18 in order
+    // Your position is always pick #11 in each round
+    const currentRound = Math.floor((currentPick - 1) / totalTeams) + 1;
+    const pickInRound = ((currentPick - 1) % totalTeams) + 1;
+    
+    // Find next pick where you're at position 11
+    let nextRound = currentRound;
+    if (pickInRound >= myDraftPosition) {
+      nextRound = currentRound + 1; // Already passed your pick this round
     }
-    return next - currentPick;
+    
+    const nextPick = ((nextRound - 1) * totalTeams) + myDraftPosition;
+    return nextPick - currentPick;
   }, [currentPick, totalTeams, myDraftPosition]);
 
   const displayPool = useMemo(() => {
