@@ -664,8 +664,25 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
 DraftBoardPlayerRow.displayName = 'DraftBoardPlayerRow';
 
 export default function Home() {
+  // Read selected league from localStorage
+  const [selectedLeague, setSelectedLeague] = useState<any>(null);
   const [activeSport, setActiveSport] = useState('baseball');
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Load selected league from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('selectedLeague');
+    if (stored) {
+      try {
+        const league = JSON.parse(stored);
+        setSelectedLeague(league);
+        setActiveSport(league.sport);
+        console.log('📍 Loaded league from localStorage:', league);
+      } catch (e) {
+        console.error('Failed to parse stored league:', e);
+      }
+    }
+  }, []);
   
   // Position filters based on sport
   const positionsBySport: Record<string, string[]> = {
@@ -1406,13 +1423,26 @@ export default function Home() {
     <div className="h-screen overflow-hidden flex flex-col bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
       <header className="max-w-7xl w-full mx-auto shrink-0 flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4 border-b border-slate-900 pb-8">
         <div className="flex items-center gap-4">
-          <div className="bg-indigo-600 p-3 rounded-2xl shadow-lg"><Trophy className="w-7 h-7" /></div>
+          <div className={`p-3 rounded-2xl shadow-lg ${activeSport === 'baseball' ? 'bg-indigo-600' : 'bg-orange-600'}`}>
+            <Trophy className="w-7 h-7" />
+          </div>
           <div>
-            <h1 className="text-3xl font-black italic uppercase tracking-tighter">{leagueName}</h1>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">{myTeamName} • 18-Team Tracker</p>
+            <h1 className="text-3xl font-black italic uppercase tracking-tighter">
+              {selectedLeague ? selectedLeague.league_name : leagueName}
+            </h1>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">
+              {selectedLeague ? `${selectedLeague.season} ${selectedLeague.sport}` : `${myTeamName} • 18-Team Tracker`}
+            </p>
           </div>
         </div>
         <div className="flex gap-3 bg-slate-900 p-2 rounded-2xl border border-slate-800">
+          <button 
+            onClick={() => window.location.href = '/select-league'}
+            className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-slate-700"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" /> CHANGE LEAGUE
+          </button>
+          
           {activeSport === 'baseball' ? (
             <button onClick={handleImport} disabled={isSyncing} className="px-4 py-2 bg-indigo-500/10 text-indigo-400 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-indigo-500/20 disabled:opacity-50">
               <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> {isSyncing ? 'SYNCING...' : 'SYNC LOCAL'}
@@ -1425,7 +1455,6 @@ export default function Home() {
 
           {session ? (
             <>
-              <LeagueSelector onLeagueChange={setActiveSport} />
               <button onClick={() => signOut()} className="px-4 py-2 bg-green-500/10 text-green-400 border border-green-500/20 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-green-500/20 hover:text-red-400 transition-colors" title={session.user?.name || "Connected"}>
                 <ShieldCheck className="w-3.5 h-3.5" /> YAHOO LINKED
               </button>
@@ -1465,14 +1494,8 @@ export default function Home() {
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-10 shrink-0">
             <h2 className="text-3xl font-black italic uppercase tracking-tighter flex items-center gap-4">
               <LayoutGrid className={`w-8 h-8 ${activeSport === 'baseball' ? 'text-indigo-500' : 'text-orange-500'}`} />
-              {activeSport === 'baseball' ? 'Draft Board' : 'NBA Stats'}
+              {activeSport === 'baseball' ? 'Draft Board' : 'Team Manager'}
             </h2>
-            
-            {activeSport !== 'baseball' && (
-              <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl px-4 py-2 text-orange-300 text-sm">
-                🏀 Basketball features coming soon! Currently showing baseball data.
-              </div>
-            )}
             
             <div className="flex bg-slate-950 w-fit rounded-xl p-1 border border-slate-800 shadow-inner">
               {/* Basketball in-season tabs */}
