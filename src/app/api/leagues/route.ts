@@ -13,8 +13,9 @@ export async function GET() {
         sport,
         season,
         is_active,
+        team_name,
         created_at
-      FROM leagues
+      FROM user_leagues
       ORDER BY is_active DESC, season DESC, sport
     `;
 
@@ -44,8 +45,9 @@ export async function POST(request: Request) {
         league_name,
         sport,
         season,
-        is_active
-      FROM leagues
+        is_active,
+        team_name
+      FROM user_leagues
       WHERE id = ${leagueId}
     `;
 

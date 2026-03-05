@@ -7,6 +7,15 @@ const sql = getDb();
 
 export const dynamic = 'force-dynamic';
 
+// Normalize team names for consistent matching
+function normalizeTeamName(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/^the\s+/i, '') // Remove "The" prefix
+    .replace(/[^a-z0-9]/g, '') // Remove special chars and spaces
+    .trim();
+}
+
 export async function POST() {
     try {
         const session = await getServerSession(authOptions);
