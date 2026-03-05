@@ -40,4 +40,17 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-certificates.vscode/
+# local dev files
+certificates/
+.vscode/
+
+# temp/test files
+*.json
+!package.json
+!tsconfig.json
+!public/*.json
+patch*.js
+patch*.py
+test-*.js
+tapatalk*.txt
+tapatalk*.html

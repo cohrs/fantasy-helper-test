@@ -1,11 +1,52 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
-import { saveDraftPicks } from '@/lib/db';
+import { saveDraftPicks, getSelectedLeagueId, getDb } from '@/lib/db';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]/route";
 
-const TARGET_URL = "https://www.tapatalk.com/groups/asshatrotoleagues/2026-draft-player-list-t1235.html";
+const sql = getDb();
+
+const DRAFT_URLS: Record<string, string> = {
+  'baseball': "https://www.tapatalk.com/groups/asshatrotoleagues/2026-draft-player-list-t1235.html",
+  'basketball': "https://www.tapatalk.com/groups/asshatrotoleagues/2025-2026-player-list-t611.html"
+};
 
 export async function GET() {
     try {
+        const session = await getServerSession(authOptions);
+        const leagueId = await getSelectedLeagueId(session);
+        
+        if (!leagueId) {
+            return NextResponse.json({ 
+                success: false, 
+                error: "No league selected. Please select a league first." 
+            }, { status: 400 });
+        }
+
+        // Get the sport for this league
+        const leagueInfo = await sql`
+            SELECT sport FROM user_leagues WHERE id = ${leagueId}
+        `;
+        
+        if (!leagueInfo.length) {
+            return NextResponse.json({ 
+                success: false, 
+                error: "League not found" 
+            }, { status: 404 });
+        }
+
+        const sport = leagueInfo[0].sport;
+        const TARGET_URL = DRAFT_URLS[sport];
+
+        if (!TARGET_URL) {
+            return NextResponse.json({ 
+                success: false, 
+                error: `No draft URL configured for ${sport}` 
+            }, { status: 400 });
+        }
+
+        console.log(`🔄 Scraping ${sport} draft for league ${leagueId}...`);
+
         const { data } = await axios.get(TARGET_URL, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -77,7 +118,7 @@ export async function GET() {
         uniquePicks.sort((a, b) => a.pk - b.pk);
 
         // Save to database (only inserts new picks)
-        const newPicksCount = await saveDraftPicks(uniquePicks);
+        const newPicksCount = await saveDraftPicks(uniquePicks, leagueId);
 
         return NextResponse.json({ 
             success: true, 

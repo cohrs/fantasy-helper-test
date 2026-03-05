@@ -1,14 +1,23 @@
 import { NextResponse } from 'next/server';
-import { getDraftPicks, getWatchlist, saveWatchlist } from '@/lib/db';
+import { getDraftPicks, getWatchlist, saveWatchlist, getSelectedLeagueId } from '@/lib/db';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]/route";
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
+        const session = await getServerSession(authOptions);
+        const leagueId = await getSelectedLeagueId(session);
+        
+        console.log('📊 draft-data GET - session:', session?.user?.email, 'leagueId:', leagueId);
+        
         const [draftPicks, watchlist] = await Promise.all([
-            getDraftPicks(),
-            getWatchlist()
+            getDraftPicks(leagueId),
+            getWatchlist(leagueId)
         ]);
+        
+        console.log('📊 draft-data results - picks:', draftPicks.length, 'watchlist:', watchlist.length);
         
         // Transform database format to match expected format
         const draft = draftPicks.map((pick: any) => ({
@@ -39,10 +48,17 @@ export async function GET() {
 
 export async function POST(req: Request) {
     try {
+        const session = await getServerSession(authOptions);
+        const leagueId = await getSelectedLeagueId(session);
+        
+        if (!leagueId) {
+            return NextResponse.json({ success: false, error: "No league selected" }, { status: 400 });
+        }
+        
         const { action, rosterData } = await req.json();
 
         if (action === 'SYNC_ROSTER') {
-            await saveWatchlist(rosterData);
+            await saveWatchlist(rosterData, leagueId);
             return NextResponse.json({ success: true });
         }
 
