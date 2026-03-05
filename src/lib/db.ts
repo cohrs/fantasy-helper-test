@@ -8,7 +8,14 @@ export function getDb() {
     throw new Error('POSTGRES_URL environment variable is not set');
   }
   
-  return neon(databaseUrl);
+  // For local development, disable SSL verification
+  const sql = neon(databaseUrl, {
+    fetchOptions: {
+      cache: 'no-store',
+    }
+  });
+  
+  return sql;
 }
 
 // Get current user's selected league ID
