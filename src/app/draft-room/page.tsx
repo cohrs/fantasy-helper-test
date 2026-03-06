@@ -807,15 +807,24 @@ export default function Home() {
     matchup: { opp: "Gotham Knights", score: "5-4-0" }
   };
 
-  // Backend JSON Load
+  // Backend JSON Load - Load data for selected league
   useEffect(() => {
+    if (!selectedLeague) {
+      console.log('⚠️ No league selected, skipping data load');
+      setIsDataLoaded(true);
+      return;
+    }
+
+    const leagueId = selectedLeague.id;
+    console.log(`📊 Loading data for league ${leagueId} (${selectedLeague.league_name})`);
+
     Promise.all([
-      fetch('/api/draft-data', { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch('/api/assistant/notes', { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch('/api/player-stats?season=2025', { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch('/api/yahoo/league-settings', { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch('/api/team-data', { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch('/api/my-team', { cache: 'no-store' }).then(res => res.json()).catch(() => ({}))
+      fetch(`/api/draft-data?leagueId=${leagueId}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/assistant/notes?leagueId=${leagueId}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/player-stats?season=${selectedLeague.season}&sport=${selectedLeague.sport}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/yahoo/league-settings?leagueId=${leagueId}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/team-data?leagueId=${leagueId}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/my-team?leagueId=${leagueId}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({}))
     ]).then(([draftData, notesData, statsData, leagueSettings, teamData, myTeamData]) => {
       if (draftData.roster) setMyRoster(draftData.roster);
       if (draftData.draft && draftData.draft.length > 0) {
@@ -848,10 +857,15 @@ export default function Home() {
         console.log('📊 Standings:', teamData.standings?.length || 0, 'teams');
       }
       if (myTeamData?.success) {
-        setMyTeamName(myTeamData.teamName || 'My Team');
-        setLeagueName(myTeamData.leagueName || 'Fantasy League');
-        setSelectedTeam(myTeamData.teamName || 'My Team');
+        setMyTeamName(myTeamData.teamName || selectedLeague.team_name || 'My Team');
+        setLeagueName(myTeamData.leagueName || selectedLeague.league_name);
+        setSelectedTeam(myTeamData.teamName || selectedLeague.team_name || 'My Team');
         console.log('⭐ My Team:', myTeamData.teamName);
+      } else {
+        // Fallback to league data if API fails
+        setMyTeamName(selectedLeague.team_name || 'My Team');
+        setLeagueName(selectedLeague.league_name);
+        setSelectedTeam(selectedLeague.team_name || 'My Team');
       }
       setIsDataLoaded(true);
       
@@ -865,7 +879,7 @@ export default function Home() {
       console.error("Error loading initial data:", err);
       setIsDataLoaded(true);
     });
-  }, [activeSport]); // Re-run when sport changes
+  }, [selectedLeague, activeSport]); // Re-run when league or sport changes
 
   const handleImport = async () => {
     setIsSyncing(true);

@@ -5,12 +5,22 @@ import { authOptions } from "../auth/[...nextauth]/route";
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
-        const session = await getServerSession(authOptions);
-        const leagueId = await getSelectedLeagueId(session);
+        const { searchParams } = new URL(request.url);
+        const leagueIdParam = searchParams.get('leagueId');
         
-        console.log('📊 draft-data GET - session:', session?.user?.email, 'leagueId:', leagueId);
+        let leagueId: number | null = null;
+        
+        if (leagueIdParam) {
+            leagueId = parseInt(leagueIdParam);
+        } else {
+            // Fallback to session-based league selection
+            const session = await getServerSession(authOptions);
+            leagueId = await getSelectedLeagueId(session);
+        }
+        
+        console.log('📊 draft-data GET - leagueId:', leagueId);
         
         const [draftPicks, watchlist] = await Promise.all([
             getDraftPicks(leagueId),

@@ -7,8 +7,11 @@ const sql = getDb();
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
+        const { searchParams } = new URL(request.url);
+        const leagueIdParam = searchParams.get('leagueId');
+        
         const session = await getServerSession(authOptions);
 
         if (!session || !(session as any).accessToken) {
@@ -16,23 +19,42 @@ export async function GET() {
         }
 
         const accessToken = (session as any).accessToken;
-        const userGuid = session.user?.email?.split('@')[0] || 'unknown';
 
-        // Get selected league
-        const leagueResult = await sql`
-            SELECT ul.league_key, ul.sport
-            FROM user_selected_league usl
-            JOIN users u ON u.id = usl.user_id
-            JOIN user_leagues ul ON ul.id = usl.league_id
-            WHERE u.yahoo_guid = ${userGuid}
-        `;
+        let leagueKey: string;
+        let sport: string;
 
-        if (!leagueResult.length) {
-            return NextResponse.json({ error: 'No league selected' }, { status: 400 });
+        if (leagueIdParam) {
+            // Use provided league ID
+            const leagueResult = await sql`
+                SELECT league_key, sport
+                FROM user_leagues
+                WHERE id = ${parseInt(leagueIdParam)}
+            `;
+            
+            if (!leagueResult.length) {
+                return NextResponse.json({ error: 'League not found' }, { status: 404 });
+            }
+            
+            leagueKey = leagueResult[0].league_key;
+            sport = leagueResult[0].sport;
+        } else {
+            // Fallback to session-based league selection
+            const userGuid = session.user?.email?.split('@')[0] || 'unknown';
+            const leagueResult = await sql`
+                SELECT ul.league_key, ul.sport
+                FROM user_selected_league usl
+                JOIN users u ON u.id = usl.user_id
+                JOIN user_leagues ul ON ul.id = usl.league_id
+                WHERE u.yahoo_guid = ${userGuid}
+            `;
+
+            if (!leagueResult.length) {
+                return NextResponse.json({ error: 'No league selected' }, { status: 400 });
+            }
+
+            leagueKey = leagueResult[0].league_key;
+            sport = leagueResult[0].sport;
         }
-
-        const leagueKey = leagueResult[0].league_key;
-        const sport = leagueResult[0].sport;
 
         // Fetch league settings from Yahoo
         const yahooUrl = `https://fantasysports.yahooapis.com/fantasy/v2/league/${leagueKey}/settings?format=json`;
