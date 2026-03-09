@@ -28,12 +28,25 @@ export async function getSelectedLeagueId(session?: any) {
     userGuid = session.user.email.split('@')[0];
   }
   
-  const result = await sql`
+  // Handle legacy "yahoo" guid by trying "yahoo-user" as fallback
+  let result = await sql`
     SELECT usl.league_id
     FROM user_selected_league usl
     JOIN users u ON u.id = usl.user_id
     WHERE u.yahoo_guid = ${userGuid}
   `;
+  
+  // If not found and guid is "yahoo", try "yahoo-user"
+  if (!result.length && userGuid === 'yahoo') {
+    console.log('⚠️  User "yahoo" not found in getSelectedLeagueId, trying "yahoo-user" as fallback');
+    userGuid = 'yahoo-user';
+    result = await sql`
+      SELECT usl.league_id
+      FROM user_selected_league usl
+      JOIN users u ON u.id = usl.user_id
+      WHERE u.yahoo_guid = ${userGuid}
+    `;
+  }
   
   return result.length > 0 ? result[0].league_id : null;
 }
@@ -116,26 +129,45 @@ export async function saveDraftPicks(picks: any[], leagueId?: number | null) {
   
   if (picks.length === 0) return 0;
   
-  // Get existing pick numbers to avoid duplicates
+  // Get existing picks to avoid duplicates
+  // For draft picks: match on pick number
+  // For keepers/undrafted: match on player name + team
   const existing = await sql`
-    SELECT pick FROM draft_picks 
+    SELECT pick, player_name, drafted_by FROM draft_picks 
     WHERE league_id = ${leagueId}
   `;
-  const existingPicks = new Set(existing.map((row: any) => row.pick));
+  
+  const existingPickNumbers = new Set(existing.filter((r: any) => r.pick !== null).map((r: any) => r.pick));
+  const existingKeepers = new Set(existing.filter((r: any) => r.pick === null).map((r: any) => `${r.player_name}|${r.drafted_by}`));
   
   // Filter to only new picks
-  const newPicks = picks.filter(pick => !existingPicks.has(pick.pk));
+  const newPicks = picks.filter(pick => {
+    if (pick.pk !== null) {
+      // Draft pick: check if pick number exists
+      return !existingPickNumbers.has(pick.pk);
+    } else {
+      // Keeper/undrafted: check if player+team combo exists
+      const key = `${pick.name}|${pick.tm}`;
+      return !existingKeepers.has(key);
+    }
+  });
   
-  if (newPicks.length === 0) return 0;
+  console.log(`📝 Total picks scraped: ${picks.length}, Already in DB: ${existing.length}, New picks to insert: ${newPicks.length}`);
   
-  // Insert new picks one by one (Neon doesn't support batch UNNEST)
+  if (newPicks.length === 0) {
+    console.log('✅ No new picks to add');
+    return 0;
+  }
+  
+  // Insert new picks
   for (const pick of newPicks) {
     await sql`
-      INSERT INTO draft_picks (league_id, round, pick, player_name, position, team_abbr, drafted_by, is_keeper)
+      INSERT INTO draft_picks (league_id, round, pick, rank, player_name, position, team_abbr, drafted_by, is_keeper)
       VALUES (
         ${leagueId},
         ${pick.rd}, 
-        ${pick.pk}, 
+        ${pick.pk},
+        ${pick.rank}, 
         ${pick.name}, 
         ${pick.pos}, 
         ${pick.playerTeam || null}, 
@@ -145,6 +177,7 @@ export async function saveDraftPicks(picks: any[], leagueId?: number | null) {
     `;
   }
   
+  console.log(`✅ Inserted ${newPicks.length} new picks`);
   return newPicks.length;
 }
 

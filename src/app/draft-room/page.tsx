@@ -884,7 +884,30 @@ export default function Home() {
   const handleImport = async () => {
     setIsSyncing(true);
     try {
-      const response = await fetch('/api/scrape-draft');
+      let leagueId = selectedLeague?.id;
+      
+      // Fallback: try to get from localStorage if state is not set
+      if (!leagueId) {
+        try {
+          const stored = localStorage.getItem('selectedLeague');
+          if (stored) {
+            const league = JSON.parse(stored);
+            leagueId = league.id;
+            setSelectedLeague(league); // Update state
+            setActiveSport(league.sport);
+          }
+        } catch (e) {
+          console.error('Failed to parse stored league:', e);
+        }
+      }
+      
+      if (!leagueId) {
+        alert("No league selected. Please select a league first.");
+        setIsSyncing(false);
+        return;
+      }
+      
+      const response = await fetch(`/api/scrape-draft?leagueId=${leagueId}`);
       const data = await response.json();
 
       if (data.success) {
@@ -895,7 +918,8 @@ export default function Home() {
           const nonKeeperPicks = data.picks.filter((p: any) => p.tm && !p.isKeeper).length;
           setCurrentPick(nonKeeperPicks + 1);
         }
-        // Success even if no new picks - don't show error
+        // Reload data from database to show updated roster
+        window.location.reload();
       } else {
         alert("Failed to sync Draft! " + (data.error || "Unknown error"));
       }
@@ -1278,9 +1302,9 @@ export default function Home() {
   }, [displayPool, searchTerm, showDrafted, draftResults, positionFilter, statSort, yahooStats, yahooPlayers, activeSport]);
 
 
-  // Sport-specific roster slots
+  // Sport-specific roster slots (from Yahoo league settings)
   const ROSTER_SLOTS_BY_SPORT: Record<string, string[]> = {
-    baseball: ['C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'UTIL', 'SP', 'SP', 'SP', 'SP', 'SP', 'RP', 'RP', 'P', 'P', 'BN', 'BN', 'BN', 'BN'],
+    baseball: ['C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'UTIL', 'SP', 'SP', 'SP', 'SP', 'RP', 'RP', 'RP', 'P', 'P', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN'],
     basketball: ['PG', 'SG', 'G', 'SF', 'PF', 'F', 'C', 'C', 'UTIL', 'UTIL', 'UTIL', 'BN', 'BN', 'BN'],
     hockey: ['C', 'C', 'LW', 'LW', 'RW', 'RW', 'D', 'D', 'D', 'D', 'G', 'G', 'BN', 'BN', 'BN', 'BN'],
     football: ['QB', 'RB', 'RB', 'WR', 'WR', 'WR', 'TE', 'FLEX', 'K', 'DEF', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN']
@@ -1648,9 +1672,9 @@ export default function Home() {
                 )}
               </div>
               <div className="flex-1 overflow-y-auto space-y-1 pr-2">
-                {processedPool.map((p: any) => (
+                {processedPool.map((p: any, idx: number) => (
                   <DraftBoardPlayerRow
-                    key={p.pk}
+                    key={p.pk !== null ? `pick-${p.pk}` : `player-${p.rank || idx}`}
                     p={{ ...p, rationale: aiNotes[normalizeName(p.name)] }}
                     yahooStats={yahooStats}
                     yahooPlayers={yahooPlayers}
@@ -1865,7 +1889,10 @@ export default function Home() {
                             </td>
                             <td className="py-2 px-3">
                               {r.player
-                                ? <span className="font-bold text-sm text-slate-100">{r.player.name}</span>
+                                ? <div className="flex items-center gap-2">
+                                    <span className="font-bold text-sm text-slate-100">{r.player.name}</span>
+                                    {r.player.rank && <span className="text-[9px] font-bold text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">#{r.player.rank}</span>}
+                                  </div>
                                 : <span className="text-xs text-slate-600 italic">Empty</span>
                               }
                             </td>

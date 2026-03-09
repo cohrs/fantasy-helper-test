@@ -48,6 +48,8 @@ export async function GET() {
             season: number;
             is_active: boolean;
             current_week?: number;
+            team_key?: string;
+            team_name?: string;
         }> = [];
 
         if (users) {
@@ -86,6 +88,27 @@ export async function GET() {
                             if (item.is_finished !== undefined) leagueInfo.is_finished = item.is_finished as boolean;
                         });
 
+                        // Try to extract team info if available
+                        let teamKey: string | undefined;
+                        let teamName: string | undefined;
+                        
+                        // Yahoo sometimes includes team info in the league response
+                        const teamsBlock = league.find((item: any) => item.teams);
+                        if (teamsBlock?.teams) {
+                            // User's team is usually the first one
+                            for (const teamIdx in teamsBlock.teams) {
+                                if (teamIdx === 'count') continue;
+                                const team = teamsBlock.teams[teamIdx]?.team;
+                                if (team && Array.isArray(team)) {
+                                    for (const teamItem of team) {
+                                        if (teamItem.team_key) teamKey = teamItem.team_key;
+                                        if (teamItem.name) teamName = teamItem.name;
+                                    }
+                                    break; // Take first team (user's team)
+                                }
+                            }
+                        }
+
                         if (leagueInfo.league_key && leagueInfo.name) {
                             // Map game code to sport
                             const sportMap: Record<string, string> = {
@@ -101,7 +124,9 @@ export async function GET() {
                                 sport: sportMap[leagueInfo.game_code as string] || leagueInfo.game_code as string,
                                 season: leagueInfo.season as number,
                                 is_active: !leagueInfo.is_finished,
-                                current_week: leagueInfo.current_week as number | undefined
+                                current_week: leagueInfo.current_week as number | undefined,
+                                team_key: teamKey,
+                                team_name: teamName
                             });
                         }
                     }
@@ -130,16 +155,19 @@ export async function GET() {
                 for (const league of leagues) {
                     await sql`
                         INSERT INTO user_leagues (
-                            user_id, league_key, league_name, sport, season, is_active
+                            user_id, league_key, league_name, sport, season, is_active, team_key, team_name
                         )
                         VALUES (
                             ${userId}, ${league.league_key}, ${league.name}, 
-                            ${league.sport}, ${league.season}, ${league.is_active}
+                            ${league.sport}, ${league.season}, ${league.is_active},
+                            ${league.team_key || null}, ${league.team_name || null}
                         )
                         ON CONFLICT (user_id, league_key)
                         DO UPDATE SET
                             league_name = ${league.name},
                             is_active = ${league.is_active},
+                            team_key = ${league.team_key || null},
+                            team_name = ${league.team_name || null},
                             updated_at = CURRENT_TIMESTAMP
                     `;
                 }

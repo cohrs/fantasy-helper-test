@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/route";
 import { getDb } from '@/lib/db';
+import { getYahooAccessToken } from '@/lib/yahoo-auth';
 
 const sql = getDb();
 
@@ -14,11 +15,19 @@ export async function GET(request: Request) {
         
         const session = await getServerSession(authOptions);
 
-        if (!session || !(session as any).accessToken) {
+        if (!session?.user?.email) {
             return NextResponse.json({ error: 'Unauthorized. Please connect Yahoo first.' }, { status: 401 });
         }
 
-        const accessToken = (session as any).accessToken;
+        // Get Yahoo GUID from session
+        const yahooGuid = session.user.email.split('@')[0];
+        
+        // Get valid access token (will refresh if needed)
+        const accessToken = await getYahooAccessToken(yahooGuid);
+        
+        if (!accessToken) {
+            return NextResponse.json({ error: 'Failed to get Yahoo access token. Please re-login.' }, { status: 401 });
+        }
 
         let leagueKey: string;
         let sport: string;

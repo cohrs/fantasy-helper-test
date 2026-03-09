@@ -7,6 +7,9 @@ CREATE TABLE IF NOT EXISTS users (
   nickname VARCHAR(255),
   email VARCHAR(255),
   image_url TEXT,
+  access_token TEXT,
+  refresh_token TEXT,
+  token_expires_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -62,6 +65,7 @@ CREATE TABLE IF NOT EXISTS draft_picks (
   league_id INT REFERENCES user_leagues(id) ON DELETE CASCADE,
   round INT NOT NULL,
   pick INT NOT NULL,
+  rank INT,
   player_name VARCHAR(255) NOT NULL,
   position VARCHAR(50) NOT NULL,
   team_abbr VARCHAR(50),

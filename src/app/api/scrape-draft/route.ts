@@ -11,10 +11,44 @@ const DRAFT_URLS: Record<string, string> = {
   'basketball': "https://www.tapatalk.com/groups/asshatrotoleagues/2025-2026-player-list-t611.html"
 };
 
-export async function GET() {
+// Normalize team names to handle variations
+function normalizeTeamName(name: string | null): string | null {
+    if (!name) return null;
+    
+    let normalized = name
+        .trim()
+        .toLowerCase()
+        .replace(/^the\s+/i, '')
+        .replace(/[''`]/g, '')
+        .replace(/\s*-\s*/g, '-')
+        .replace(/\s+/g, ' ')
+        .replace(/[^\w\s-]/g, '')
+        .trim();
+    
+    // Handle specific team name variations
+    if (normalized === 'timber wolves') {
+        normalized = 'timberwolves';
+    }
+    
+    return normalized
+        .split(' ')
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+}
+
+export async function GET(request: Request) {
     try {
-        const session = await getServerSession(authOptions);
-        const leagueId = await getSelectedLeagueId(session);
+        const { searchParams } = new URL(request.url);
+        const leagueIdParam = searchParams.get('leagueId');
+        
+        let leagueId: number | null = null;
+        
+        if (leagueIdParam) {
+            leagueId = parseInt(leagueIdParam);
+        } else {
+            const session = await getServerSession(authOptions);
+            leagueId = await getSelectedLeagueId(session);
+        }
         
         if (!leagueId) {
             return NextResponse.json({ 
@@ -23,7 +57,6 @@ export async function GET() {
             }, { status: 400 });
         }
 
-        // Get the sport for this league
         const leagueInfo = await sql`
             SELECT sport FROM user_leagues WHERE id = ${leagueId}
         `;
@@ -58,36 +91,35 @@ export async function GET() {
             .replace(/\u00A0/g, " ")
             .replace(/&middot;/g, "·");
 
-        // Remove HTML tags completely and replace with newlines to ensure logical lines
         cleanContent = cleanContent.replace(/<\/?[^>]+(>|$)/g, "\n");
 
         const lines = cleanContent.split('\n');
-        const results: { rd: number; pk: number; tm: string | null; name: string; pos: string; playerTeam: string; isKeeper: boolean }[] = [];
+        const results: { rd: number; pk: number | null; rank: number; tm: string | null; name: string; pos: string; playerTeam: string; isKeeper: boolean }[] = [];
+        
+        let draftPickCounter = 1; // Sequential counter for ACTUAL draft picks only
 
         lines.forEach((line: string) => {
             const cleanLine = line.trim();
-            // Match lines starting with a bullet hole character or just a number
-            const pkMatch = cleanLine.match(/(?:·*\s*)(\d+)\.\s+/);
+            const rankMatch = cleanLine.match(/(?:·*\s*)(\d+)\.\s+/);
 
-            if (pkMatch) {
-                const pk = parseInt(pkMatch[1]);
+            if (rankMatch) {
+                const rank = parseInt(rankMatch[1]); // This is ALWAYS the player's rank
                 let tm: string | null = null;
 
-                const startIdx = cleanLine.indexOf(pkMatch[0]) + pkMatch[0].length;
+                const startIdx = cleanLine.indexOf(rankMatch[0]) + rankMatch[0].length;
                 let namePart = cleanLine.substring(startIdx);
 
                 let isKeeper = false;
-
                 let forcedRound = null;
-                // Handle Keeper assignments
+                
+                // Check for Keeper
                 const keeperMatch = namePart.match(/-\s*Keeper\s*-?\s*(.*)/i);
                 if (keeperMatch) {
                     tm = keeperMatch[1].trim();
                     isKeeper = true;
                     namePart = namePart.replace(keeperMatch[0], '').trim();
                 } else {
-                    // Handle Round assignments (e.g. "2nd Round" or "2 nd Round" or "3 rd Round")
-                    // Allow flexible spacing: "2nd", "2 nd", "2  nd", etc.
+                    // Check for Round assignment
                     const roundMatch = namePart.match(/(\d+)\s*(?:st|nd|rd|th)\s*Round\s*-\s*(.*)/i);
                     if (roundMatch) {
                         forcedRound = parseInt(roundMatch[1]);
@@ -96,38 +128,67 @@ export async function GET() {
                     }
                 }
 
-                // Clean up the name and pos (e.g. "Pete Alonso BAL - 1B")
+                // Parse player name and position
                 let nameSplit = namePart.split('-');
                 let nameRaw = nameSplit[0].trim();
                 let pos = nameSplit.length > 1 ? nameSplit[1].trim() : "UTIL";
 
-                // Extract team from the end of the name string (e.g. "Pete Alonso BAL" -> name="Pete Alonso", team="BAL")
                 let nameWords = nameRaw.split(' ');
                 let playerTeam = nameWords.pop() || "FA";
                 let name = nameWords.join(' ');
 
-                const calculatedRound = forcedRound !== null ? forcedRound : Math.floor((pk - 1) / 18) + 1;
-                results.push({ rd: calculatedRound, pk, name, pos, tm, playerTeam, isKeeper });
+                // Normalize team name
+                const normalizedTeam = normalizeTeamName(tm);
+                
+                // Determine pick number and round
+                let pickNumber: number | null = null;
+                let round = 0;
+                
+                if (isKeeper) {
+                    // Keepers: no pick number, round = 0
+                    pickNumber = null;
+                    round = 0;
+                } else if (normalizedTeam) {
+                    // Draft pick: sequential pick number
+                    pickNumber = draftPickCounter;
+                    round = forcedRound !== null ? forcedRound : Math.floor((draftPickCounter - 1) / 18) + 1;
+                    draftPickCounter++;
+                } else {
+                    // Undrafted: no pick number, round = 0
+                    pickNumber = null;
+                    round = 0;
+                }
+                
+                results.push({ 
+                    rd: round, 
+                    pk: pickNumber,
+                    rank: rank,
+                    name, 
+                    pos, 
+                    tm: normalizedTeam, 
+                    playerTeam, 
+                    isKeeper 
+                });
             }
         });
 
-        // Remove duplicates just in case quotes or multiple threads matched
-        const uniquePicks = Array.from(new Map(results.map(item => [item.pk, item])).values());
+        console.log(`\n📊 Scraper Results:`);
+        console.log(`   Total players: ${results.length}`);
+        console.log(`   Keepers: ${results.filter(p => p.isKeeper).length}`);
+        console.log(`   Draft picks: ${results.filter(p => p.pk !== null).length}`);
+        console.log(`   Undrafted: ${results.filter(p => !p.isKeeper && p.pk === null).length}`);
 
-        // Sort by pick number
-        uniquePicks.sort((a, b) => a.pk - b.pk);
-
-        // Save to database (only inserts new picks)
-        const newPicksCount = await saveDraftPicks(uniquePicks, leagueId);
+        // Save to database
+        const newPicksCount = await saveDraftPicks(results, leagueId);
 
         return NextResponse.json({ 
             success: true, 
-            totalPicks: uniquePicks.length,
+            totalPicks: results.length,
             newPicks: newPicksCount,
-            picks: uniquePicks,
+            picks: results,
             message: newPicksCount > 0 
-                ? `Added ${newPicksCount} new picks (${uniquePicks.length} total)` 
-                : `No new picks (${uniquePicks.length} total)`
+                ? `Added ${newPicksCount} new picks (${results.length} total)` 
+                : `No new picks (${results.length} total)`
         });
     } catch (error) {
         console.error("Scraper Error:", error);

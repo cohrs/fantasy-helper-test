@@ -4,12 +4,13 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   // Only enforce HTTPS in development (production handles this at platform level)
   if (process.env.NODE_ENV === 'development') {
-    const protocol = request.headers.get('x-forwarded-proto') || 'http';
+    const url = request.nextUrl;
     
-    if (protocol === 'http') {
-      const url = request.nextUrl.clone();
-      url.protocol = 'https:';
-      return NextResponse.redirect(url);
+    // Check if request is HTTP (not HTTPS)
+    if (url.protocol === 'http:') {
+      const httpsUrl = url.clone();
+      httpsUrl.protocol = 'https:';
+      return NextResponse.redirect(httpsUrl);
     }
   }
   

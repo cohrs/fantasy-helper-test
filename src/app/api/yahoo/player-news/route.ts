@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/route";
+import { getYahooAccessToken } from '@/lib/yahoo-auth';
 
 const LEAGUE_KEY = '469.l.4136';
 
@@ -8,11 +9,24 @@ export async function GET(request: Request) {
     try {
         const session = await getServerSession(authOptions);
 
-        if (!session || !(session as any).accessToken) {
+        if (!session?.user?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const accessToken = (session as any).accessToken;
+        // Get Yahoo GUID from session
+        const yahooGuid = session.user.email.split('@')[0];
+        
+        console.log('🔍 Session debug:', {
+            email: session.user.email,
+            extractedGuid: yahooGuid
+        });
+        
+        // Get valid access token (will refresh if needed)
+        const accessToken = await getYahooAccessToken(yahooGuid);
+        
+        if (!accessToken) {
+            return NextResponse.json({ error: 'Failed to get Yahoo access token. Please re-login.' }, { status: 401 });
+        }
         const { searchParams } = new URL(request.url);
         const playerName = searchParams.get('name');
 
@@ -76,6 +90,12 @@ export async function GET(request: Request) {
         // Parse player notes
         const notes: any[] = [];
         const notesBlock = findField('player_notes');
+        
+        console.log('🔍 Yahoo News Debug:', {
+            playerName: fullName,
+            hasNotes,
+            notesBlock: JSON.stringify(notesBlock, null, 2)
+        });
         
         if (notesBlock && Array.isArray(notesBlock)) {
             for (const noteNode of notesBlock) {
