@@ -10,6 +10,17 @@ const DRAFT_URLS: Record<string, string> = {
   'basketball': "https://www.tapatalk.com/groups/asshatrotoleagues/2025-2026-player-list-t611.html"
 };
 
+interface ParsedPlayer {
+  rd: number;
+  pk: number | null;
+  rank: number;
+  tm: string | null;
+  name: string;
+  pos: string;
+  playerTeam: string;
+  isKeeper: boolean;
+}
+
 // Normalize team names to handle variations
 function normalizeTeamName(name: string | null): string | null {
     if (!name) return null;
@@ -36,9 +47,9 @@ function normalizeTeamName(name: string | null): string | null {
 }
 
 // Parse player data from text content using improved logic
-function parsePlayerData(textContent: string): any[] {
+function parsePlayerData(textContent: string): ParsedPlayer[] {
     const lines = textContent.split('\n');
-    const results: { rd: number; pk: number | null; rank: number; tm: string | null; name: string; pos: string; playerTeam: string; isKeeper: boolean }[] = [];
+    const results: ParsedPlayer[] = [];
     
     let draftPickCounter = 1; // Sequential counter for ACTUAL draft picks only
 
@@ -123,6 +134,7 @@ export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const leagueIdParam = searchParams.get('leagueId');
+        const textContent = searchParams.get('textContent');
         
         let leagueId: number | null = null;
         
@@ -163,18 +175,34 @@ export async function GET(request: Request) {
 
         console.log(`🔄 Scraping ${sport} draft for league ${leagueId} using Playwright...`);
 
-        // This will be replaced with actual Playwright MCP calls once the server is connected
-        // For now, this is a placeholder that shows the intended structure
-        
-        // TODO: Replace with actual Playwright MCP calls:
-        // 1. playwright_navigate({ url: TARGET_URL })
-        // 2. playwright_get_visible_text() to get clean text content
-        // 3. Parse the text content using our improved parser
-        
+        // Check if text content was provided (from AI assistant using Playwright MCP)
+        if (!textContent) {
+            return NextResponse.json({ 
+                success: false, 
+                error: "This endpoint requires textContent parameter from Playwright scraping.",
+                targetUrl: TARGET_URL,
+                instructions: "Use Kiro AI assistant to scrape this URL with Playwright MCP tools"
+            }, { status: 400 });
+        }
+
+        console.log(`📄 Processing ${textContent.length} characters of text`);
+
+        // Parse the text content
+        const parsedData = parsePlayerData(textContent);
+        console.log(`✅ Parsed ${parsedData.length} players`);
+
+        // Save to database
+        const saved = await saveDraftPicks(parsedData, leagueId);
+        console.log(`💾 Saved ${saved} draft picks to database`);
+
         return NextResponse.json({ 
-            success: false, 
-            error: "Playwright MCP server not yet connected. Please restart Kiro to connect the MCP server, then try again." 
-        }, { status: 503 });
+            success: true, 
+            message: `Successfully scraped and saved ${saved} draft picks using Playwright`,
+            playersFound: parsedData.length,
+            playersSaved: saved,
+            sport,
+            leagueId
+        });
 
     } catch (error) {
         console.error("Playwright Scraper Error:", error);

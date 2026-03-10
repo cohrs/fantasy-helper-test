@@ -11,6 +11,6 @@
   },
   "then": {
     "type": "askAgent",
-    "prompt": "STOP! You are about to execute a shell command. If this is a 'git push' command, you MUST NOT proceed. The user has explicitly instructed: DO NOT push to remote git until they confirm it works locally. Ask the user for confirmation first before any git push."
+    "prompt": "STOP! Check if this is a 'git push' command. If it is, you MUST NOT proceed - ask the user for confirmation first. The user has explicitly instructed: DO NOT push to remote git until they confirm it works locally. If this is any other git command (pull, fetch, status, log, branch, etc.) or non-git shell command, proceed normally."
   }
 }

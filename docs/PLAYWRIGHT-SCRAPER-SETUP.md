@@ -19,32 +19,34 @@ The Playwright scraper is a more reliable alternative to the current axios-based
 
 ## Setup Steps
 
-### 1. Restart Kiro
-The MCP configuration needs Kiro to restart to connect to the Playwright server.
-
-### 2. Verify MCP Connection
-After restart, check that Playwright tools are available:
-- Look for Playwright tools in the MCP server view
-- Should see tools like `playwright_navigate`, `playwright_get_visible_text`, etc.
-
-### 3. Test the New Scraper
-The new scraper endpoint is available at:
+### 1. Install UV (✅ COMPLETED)
+UV package manager is now installed:
+```bash
+uv --version
+# uv 0.10.9 (Homebrew 2026-03-06)
 ```
-GET /api/scrape-draft-playwright?leagueId=2
-```
+
+### 2. Restart Kiro
+The MCP configuration is in place at `.kiro/settings/mcp.json`. After restarting Kiro, the Playwright MCP server should connect automatically.
+
+### 3. Test the Playwright MCP Connection
+After restart, you can test if Playwright tools are available by asking Kiro to use them.
 
 ## Implementation Details
 
 ### Current Status
-- **Branch**: `playwright-scraper` (to be created)
-- **Endpoint**: `/api/scrape-draft-playwright/route.ts`
-- **Status**: Placeholder implementation ready for MCP integration
+- **Branch**: `playwright-scraper` ✅
+- **UV Installation**: ✅ Installed (v0.10.9)
+- **MCP Configuration**: ✅ Complete (`.kiro/settings/mcp.json`)
+- **Endpoint**: `/api/scrape-draft-playwright/route.ts` ✅
+- **Status**: Implementation complete, ready for testing after Kiro restart
 
-### Planned Playwright Flow
-1. `playwright_navigate()` - Navigate to Tapatalk URL
-2. `playwright_get_visible_text()` - Extract clean text content
-3. Parse using improved regex logic (same as current scraper)
-4. Save to database using optimized batch operations
+### Implementation Details
+The scraper works in two steps:
+1. **AI Assistant** uses Playwright MCP tools to navigate and extract text
+2. **API Endpoint** receives the text, parses it, and saves to database
+
+This design keeps the browser automation in the AI layer where MCP tools are available.
 
 ### Advantages Over Current Scraper
 - ✅ **Real browser rendering** - Handles JavaScript and dynamic content
