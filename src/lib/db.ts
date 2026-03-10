@@ -105,6 +105,24 @@ export async function saveChatHistory(prompt: string, rawResponse: string, recom
   `;
 }
 
+export async function getChatHistory(leagueId?: number | null, limit: number = 20) {
+  const sql = getDb();
+  
+  if (!leagueId) {
+    return [];
+  }
+  
+  const results = await sql`
+    SELECT prompt, raw_response, recommendations, created_at
+    FROM chat_history
+    WHERE league_id = ${leagueId}
+    ORDER BY created_at DESC
+    LIMIT ${limit}
+  `;
+  
+  return results.reverse(); // Return oldest first for chat display
+}
+
 // Draft Picks
 export async function getDraftPicks(leagueId?: number | null) {
   const sql = getDb();
@@ -129,56 +147,46 @@ export async function saveDraftPicks(picks: any[], leagueId?: number | null) {
   
   if (picks.length === 0) return 0;
   
-  // Get existing picks to avoid duplicates
-  // For draft picks: match on pick number
-  // For keepers/undrafted: match on player name + team
-  const existing = await sql`
-    SELECT pick, player_name, drafted_by FROM draft_picks 
-    WHERE league_id = ${leagueId}
-  `;
+  console.log(`📝 Processing ${picks.length} picks for league ${leagueId}...`);
   
-  const existingPickNumbers = new Set(existing.filter((r: any) => r.pick !== null).map((r: any) => r.pick));
-  const existingKeepers = new Set(existing.filter((r: any) => r.pick === null).map((r: any) => `${r.player_name}|${r.drafted_by}`));
+  let insertedCount = 0;
   
-  // Filter to only new picks
-  const newPicks = picks.filter(pick => {
-    if (pick.pk !== null) {
-      // Draft pick: check if pick number exists
-      return !existingPickNumbers.has(pick.pk);
-    } else {
-      // Keeper/undrafted: check if player+team combo exists
-      const key = `${pick.name}|${pick.tm}`;
-      return !existingKeepers.has(key);
+  // First, clear existing data for this league to avoid conflicts
+  await sql`DELETE FROM draft_picks WHERE league_id = ${leagueId}`;
+  
+  // Batch insert all picks at once
+  const batchSize = 100; // Process in batches to avoid memory issues
+  
+  for (let i = 0; i < picks.length; i += batchSize) {
+    const batch = picks.slice(i, i + batchSize);
+    
+    // Insert each pick in the batch
+    for (const pick of batch) {
+      await sql`
+        INSERT INTO draft_picks (league_id, round, pick, rank, player_name, position, team_abbr, drafted_by, is_keeper)
+        VALUES (
+          ${leagueId},
+          ${pick.rd || 0},
+          ${pick.pk},
+          ${pick.rank},
+          ${pick.name},
+          ${pick.pos},
+          ${pick.playerTeam || null},
+          ${pick.tm || null},
+          ${pick.isKeeper || false}
+        )
+      `;
+      insertedCount++;
     }
-  });
-  
-  console.log(`📝 Total picks scraped: ${picks.length}, Already in DB: ${existing.length}, New picks to insert: ${newPicks.length}`);
-  
-  if (newPicks.length === 0) {
-    console.log('✅ No new picks to add');
-    return 0;
+    
+    // Log progress for large batches
+    if (picks.length > 1000) {
+      console.log(`   Processed ${Math.min(i + batchSize, picks.length)}/${picks.length} picks...`);
+    }
   }
   
-  // Insert new picks
-  for (const pick of newPicks) {
-    await sql`
-      INSERT INTO draft_picks (league_id, round, pick, rank, player_name, position, team_abbr, drafted_by, is_keeper)
-      VALUES (
-        ${leagueId},
-        ${pick.rd}, 
-        ${pick.pk},
-        ${pick.rank}, 
-        ${pick.name}, 
-        ${pick.pos}, 
-        ${pick.playerTeam || null}, 
-        ${pick.tm || null}, 
-        ${pick.isKeeper || false}
-      )
-    `;
-  }
-  
-  console.log(`✅ Inserted ${newPicks.length} new picks`);
-  return newPicks.length;
+  console.log(`✅ Processed picks: ${insertedCount} inserted`);
+  return insertedCount;
 }
 
 // Watchlist

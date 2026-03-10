@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Prevent Automatic Git Push",
+  "description": "Blocks git push commands and reminds to get user confirmation after local testing first",
+  "version": "1",
+  "when": {
+    "type": "preToolUse",
+    "toolTypes": [
+      "shell"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "STOP! You are about to execute a shell command. If this is a 'git push' command, you MUST NOT proceed. The user has explicitly instructed: DO NOT push to remote git until they confirm it works locally. Ask the user for confirmation first before any git push."
+  }
+}

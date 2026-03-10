@@ -155,7 +155,7 @@ scripts/
 - **Categories**: 7x7 (R, H, HR, RBI, SB, AVG, OPS × W, SV, K, HLD, ERA, WHIP, QS)
 - **Keepers**: 10 per team (180 total)
 - **Draft Format**: Linear (not snake)
-- **Roster**: C, 1B, 2B, 3B, SS, LF, CF, RF, Util, SP×4, RP×2, P×2, BN×4
+- **Roster**: C, 1B, 2B, 3B, SS, LF, CF, RF, Util, SP×4, RP×3, P×2, BN×7
 
 ### Basketball League
 - **Teams**: 14

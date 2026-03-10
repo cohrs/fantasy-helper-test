@@ -81,6 +81,21 @@ if (pickInRound === 11) {
 }
 ```
 
+## Scraper Implementations
+
+### Current Scraper (axios-based)
+- **Endpoint**: `/api/scrape-draft`
+- **Method**: Raw HTML parsing with regex
+- **Issues**: Hangs on large datasets, timeout problems
+- **Status**: Working but unreliable
+
+### Playwright Scraper (NEW)
+- **Endpoint**: `/api/scrape-draft-playwright`
+- **Method**: Real browser automation via MCP
+- **Advantages**: More reliable, better error handling, no hanging
+- **Status**: In development on `playwright-scraper` branch
+- **Setup**: See `docs/PLAYWRIGHT-SCRAPER-SETUP.md`
+
 ## Logging Requirements
 
 **All scraper logs should be stored in the database** so they can be queried programmatically:

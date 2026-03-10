@@ -9,6 +9,7 @@ export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const leagueIdParam = searchParams.get('leagueId');
+        const playerName = searchParams.get('playerName');
         
         let leagueId: number | null = null;
         
@@ -21,6 +22,23 @@ export async function GET(request: Request) {
         }
         
         const notes = await getPlayerNotes(leagueId);
+        
+        // If requesting a specific player, return just their notes
+        if (playerName) {
+            const normalizedName = playerName
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .replace(/[^a-z\s]/g, '')
+                .replace(/\s+(jr|sr|ii|iii)$/, '')
+                .trim()
+                .replace(/\s+/g, '');
+            
+            return NextResponse.json({ 
+                notes: notes[normalizedName] || null 
+            });
+        }
+        
         return NextResponse.json(notes);
     } catch (err) {
         console.error("Error reading AI notes from database:", err);

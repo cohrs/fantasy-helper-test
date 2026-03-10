@@ -13,10 +13,10 @@ export async function POST(request: NextRequest) {
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
         const body = await request.json();
-        const { myTeam, openSlots, availablePool, picksUntilTurn, customPrompt, chatHistory = [], allDrafted = [] } = body;
+        const { myTeam, openSlots, availablePool, picksUntilTurn, customPrompt, chatHistory = [], allDrafted = [], leagueId } = body;
 
         // Feedback Loop: Read historical AI notes from database
-        const historicalNotes = await getPlayerNotes();
+        const historicalNotes = await getPlayerNotes(leagueId);
 
         let feedbackContext = '';
         if (Object.keys(historicalNotes).length > 0 && allDrafted.length > 0) {
@@ -131,12 +131,20 @@ If the user is asking a general question about players, injuries, news, or strat
                             ? newNote + '\n\n---\n\n' + existingNote
                             : newNote;
                         
-                        await savePlayerNote(r.name, normalized, combinedNote);
+                        await savePlayerNote(r.name, normalized, combinedNote, leagueId);
                     }
                 }
             } else if (customPrompt && text) {
                 // Handle conversational player-specific queries
-                const playerNameMatch = customPrompt.match(/(?:analyze|about|why|tell me about|what about)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i);
+                // Try multiple patterns to extract player name
+                let playerNameMatch = customPrompt.match(/^([A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[IVX]+)?)+)\s+is\s+on\s+my\s+team/i);
+                if (!playerNameMatch) {
+                    playerNameMatch = customPrompt.match(/(?:analyze|about|why|tell me about|what about|watching)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[IVX]+)?)+)/i);
+                }
+                if (!playerNameMatch) {
+                    playerNameMatch = customPrompt.match(/^([A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[IVX]+)?)+)/);
+                }
+                
                 if (playerNameMatch) {
                     const playerName = playerNameMatch[1].trim();
                     const normalized = normalizeName(playerName);
@@ -148,7 +156,7 @@ If the user is asking a general question about players, injuries, news, or strat
                         ? newNote + '\n\n---\n\n' + existingNote
                         : newNote;
                     
-                    await savePlayerNote(playerName, normalized, combinedNote);
+                    await savePlayerNote(playerName, normalized, combinedNote, leagueId);
                 }
             }
         } catch (e) {
@@ -160,7 +168,8 @@ If the user is asking a general question about players, injuries, news, or strat
             await saveChatHistory(
                 customPrompt || "General Analysis",
                 text,
-                recommendations
+                recommendations,
+                leagueId
             );
         } catch (e) {
             console.error("Failed to save chat history:", e);

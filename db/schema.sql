@@ -49,6 +49,20 @@ CREATE TABLE IF NOT EXISTS player_notes (
   UNIQUE(league_id, player_name_normalized)
 );
 
+-- Yahoo player news cache (league-specific)
+CREATE TABLE IF NOT EXISTS yahoo_player_news (
+  id SERIAL PRIMARY KEY,
+  league_id INT REFERENCES user_leagues(id) ON DELETE CASCADE,
+  player_name VARCHAR(255) NOT NULL,
+  player_name_normalized VARCHAR(255) NOT NULL,
+  status VARCHAR(100),
+  status_full TEXT,
+  image_url TEXT,
+  notes JSONB,
+  fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(league_id, player_name_normalized)
+);
+
 -- Chat history with AI assistant (league-specific)
 CREATE TABLE IF NOT EXISTS chat_history (
   id SERIAL PRIMARY KEY,

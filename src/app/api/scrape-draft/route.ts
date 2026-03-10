@@ -83,7 +83,8 @@ export async function GET(request: Request) {
         const { data } = await axios.get(TARGET_URL, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            }
+            },
+            timeout: 30000 // 30 second timeout
         });
 
         let cleanContent = data.replace(/&nbsp;/g, " ")
@@ -129,13 +130,13 @@ export async function GET(request: Request) {
                 }
 
                 // Parse player name and position
-                let nameSplit = namePart.split('-');
-                let nameRaw = nameSplit[0].trim();
-                let pos = nameSplit.length > 1 ? nameSplit[1].trim() : "UTIL";
+                const nameSplit = namePart.split('-');
+                const nameRaw = nameSplit[0].trim();
+                const pos = nameSplit.length > 1 ? nameSplit[1].trim() : "UTIL";
 
-                let nameWords = nameRaw.split(' ');
-                let playerTeam = nameWords.pop() || "FA";
-                let name = nameWords.join(' ');
+                const nameWords = nameRaw.split(' ');
+                const playerTeam = nameWords.pop() || "FA";
+                const name = nameWords.join(' ');
 
                 // Normalize team name
                 const normalizedTeam = normalizeTeamName(tm);

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import LeagueSelector from '@/components/LeagueSelector';
+import { PlayerCard } from '@/components/PlayerCard';
 
 // Utility function to normalize player names for consistent lookups
 function normalizeName(name: string) {
@@ -821,18 +822,19 @@ export default function Home() {
     Promise.all([
       fetch(`/api/draft-data?leagueId=${leagueId}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
       fetch(`/api/assistant/notes?leagueId=${leagueId}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/assistant/history?leagueId=${leagueId}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({ history: [] })),
       fetch(`/api/player-stats?season=${selectedLeague.season}&sport=${selectedLeague.sport}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
       fetch(`/api/yahoo/league-settings?leagueId=${leagueId}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
       fetch(`/api/team-data?leagueId=${leagueId}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
       fetch(`/api/my-team?leagueId=${leagueId}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({}))
-    ]).then(([draftData, notesData, statsData, leagueSettings, teamData, myTeamData]) => {
+    ]).then(([draftData, notesData, chatData, statsData, leagueSettings, teamData, myTeamData]) => {
       if (draftData.roster) setMyRoster(draftData.roster);
       if (draftData.draft && draftData.draft.length > 0) {
         setDraftResults(draftData.draft);
         // Current pick = number of non-keeper picks made + 1
-        // (Keepers don't count as draft picks)
-        const nonKeeperPicks = draftData.draft.filter((p: any) => p.tm && !p.isKeeper).length;
-        setCurrentPick(nonKeeperPicks + 1);
+        // Count ONLY non-keeper draft picks (as per Tapatalk scraper rules)
+        const draftPicksMade = draftData.draft.filter((p: any) => p.tm && !p.isKeeper).length;
+        setCurrentPick(draftPicksMade + 1);
       }
       if (notesData) {
         // Normalize keys so they match the normalizeName function used for lookups
@@ -841,6 +843,15 @@ export default function Home() {
           normalizedNotes[normalizeName(k)] = v as string;
         }
         setAiNotes(normalizedNotes);
+      }
+      if (chatData?.history && chatData.history.length > 0) {
+        console.log('💬 Restoring chat history:', chatData.history.length, 'messages');
+        setChatHistory(chatData.history);
+        // If there are recommendations in the last assistant message, show them
+        const lastMessage = chatData.history[chatData.history.length - 1];
+        if (lastMessage?.role === 'model' && lastMessage.recommendations?.length > 0) {
+          setAssistantRecs(lastMessage.recommendations);
+        }
       }
       if (statsData) {
         setYahooStats(statsData);
@@ -914,9 +925,9 @@ export default function Home() {
         if (data.picks && data.picks.length > 0) {
           setDraftResults(data.picks);
           // Current pick = number of non-keeper picks made + 1
-          // (Keepers don't count as draft picks)
-          const nonKeeperPicks = data.picks.filter((p: any) => p.tm && !p.isKeeper).length;
-          setCurrentPick(nonKeeperPicks + 1);
+          // Count ONLY non-keeper draft picks (as per Tapatalk scraper rules)
+          const draftPicksMade = data.picks.filter((p: any) => p.tm && !p.isKeeper).length;
+          setCurrentPick(draftPicksMade + 1);
         }
         // Reload data from database to show updated roster
         window.location.reload();
@@ -1098,7 +1109,8 @@ export default function Home() {
         allDrafted: draftResults.filter(r => r.tm), // The actual drafted pool for live AI feedback loop
         picksUntilTurn: waitPicks,
         customPrompt: userPromptText,
-        chatHistory: newHistory
+        chatHistory: newHistory,
+        leagueId: selectedLeague?.id
       };
 
       const res = await fetch('/api/assistant', {
@@ -1799,9 +1811,10 @@ export default function Home() {
                 })()}
               </div>
 
-              {/* Roster table */}
-              <div className="flex-1 overflow-y-auto">
-                <div className="flex items-baseline gap-3 mb-4">
+              {/* Roster - Card View */}
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Header */}
+                <div className="flex items-baseline gap-3 mb-4 shrink-0">
                   <h3 className="text-lg font-black italic tracking-tighter text-indigo-400">{selectedTeam}</h3>
                   {(() => {
                     // For basketball, show player count from team_rosters
@@ -1820,7 +1833,8 @@ export default function Home() {
                   })()}
                 </div>
                 
-                {(() => {
+                {/* Player Cards */}
+                <div className="flex-1 overflow-y-auto space-y-2 pr-2">{(() => {
                   // For basketball (in-season), show current roster from team_rosters
                   if (activeSport === 'basketball' && teamRosters.length > 0) {
                     const teamPlayers = teamRosters.filter((r: any) => r.team_name === selectedTeam);
@@ -1833,88 +1847,59 @@ export default function Home() {
                       );
                     }
                     
-                    return (
-                      <table className="w-full border-collapse text-sm">
-                        <thead className="sticky top-0 bg-slate-900 z-10">
-                          <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                            <th className="text-left py-2 px-3">Player</th>
-                            <th className="text-left py-2 px-3 w-12">Team</th>
-                            <th className="text-left py-2 px-3 w-24">Pos</th>
-                            <th className="text-left py-2 px-3 w-24">Status</th>
-                          </tr>
-                          <tr><td colSpan={4}><div className="h-px bg-slate-800 w-full" /></td></tr>
-                        </thead>
-                        <tbody>
-                          {teamPlayers.map((player: any, i: number) => (
-                            <tr key={i} className={`border-b border-slate-800/30 ${i % 2 === 0 ? 'bg-slate-950' : 'bg-slate-900/20'}`}>
-                              <td className="py-2 px-3">
-                                <span className="font-bold text-sm text-slate-100">{player.player_name}</span>
-                              </td>
-                              <td className="py-2 px-3">
-                                <span className="text-[10px] text-slate-500 font-bold">{player.nba_team || 'FA'}</span>
-                              </td>
-                              <td className="py-2 px-3">
-                                <span className="text-[10px] text-indigo-400 font-bold uppercase">{player.position || 'UTIL'}</span>
-                              </td>
-                              <td className="py-2 px-3">
-                                <span className={`text-[10px] font-bold ${player.status === 'Active' ? 'text-green-400' : 'text-yellow-400'}`}>
-                                  {player.status || 'Active'}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    );
+                    return teamPlayers.map((player: any, i: number) => (
+                      <PlayerCard
+                        key={i}
+                        player={{
+                          name: player.player_name,
+                          pos: player.position || 'UTIL',
+                          team: player.nba_team || 'FA',
+                          yahooStatus: player.status !== 'Active' ? player.status : undefined,
+                        }}
+                        activeSport={activeSport}
+                        leagueId={selectedLeague?.id}
+                        onAskAssistant={askAssistant}
+                        context="team"
+                      />
+                    ));
                   }
                   
-                  // For baseball (draft mode), show roster slots from draft_picks
-                  return (
-                    <table className="w-full border-collapse text-sm">
-                      <thead className="sticky top-0 bg-slate-900 z-10">
-                        <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                          <th className="text-left py-2 px-3 w-14">Slot</th>
-                          <th className="text-left py-2 px-3">Player</th>
-                          <th className="text-left py-2 px-3 w-12">Team</th>
-                          <th className="text-left py-2 px-3 w-24">Pos</th>
-                          <th className="text-left py-2 px-3 w-24">Pick</th>
-                        </tr>
-                        <tr><td colSpan={5}><div className="h-px bg-slate-800 w-full" /></td></tr>
-                      </thead>
-                      <tbody>
-                        {getTeamRoster(draftResults.filter(p => p.tm === selectedTeam)).map((r, i) => (
-                          <tr key={i} className={`border-b border-slate-800/30 ${r.player ? (i % 2 === 0 ? 'bg-slate-950' : 'bg-slate-900/20') : 'opacity-40'}`}>
-                            <td className="py-2 px-3">
-                              <span className={`text-[10px] font-black uppercase ${r.player ? 'text-indigo-400' : 'text-slate-600 italic'}`}>{r.slot}</span>
-                            </td>
-                            <td className="py-2 px-3">
-                              {r.player
-                                ? <div className="flex items-center gap-2">
-                                    <span className="font-bold text-sm text-slate-100">{r.player.name}</span>
-                                    {r.player.rank && <span className="text-[9px] font-bold text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">#{r.player.rank}</span>}
-                                  </div>
-                                : <span className="text-xs text-slate-600 italic">Empty</span>
-                              }
-                            </td>
-                            <td className="py-2 px-3">
-                              <span className="text-[10px] text-slate-500 font-bold">{r.player?.playerTeam || ''}</span>
-                            </td>
-                            <td className="py-2 px-3">
-                              <span className="text-[10px] text-indigo-400 font-bold uppercase">{r.player?.pos || ''}</span>
-                            </td>
-                            <td className="py-2 px-3">
-                              {r.player && (
-                                <span className="text-[10px] text-slate-500 font-bold">
-                                  {r.player.isKeeper ? 'KEEPER' : `#${r.player.pk} Rd ${r.player.rd}`}
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  );
+                  // For baseball (draft mode), show roster from draft_picks
+                  const teamPicks = draftResults.filter(p => p.tm === selectedTeam);
+                  const roster = getTeamRoster(teamPicks);
+                  
+                  return roster.map((r, i) => {
+                    if (!r.player) {
+                      // Empty slot
+                      return (
+                        <div key={i} className="bg-slate-950/50 rounded-xl border border-dashed border-slate-800/50 p-3 opacity-40">
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10px] font-black uppercase text-slate-600 italic">{r.slot}</span>
+                            <span className="text-xs text-slate-600 italic">Empty</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <PlayerCard
+                        key={i}
+                        player={{
+                          name: r.player.name,
+                          pos: r.player.pos,
+                          team: r.player.playerTeam,
+                          rank: r.player.rank,
+                          isKeeper: r.player.isKeeper,
+                        }}
+                        activeSport={activeSport}
+                        leagueId={selectedLeague?.id}
+                        onAskAssistant={askAssistant}
+                        context="team"
+                      />
+                    );
+                  });
                 })()}
+                </div>
               </div>
             </div>
           )}
@@ -2327,8 +2312,15 @@ export default function Home() {
                     Load Test
                   </button>
                 )}
-                {assistantRecs.length > 0 && !isAskingAssistant && (
-                  <button onClick={() => { setAssistantRecs([]); setChatHistory([]); }} className="text-slate-500 hover:text-red-400 bg-slate-800/50 hover:bg-slate-800 p-2 rounded-full transition-all">
+                {(assistantRecs.length > 0 || chatHistory.length > 0) && !isAskingAssistant && (
+                  <button 
+                    onClick={() => { 
+                      setAssistantRecs([]); 
+                      setChatHistory([]); 
+                    }} 
+                    className="text-slate-500 hover:text-red-400 bg-slate-800/50 hover:bg-slate-800 p-2 rounded-full transition-all"
+                    title="Clear chat history"
+                  >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 )}
@@ -2393,7 +2385,9 @@ export default function Home() {
                         {!isUser && msg.recommendations && msg.recommendations.length > 0 && (
                           <div className="flex flex-col gap-3 w-[95%]">
                             {msg.recommendations.map((rec: any, i: number) => {
-                              const targetPlayer = displayPool.find(p => p.name.toLowerCase() === rec.name.toLowerCase() || p.name.includes(rec.name.split(' ')[1]));
+                              // Try exact match first, then fuzzy match
+                              const targetPlayer = displayPool.find(p => p.name.toLowerCase() === rec.name.toLowerCase()) 
+                                || displayPool.find(p => normalizeName(p.name) === normalizeName(rec.name));
                               const rankToDisplay = targetPlayer ? (yahooPlayers.length > 0 && yahooPlayers.find(y => normalizeName(y.name) === normalizeName(targetPlayer.name))?.rank) : rec.rank;
                               const posToDisplay = targetPlayer ? targetPlayer.pos : rec.pos;
                               const teamToDisplay = targetPlayer ? targetPlayer.team : rec.team;
@@ -2414,11 +2408,10 @@ export default function Home() {
                                     </div>
                                     <button
                                       onClick={() => {
-                                        const targetPlayer = displayPool.find(p =>
-                                          p.name.toLowerCase() === rec.name.toLowerCase() ||
-                                          p.name.toLowerCase().includes(rec.name.split(' ').pop()?.toLowerCase() || '')
-                                        );
-                                        const alreadyIn = myRoster.find(r => r.name.toLowerCase() === rec.name.toLowerCase());
+                                        // Try exact match first, then normalized match
+                                        const targetPlayer = displayPool.find(p => p.name.toLowerCase() === rec.name.toLowerCase())
+                                          || displayPool.find(p => normalizeName(p.name) === normalizeName(rec.name));
+                                        const alreadyIn = myRoster.find(r => normalizeName(r.name) === normalizeName(rec.name));
                                         if (!alreadyIn) {
                                           const entry = targetPlayer
                                             ? { ...targetPlayer, rationale: rec.rationale }
