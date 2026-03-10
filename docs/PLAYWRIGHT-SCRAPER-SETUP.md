@@ -6,28 +6,30 @@ The Playwright scraper is a more reliable alternative to the current axios-based
 
 ## Prerequisites
 
-1. **UV Package Manager** - Required for the Playwright MCP server
+1. **Node.js and npm** - Required for the Playwright MCP server (✅ Already installed)
    ```bash
-   # On macOS with Homebrew
-   brew install uv
-   
-   # Or with pip
-   pip install uv
+   npx --version  # 10.8.2
    ```
 
-2. **MCP Configuration** - Already set up in `.kiro/settings/mcp.json`
+2. **MCP Configuration** - Updated to use npm-based Playwright server in `.kiro/settings/mcp.json`
 
 ## Setup Steps
 
-### 1. Install UV (✅ COMPLETED)
-UV package manager is now installed:
-```bash
-uv --version
-# uv 0.10.9 (Homebrew 2026-03-06)
+### 1. MCP Configuration (✅ COMPLETED)
+The MCP configuration has been updated to use the npm-based Playwright server:
+```json
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@executeautomation/playwright-mcp-server"]
+    }
+  }
+}
 ```
 
 ### 2. Restart Kiro
-The MCP configuration is in place at `.kiro/settings/mcp.json`. After restarting Kiro, the Playwright MCP server should connect automatically.
+After restarting Kiro, the Playwright MCP server should connect automatically and download the necessary browser binaries on first use.
 
 ### 3. Test the Playwright MCP Connection
 After restart, you can test if Playwright tools are available by asking Kiro to use them.
@@ -36,8 +38,7 @@ After restart, you can test if Playwright tools are available by asking Kiro to 
 
 ### Current Status
 - **Branch**: `playwright-scraper` ✅
-- **UV Installation**: ✅ Installed (v0.10.9)
-- **MCP Configuration**: ✅ Complete (`.kiro/settings/mcp.json`)
+- **MCP Configuration**: ✅ Updated to use npm-based server (`@executeautomation/playwright-mcp-server`)
 - **Endpoint**: `/api/scrape-draft-playwright/route.ts` ✅
 - **Status**: Implementation complete, ready for testing after Kiro restart
 
@@ -59,10 +60,10 @@ This design keeps the browser automation in the AI layer where MCP tools are ava
 
 ### MCP Server Not Connected
 If Playwright tools aren't available after restart:
-1. Check `.kiro/settings/mcp.json` exists
-2. Verify `uv` is installed: `uv --version`
+1. Check `.kiro/settings/mcp.json` exists and has correct npm configuration
+2. Verify `npx` is installed: `npx --version`
 3. Check MCP server logs in Kiro
-4. Try manually: `uvx mcp-server-playwright`
+4. Try manually: `npx -y @executeautomation/playwright-mcp-server`
 
 ### Scraper Returns 503 Error
 This means the MCP server isn't connected yet. The scraper will return:
