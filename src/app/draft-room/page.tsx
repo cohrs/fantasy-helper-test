@@ -732,7 +732,7 @@ export default function Home() {
       await fetch('/api/draft-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'SYNC_ROSTER', rosterData: newRoster })
+        body: JSON.stringify({ action: 'SYNC_ROSTER', rosterData: newRoster, leagueId: selectedLeague?.id })
       });
     } catch (err) {
       console.error('Failed to sync watchlist to JSON', err);
@@ -820,21 +820,21 @@ export default function Home() {
     console.log(`📊 Loading data for league ${leagueId} (${selectedLeague.league_name})`);
 
     Promise.all([
-      fetch(`/api/draft-data?leagueId=${leagueId}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch(`/api/assistant/notes?leagueId=${leagueId}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch(`/api/assistant/history?leagueId=${leagueId}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({ history: [] })),
-      fetch(`/api/player-stats?season=${selectedLeague.season}&sport=${selectedLeague.sport}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch(`/api/yahoo/league-settings?leagueId=${leagueId}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch(`/api/team-data?leagueId=${leagueId}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch(`/api/my-team?leagueId=${leagueId}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({}))
+      fetch(`/api/draft-data?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/assistant/notes?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/assistant/history?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({ history: [] })),
+      fetch(`/api/player-stats?season=${selectedLeague.season}&sport=${selectedLeague.sport}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/yahoo/league-settings?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/team-data?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/my-team?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({}))
     ]).then(([draftData, notesData, chatData, statsData, leagueSettings, teamData, myTeamData]) => {
       if (draftData.roster) setMyRoster(draftData.roster);
       if (draftData.draft && draftData.draft.length > 0) {
         setDraftResults(draftData.draft);
-        // Current pick = number of non-keeper picks made + 1
-        // Count ONLY non-keeper draft picks (as per Tapatalk scraper rules)
-        const draftPicksMade = draftData.draft.filter((p: any) => p.tm && !p.isKeeper).length;
-        setCurrentPick(draftPicksMade + 1);
+        // Current pick = max pick number + 1 (not count of picks, since some picks may be missing)
+        const draftedPicks = draftData.draft.filter((p: any) => p.pk !== null && !p.isKeeper);
+        const maxPick = draftedPicks.length > 0 ? Math.max(...draftedPicks.map((p: any) => p.pk)) : 0;
+        setCurrentPick(maxPick + 1);
       }
       if (notesData) {
         // Normalize keys so they match the normalizeName function used for lookups
@@ -924,10 +924,10 @@ export default function Home() {
       if (data.success) {
         if (data.picks && data.picks.length > 0) {
           setDraftResults(data.picks);
-          // Current pick = number of non-keeper picks made + 1
-          // Count ONLY non-keeper draft picks (as per Tapatalk scraper rules)
-          const draftPicksMade = data.picks.filter((p: any) => p.tm && !p.isKeeper).length;
-          setCurrentPick(draftPicksMade + 1);
+          // Current pick = max pick number + 1 (not count of picks, since some picks may be missing)
+          const draftedPicks = data.picks.filter((p: any) => p.pk !== null && !p.isKeeper);
+          const maxPick = draftedPicks.length > 0 ? Math.max(...draftedPicks.map((p: any) => p.pk)) : 0;
+          setCurrentPick(maxPick + 1);
         }
         // Reload data from database to show updated roster
         window.location.reload();
@@ -1161,7 +1161,7 @@ export default function Home() {
   };
 
   const waitPicks = useMemo(() => {
-    // Standard linear draft (not snake) - each round goes 1-18 in order
+    // Linear draft - same order every round (1-18)
     // Your position is always pick #11 in each round
     const currentRound = Math.floor((currentPick - 1) / totalTeams) + 1;
     const pickInRound = ((currentPick - 1) % totalTeams) + 1;
@@ -1316,7 +1316,7 @@ export default function Home() {
 
   // Sport-specific roster slots (from Yahoo league settings)
   const ROSTER_SLOTS_BY_SPORT: Record<string, string[]> = {
-    baseball: ['C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'UTIL', 'SP', 'SP', 'SP', 'SP', 'RP', 'RP', 'RP', 'P', 'P', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN'],
+    baseball: ['C', '1B', '2B', '3B', 'SS', 'OF', 'OF', 'OF', 'UTIL', 'SP', 'SP', 'SP', 'SP', 'RP', 'RP', 'RP', 'P', 'P', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN'],
     basketball: ['PG', 'SG', 'G', 'SF', 'PF', 'F', 'C', 'C', 'UTIL', 'UTIL', 'UTIL', 'BN', 'BN', 'BN'],
     hockey: ['C', 'C', 'LW', 'LW', 'RW', 'RW', 'D', 'D', 'D', 'D', 'G', 'G', 'BN', 'BN', 'BN', 'BN'],
     football: ['QB', 'RB', 'RB', 'WR', 'WR', 'WR', 'TE', 'FLEX', 'K', 'DEF', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN']
@@ -1326,6 +1326,25 @@ export default function Home() {
 
   // Returns unique empty slot names (excluding BN) for a team's roster
   const getMissingSlots = (roster: { slot: string; player: any }[]) => {
+    // For baseball, P slots should be treated as RP slots
+    // Only count P as open if there aren't enough RPs to fill RP + P slots
+    if (activeSport === 'baseball') {
+      const rpSlots = roster.filter(r => r.slot === 'RP');
+      const pSlots = roster.filter(r => r.slot === 'P');
+      const filledRPs = rpSlots.filter(r => r.player).length;
+      const filledPs = pSlots.filter(r => r.player).length;
+      const totalRPandP = rpSlots.length + pSlots.length;
+      const totalFilledRPandP = filledRPs + filledPs;
+      
+      // If we have enough RPs to fill both RP and P slots, don't count P as missing
+      const shouldExcludeP = totalFilledRPandP >= totalRPandP;
+      
+      return roster
+        .filter(r => !r.player && r.slot !== 'BN' && (shouldExcludeP ? r.slot !== 'P' : true))
+        .map(r => r.slot);
+    }
+    
+    // For other sports, exclude P from missing slots
     return roster
       .filter(r => !r.player && r.slot !== 'BN' && r.slot !== 'P')
       .map(r => r.slot);
@@ -1400,7 +1419,14 @@ export default function Home() {
         return true;
       };
 
-      picks.forEach(pick => {
+      // Sort picks so keepers get assigned to starting slots first
+      const sortedPicks = [...picks].sort((a, b) => {
+        if (a.isKeeper && !b.isKeeper) return -1;
+        if (!a.isKeeper && b.isKeeper) return 1;
+        return 0; // maintain original draft order for remainder
+      });
+
+      sortedPicks.forEach(pick => {
         const posString = pick.pos?.toUpperCase() || '';
         const eligiblePos = posString.split(/[\/,]/).map(p => p.trim());
         let assigned = false;
@@ -1418,8 +1444,8 @@ export default function Home() {
             }
 
             // OF handling
-            const hasSpecificOF = eligiblePos.some(p => ['LF', 'CF', 'RF'].includes(p));
-            if (eligiblePos.includes('OF') && !hasSpecificOF && (slot === 'LF' || slot === 'CF' || slot === 'RF')) {
+            const hasSpecificOF = eligiblePos.some(p => ['LF', 'CF', 'RF', 'OF'].includes(p));
+            if (hasSpecificOF && slot === 'OF') {
               roster[i].player = pick;
               assigned = true;
               break;
@@ -1590,36 +1616,34 @@ export default function Home() {
           </div>
 
           {/* === GLOBAL ROW: Assistant controls === */}
-          {session && (
-            <div className="flex items-center gap-2 mb-4 shrink-0 flex-wrap">
-              <div className="flex items-center gap-1.5 bg-sky-500/5 border border-sky-500/20 rounded-2xl px-3 py-2 flex-1 min-w-0">
-                {/* Toggle panel open/close without firing a query */}
-                <button
-                  onClick={() => setShowAssistantModal(v => !v)}
-                  title={showAssistantModal ? 'Close panel' : 'Open panel'}
-                  className="shrink-0 text-sky-400/60 hover:text-sky-400 transition-colors"
-                >
-                  <Sparkles className="w-4 h-4" />
-                </button>
-                <div className="flex-1 min-w-0">
-                  <AssistantInput
-                    ref={assistantInputRef}
-                    isAskingAssistant={isAskingAssistant}
-                    onSubmit={(val) => askAssistant(val, true)}
-                    placeholder="Ask assistant: focus on closers, need a SS..."
-                  />
-                </div>
-              </div>
+          <div className="flex items-center gap-2 mb-4 shrink-0 flex-wrap">
+            <div className="flex items-center gap-1.5 bg-sky-500/5 border border-sky-500/20 rounded-2xl px-3 py-2 flex-1 min-w-0">
+              {/* Toggle panel open/close without firing a query */}
               <button
-                onClick={() => askAssistant(assistantInputRef.current?.getValue() || '', true)}
-                disabled={isAskingAssistant}
-                className="px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-sky-500/20 text-sky-400 border border-sky-500/30 hover:bg-sky-500/30 disabled:opacity-50 flex items-center gap-2 transition-all whitespace-nowrap"
+                onClick={() => setShowAssistantModal(v => !v)}
+                title={showAssistantModal ? 'Close panel' : 'Open panel'}
+                className="shrink-0 text-sky-400/60 hover:text-sky-400 transition-colors"
               >
-                <Sparkles className={`w-4 h-4 ${isAskingAssistant ? 'animate-spin' : ''}`} />
-                {isAskingAssistant ? 'Analyzing...' : 'Ask Assistant'}
+                <Sparkles className="w-4 h-4" />
               </button>
+              <div className="flex-1 min-w-0">
+                <AssistantInput
+                  ref={assistantInputRef}
+                  isAskingAssistant={isAskingAssistant}
+                  onSubmit={(val) => askAssistant(val, true)}
+                  placeholder="Ask assistant: focus on closers, need a SS..."
+                />
+              </div>
             </div>
-          )}
+            <button
+              onClick={() => askAssistant(assistantInputRef.current?.getValue() || '', true)}
+              disabled={isAskingAssistant}
+              className="px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-sky-500/20 text-sky-400 border border-sky-500/30 hover:bg-sky-500/30 disabled:opacity-50 flex items-center gap-2 transition-all whitespace-nowrap"
+            >
+              <Sparkles className={`w-4 h-4 ${isAskingAssistant ? 'animate-spin' : ''}`} />
+              {isAskingAssistant ? 'Analyzing...' : 'Ask Assistant'}
+            </button>
+          </div>
 
           {viewMode === 'PLAYERS' && (
             <>
@@ -1881,6 +1905,16 @@ export default function Home() {
                       );
                     }
                     
+                    const yhStats = yahooStats?.[normalizeName(r.player.name)];
+                    let yahooStatsPairs = undefined;
+                    if (yhStats) {
+                      const isPitcher = /SP|RP|P/i.test(r.player.pos);
+                      const ids = isPitcher ? PITCHING_STAT_IDS : BATTING_STAT_IDS;
+                      yahooStatsPairs = ids
+                        .map(id => ({ id, label: YAHOO_STAT_LABELS[id] || id, val: yhStats[id] }))
+                        .filter(s => s.val && s.val !== '-' && s.val !== '0' && s.val !== '');
+                    }
+
                     return (
                       <PlayerCard
                         key={i}
@@ -1890,7 +1924,10 @@ export default function Home() {
                           team: r.player.playerTeam,
                           rank: r.player.rank,
                           isKeeper: r.player.isKeeper,
+                          yahooStatsPairs: yahooStatsPairs
                         }}
+                        slot={r.slot}
+                        yahooStats={yhStats}
                         activeSport={activeSport}
                         leagueId={selectedLeague?.id}
                         onAskAssistant={askAssistant}

@@ -49,26 +49,38 @@ export async function GET(request: Request) {
             rationale: item.rationale
         }));
         
-        return NextResponse.json({ draft, roster });
+        const response = NextResponse.json({ draft, roster });
+        
+        // Prevent caching at all levels (browser, CDN, edge)
+        response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+        response.headers.set('Pragma', 'no-cache');
+        response.headers.set('Expires', '0');
+        
+        return response;
     } catch (err) {
         console.error("Error reading from database:", err);
-        return NextResponse.json({ draft: [], roster: [] });
+        const response = NextResponse.json({ draft: [], roster: [] });
+        response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+        response.headers.set('Pragma', 'no-cache');
+        response.headers.set('Expires', '0');
+        return response;
     }
 }
 
 export async function POST(req: Request) {
     try {
-        const session = await getServerSession(authOptions);
-        const leagueId = await getSelectedLeagueId(session);
+        const { action, rosterData, leagueId: payloadLeagueId } = await req.json();
         
-        if (!leagueId) {
+        const session = await getServerSession(authOptions);
+        const sessionLeagueId = await getSelectedLeagueId(session);
+        const finalLeagueId = payloadLeagueId || sessionLeagueId;
+        
+        if (!finalLeagueId) {
             return NextResponse.json({ success: false, error: "No league selected" }, { status: 400 });
         }
-        
-        const { action, rosterData } = await req.json();
 
         if (action === 'SYNC_ROSTER') {
-            await saveWatchlist(rosterData, leagueId);
+            await saveWatchlist(rosterData, finalLeagueId);
             return NextResponse.json({ success: true });
         }
 
