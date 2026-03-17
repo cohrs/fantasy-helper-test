@@ -25,8 +25,16 @@ export async function POST() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Get Yahoo GUID from session
-        const yahooGuid = session.user.email.split('@')[0];
+        // Get Yahoo GUID from database using email
+        const userResult = await sql`
+            SELECT yahoo_guid FROM users WHERE email = ${session.user.email}
+        `;
+
+        if (!userResult.length) {
+            return NextResponse.json({ error: 'User not found in database. Please re-login.' }, { status: 401 });
+        }
+
+        const yahooGuid = userResult[0].yahoo_guid;
         
         // Get valid access token (will refresh if needed)
         const accessToken = await getYahooAccessToken(yahooGuid);

@@ -26,24 +26,21 @@ export const authOptions: NextAuthOptions = {
             token: "https://api.login.yahoo.com/oauth2/get_token",
             userinfo: "https://fantasysports.yahooapis.com/fantasy/v2/users;use_login=1?format=json",
             profile(profile) {
-                // Parse the weird Yahoo XML-to-JSON structure for user data
-                const userData = profile?.fantasy_content?.users?.[0]?.user?.[0];
+                // Parse the Yahoo OpenID Connect profile
+                const yahooGuid = (profile as any)?.sub || "yahoo-user";
                 
                 console.log('🔍 Yahoo Profile Debug:', {
-                    hasFantasyContent: !!profile?.fantasy_content,
-                    hasUsers: !!profile?.fantasy_content?.users,
-                    userData: userData ? 'found' : 'missing',
-                    guid: userData?.guid || 'NO GUID',
-                    fullProfile: JSON.stringify(profile, null, 2).substring(0, 500)
+                    sub: (profile as any)?.sub,
+                    email: (profile as any)?.email,
+                    name: (profile as any)?.name,
+                    nickname: (profile as any)?.nickname,
                 });
-                
-                const yahooGuid = userData?.guid || token?.sub || "yahoo-user";
                 
                 return {
                     id: yahooGuid,
-                    name: userData?.nickname || "Yahoo GM",
-                    email: `${yahooGuid}@yahoo-user.placeholder.com`,
-                    image: userData?.image_url || "",
+                    name: (profile as any)?.nickname || (profile as any)?.name || "Yahoo GM",
+                    email: (profile as any)?.email || `${yahooGuid}@yahoo-user.placeholder.com`,
+                    image: (profile as any)?.picture || "",
                 }
             }
         }
@@ -58,8 +55,7 @@ export const authOptions: NextAuthOptions = {
                 
                 // Save tokens to database for server-side use
                 if (profile) {
-                    const userData = (profile as any)?.fantasy_content?.users?.[0]?.user?.[0];
-                    const yahooGuid = userData?.guid || token.sub;
+                    const yahooGuid = (profile as any)?.sub || token.sub;
                     
                     console.log('💾 Saving tokens for user:', {
                         yahooGuid,
@@ -87,9 +83,9 @@ export const authOptions: NextAuthOptions = {
                                 )
                                 VALUES (
                                     ${yahooGuid},
-                                    ${userData?.nickname || token.name},
-                                    ${token.email},
-                                    ${userData?.image_url || ''},
+                                    ${(profile as any)?.nickname || (profile as any)?.name},
+                                    ${(profile as any)?.email},
+                                    ${(profile as any)?.picture || ''},
                                     ${account.access_token},
                                     ${account.refresh_token},
                                     ${expiresAt},
