@@ -12,7 +12,7 @@ async function fixWatchlistLeague() {
     WHERE league_id IS NULL
   `;
   
-  console.log(`✅ Updated ${result.count} watchlist entries to league_id = 2`);
+  console.log(`✅ Updated ${result.length} watchlist entries to league_id = 2`);
   
   // Verify
   const check = await sql`

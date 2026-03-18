@@ -50,7 +50,7 @@ export async function POST(request: Request) {
             const oldName = team.drafted_by;
             const newName = normalizeTeamName(oldName);
             
-            if (oldName !== newName) {
+            if (oldName !== newName && newName) {
                 updates.push({ old: oldName, new: newName });
                 
                 console.log(`  ✓ "${oldName}" → "${newName}"`);

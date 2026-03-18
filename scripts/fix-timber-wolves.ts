@@ -12,7 +12,7 @@ async function fixTimberWolves() {
     WHERE drafted_by = 'Timber Wolves'
   `;
   
-  console.log(`✅ Updated ${result.count} picks from "Timber Wolves" to "Timberwolves"`);
+  console.log(`✅ Updated ${result.length} picks from "Timber Wolves" to "Timberwolves"`);
 }
 
 fixTimberWolves()
