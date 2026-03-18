@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/route";
 import { neon } from '@neondatabase/serverless';
+import { getYahooAccessTokenByEmail } from '@/lib/yahoo-auth';
 
 const sql = neon(process.env.POSTGRES_URL!);
 
@@ -11,14 +12,26 @@ export async function GET() {
     try {
         const session = await getServerSession(authOptions);
 
-        if (!session || !(session as any).accessToken) {
+        if (!session?.user?.email) {
             return NextResponse.json({ error: 'Unauthorized. Please connect Yahoo first.' }, { status: 401 });
         }
 
-        const accessToken = (session as any).accessToken;
+        // Get user's GUID and access token from database (more reliable than session token)
+        const userEmail = session.user.email;
+        const userByEmail = await sql`SELECT id, yahoo_guid FROM users WHERE email = ${userEmail} LIMIT 1`;
         
-        // Get user's GUID from session
-        const userGuid = session.user?.email?.split('@')[0] || 'unknown';
+        if (!userByEmail[0]) {
+            return NextResponse.json({ error: 'User not found. Please re-login.' }, { status: 401 });
+        }
+        
+        const userGuid = userByEmail[0].yahoo_guid;
+        const accessToken = await getYahooAccessTokenByEmail(userEmail);
+        
+        if (!accessToken) {
+            return NextResponse.json({ error: 'No valid Yahoo token. Please re-login.' }, { status: 401 });
+        }
+        
+        console.log('🔑 Fetching Yahoo leagues for GUID:', userGuid);
 
         // Fetch user's leagues from Yahoo
         const yahooUrl = `https://fantasysports.yahooapis.com/fantasy/v2/users;use_login=1/games;game_keys=mlb,nba,nhl,nfl/leagues?format=json`;
@@ -135,44 +148,63 @@ export async function GET() {
         }
 
         // Store/update leagues in database
+        const userId = userByEmail[0].id;
         if (leagues.length > 0) {
-            // Ensure user exists
-            await sql`
-                INSERT INTO users (yahoo_guid, nickname, email)
-                VALUES (${userGuid}, ${session.user?.name || 'User'}, ${session.user?.email || ''})
-                ON CONFLICT (yahoo_guid) 
-                DO UPDATE SET 
-                    nickname = ${session.user?.name || 'User'},
-                    updated_at = CURRENT_TIMESTAMP
-            `;
-
-            // Get user ID
-            const userResult = await sql`SELECT id FROM users WHERE yahoo_guid = ${userGuid}`;
-            const userId = userResult[0]?.id;
-
-            if (userId) {
-                // Upsert leagues
-                for (const league of leagues) {
-                    await sql`
-                        INSERT INTO user_leagues (
-                            user_id, league_key, league_name, sport, season, is_active, team_key, team_name
-                        )
-                        VALUES (
-                            ${userId}, ${league.league_key}, ${league.name}, 
-                            ${league.sport}, ${league.season}, ${league.is_active},
-                            ${league.team_key || null}, ${league.team_name || null}
-                        )
-                        ON CONFLICT (user_id, league_key)
-                        DO UPDATE SET
-                            league_name = ${league.name},
-                            is_active = ${league.is_active},
-                            team_key = ${league.team_key || null},
-                            team_name = ${league.team_name || null},
-                            updated_at = CURRENT_TIMESTAMP
-                    `;
-                }
+            for (const league of leagues) {
+                await sql`
+                    INSERT INTO user_leagues (
+                        user_id, league_key, league_name, sport, season, is_active, team_key, team_name
+                    )
+                    VALUES (
+                        ${userId}, ${league.league_key}, ${league.name}, 
+                        ${league.sport}, ${league.season}, ${league.is_active},
+                        ${league.team_key || null}, ${league.team_name || null}
+                    )
+                    ON CONFLICT (user_id, league_key)
+                    DO UPDATE SET
+                        league_name = ${league.name},
+                        is_active = ${league.is_active},
+                        team_key = ${league.team_key || null},
+                        team_name = ${league.team_name || null},
+                        updated_at = CURRENT_TIMESTAMP
+                `;
             }
         }
+
+        // Also fetch manually created leagues from database (like test leagues)
+        // Also fetch manually created leagues from database (like offline draft leagues)
+        const dbLeagues = await sql`
+            SELECT 
+                id,
+                league_key,
+                league_name as name,
+                sport,
+                season,
+                is_active,
+                team_key,
+                team_name
+            FROM user_leagues
+            WHERE user_id = ${userId}
+            AND league_key NOT LIKE 'mlb.%'
+            AND league_key NOT LIKE 'nba.%'
+            AND league_key NOT LIKE 'nhl.%'
+            AND league_key NOT LIKE 'nfl.%'
+        `;
+        
+        // Add manually created leagues that aren't already in the list
+        dbLeagues.forEach(dbLeague => {
+            if (!leagues.find(l => l.league_key === dbLeague.league_key)) {
+                leagues.push({
+                    league_key: dbLeague.league_key,
+                    name: dbLeague.name,
+                    sport: dbLeague.sport,
+                    season: dbLeague.season,
+                    is_active: dbLeague.is_active,
+                    team_key: dbLeague.team_key || undefined,
+                    team_name: dbLeague.team_name || undefined
+                });
+            }
+        });
 
         return NextResponse.json({
             success: true,

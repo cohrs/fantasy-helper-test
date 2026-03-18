@@ -1,12 +1,20 @@
-import postgres from 'postgres';
+import { neon } from '@neondatabase/serverless';
+import { readFileSync } from 'fs';
 
-const sql = postgres(process.env.POSTGRES_URL);
+// Load env vars manually
+const envFile = readFileSync('.env.local', 'utf8');
+const envVars = {};
+for (const line of envFile.split('\n')) {
+  const match = line.match(/^([^#=]+)=(.*)$/);
+  if (match) envVars[match[1].trim()] = match[2].trim();
+}
+
+const sql = neon(envVars.POSTGRES_URL);
 
 async function fixBasketballLeague() {
   try {
     console.log('Checking current leagues...');
     
-    // Get all leagues with their data counts
     const leagues = await sql`
       SELECT 
         ul.id, 
@@ -29,7 +37,6 @@ async function fixBasketballLeague() {
       console.log(`    Data: ${l.pick_count} picks, ${l.watchlist_count} watchlist, ${l.roster_count} rosters`);
     });
     
-    // Find the fake basketball league
     const fakeBasketball = leagues.find(l => l.league_key === 'nba-2026');
     const realBaseball = leagues.find(l => l.league_key === '469.l.4136');
     
@@ -45,23 +52,18 @@ async function fixBasketballLeague() {
       console.log(`\n⚠️  Found fake basketball league (ID ${fakeBasketball.id}): ${fakeBasketball.league_name}`);
       console.log(`   Data: ${fakeBasketball.pick_count} picks, ${fakeBasketball.watchlist_count} watchlist, ${fakeBasketball.roster_count} rosters`);
       
-      if (fakeBasketball.pick_count === 0 && fakeBasketball.watchlist_count === 0 && fakeBasketball.roster_count === 0) {
+      if (Number(fakeBasketball.pick_count) === 0 && Number(fakeBasketball.watchlist_count) === 0 && Number(fakeBasketball.roster_count) === 0) {
         console.log('\n✅ Fake basketball league is empty. Safe to delete.');
-        console.log('Deleting fake basketball league...');
-        
-        // Delete the fake league
         await sql`DELETE FROM user_leagues WHERE id = ${fakeBasketball.id}`;
-        
         console.log('✅ Deleted fake basketball league');
-        console.log('\nNow when you refresh the app and click "CHANGE LEAGUE", the real basketball league from Yahoo should appear.');
+        console.log('\nNow refresh the app and click "CHANGE LEAGUE" - the real basketball league from Yahoo should appear.');
       } else {
         console.log('\n❌ Fake basketball league has data! Not deleting to be safe.');
       }
     } else {
-      console.log('\n⚠️  No fake basketball league found.');
+      console.log('\n⚠️  No fake basketball league found (may already be deleted).');
     }
     
-    // Show remaining leagues
     const remaining = await sql`
       SELECT id, league_key, league_name, sport, team_name FROM user_leagues ORDER BY id
     `;
@@ -73,8 +75,6 @@ async function fixBasketballLeague() {
     
   } catch (error) {
     console.error('Error:', error);
-  } finally {
-    await sql.end();
   }
 }
 

@@ -17,6 +17,8 @@ interface PlayerCardProps {
     yahooStatsPairs?: Array<{ id: string; label: string; val: string }>;
     rationale?: string;
   };
+  slot?: string;
+  yahooStats?: Record<string, string>;
   activeSport: string;
   leagueId?: number;
   onAskAssistant?: (prompt: string) => void;
@@ -27,6 +29,8 @@ interface PlayerCardProps {
 
 export function PlayerCard({ 
   player, 
+  slot,
+  yahooStats,
   activeSport, 
   leagueId,
   onAskAssistant,
@@ -112,11 +116,21 @@ export function PlayerCard({
 
       <div className="flex justify-between items-center p-2 pl-3">
         <div className="flex items-center gap-3 flex-1 min-w-0 pr-2">
+          
+          {/* Roster Slot Badge (Team View) */}
+          {slot && (
+            <div className={`w-8 flex-col items-center justify-center font-black text-[10px] leading-none text-center rounded py-1 shrink-0 ${slot === 'BN' ? 'bg-slate-800/50 text-slate-500' : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'}`}>
+              {slot}
+            </div>
+          )}
+
           {/* Rank/ADP */}
-          <div className="w-6 flex-col items-center justify-center font-black text-[8px] leading-none text-indigo-400 tabular-nums hidden sm:flex shrink-0">
-            <div className="text-[6px] text-slate-600 mb-0.5">{player.yahooRank ? 'AR' : 'ADP'}</div>
-            <div>{player.yahooRank || player.adp || player.rank || '-'}</div>
-          </div>
+          {!slot && (
+            <div className="w-6 flex-col items-center justify-center font-black text-[8px] leading-none text-indigo-400 tabular-nums hidden sm:flex shrink-0">
+              <div className="text-[6px] text-slate-600 mb-0.5">{player.yahooRank ? 'AR' : 'ADP'}</div>
+              <div>{player.yahooRank || player.adp || player.rank || '-'}</div>
+            </div>
+          )}
 
           {/* Main Player Info */}
           <div
@@ -140,7 +154,7 @@ export function PlayerCard({
             </div>
 
             {/* Stats */}
-            {player.yahooStatsPairs && player.yahooStatsPairs.length > 0 && !player.isTaken && (
+            {(player.yahooStatsPairs && player.yahooStatsPairs.length > 0 && !player.isTaken) ? (
               <div className="flex gap-1 ml-1 items-center flex-wrap">
                 <div className="w-px h-3 bg-slate-800/50 hidden md:block mx-1" />
                 {player.yahooStatsPairs.slice(0, 4).map((s: any) => (
@@ -150,7 +164,16 @@ export function PlayerCard({
                 ))}
                 {player.yahooStatsPairs.length > 4 && <span className="text-[8px] text-slate-500">+{player.yahooStatsPairs.length - 4}</span>}
               </div>
-            )}
+            ) : (yahooStats && Object.keys(yahooStats).length > 0) ? (
+              <div className="flex gap-1 ml-1 items-center flex-wrap">
+                <div className="w-px h-3 bg-slate-800/50 hidden md:block mx-1" />
+                {Object.entries(yahooStats).slice(0, 5).map(([id, val]) => (
+                  <span key={id} className="text-[8px] font-bold text-emerald-400/80 bg-emerald-500/5 border border-emerald-500/10 px-1 py-[1px] rounded whitespace-nowrap">
+                    <span className="opacity-60 font-normal mr-0.5">{id}</span>{val}
+                  </span>
+                ))}
+              </div>
+            ) : null}
 
             {/* Notes Toggle */}
             <div className={`ml-1 text-[8px] uppercase font-bold px-1.5 py-0.5 rounded flex items-center gap-1 transition-colors ${showNotes ? 'bg-sky-500/20 text-sky-400' : 'text-sky-500/50 group-hover:text-sky-400 group-hover:bg-sky-500/10'}`}>

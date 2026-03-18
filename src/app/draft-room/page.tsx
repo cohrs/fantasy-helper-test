@@ -56,13 +56,14 @@ AssistantInput.displayName = 'AssistantInput';
 
 const WatchlistItem = ({
   player, activeSport, isTaken, isFirst, isLast, onMoveUp, onMoveDown, onDelete,
-  index, draggedIndex, dragOverIndex, onDragStart, onDragOver, onDragEnd, onDrop, onAskAssistant
+  index, draggedIndex, dragOverIndex, onDragStart, onDragOver, onDragEnd, onDrop, onAskAssistant, leagueId
 }: {
   player: any; activeSport: string; isTaken: boolean; isFirst: boolean; isLast: boolean;
   onMoveUp: () => void; onMoveDown: () => void; onDelete: () => void;
   index: number; draggedIndex: number | null; dragOverIndex: number | null;
   onDragStart: (idx: number) => void; onDragOver: (idx: number) => void; onDragEnd: () => void; onDrop: (idx: number) => void;
   onAskAssistant?: (prompt: string) => void;
+  leagueId?: number | null;
 }) => {
   const [showNotes, setShowNotes] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -85,7 +86,8 @@ const WatchlistItem = ({
   const handleFetchYahooNews = async () => {
     setLoadingNews(true);
     try {
-      const response = await fetch(`/api/yahoo/player-news?name=${encodeURIComponent(player.name)}`);
+      const url = `/api/yahoo/player-news?name=${encodeURIComponent(player.name)}${leagueId ? `&leagueId=${leagueId}` : ''}`;
+      const response = await fetch(url);
       const data = await response.json();
       if (data.success) {
         setYahooNews(data.player);
@@ -373,7 +375,7 @@ const WatchlistItem = ({
  * Includes: MLB Draft Tracker & NBA Standings Scaffold
  */
 
-const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWatchlist, activeSport, myRoster, BATTING_STAT_IDS, PITCHING_STAT_IDS, YAHOO_STAT_LABELS, onAskAssistant }: any) => {
+const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWatchlist, activeSport, myRoster, BATTING_STAT_IDS, PITCHING_STAT_IDS, YAHOO_STAT_LABELS, onAskAssistant, leagueId }: any) => {
   const isPitcher = /SP|RP|P/i.test(p.pos);
   const ids = isPitcher ? PITCHING_STAT_IDS : BATTING_STAT_IDS;
   const [showNotes, setShowNotes] = useState(false);
@@ -391,7 +393,8 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
   const handleFetchYahooNews = async () => {
     setLoadingNews(true);
     try {
-      const response = await fetch(`/api/yahoo/player-news?name=${encodeURIComponent(p.name)}`);
+      const url = `/api/yahoo/player-news?name=${encodeURIComponent(p.name)}${leagueId ? `&leagueId=${leagueId}` : ''}`;
+      const response = await fetch(url);
       const data = await response.json();
       if (data.success) {
         setYahooNews(data.player);
@@ -754,8 +757,8 @@ export default function Home() {
   const [leagueName, setLeagueName] = useState("Fantasy League");
 
   // New Layout States 
-  const [viewMode, setViewMode] = useState<'PLAYERS' | 'GRID' | 'TEAM' | 'NEEDS' | 'WATCHLIST' | 'STANDINGS'>('TEAM'); // Start with TEAM for basketball, will adjust
-  const [selectedTeam, setSelectedTeam] = useState("Loading...");
+  const [viewMode, setViewMode] = useState<'PLAYERS' | 'GRID' | 'TEAM' | 'NEEDS' | 'WATCHLIST' | 'STANDINGS' | 'MATCHUP'>('TEAM');
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
 
   // Yahoo enriched player data (ranked + projected stats)
   const [yahooPlayers, setYahooPlayers] = useState<any[]>([]);
@@ -767,6 +770,9 @@ export default function Home() {
   // Team rosters and standings (for in-season leagues)
   const [teamRosters, setTeamRosters] = useState<any[]>([]);
   const [standings, setStandings] = useState<any[]>([]);
+  const [statCategories, setStatCategories] = useState<{statId: string; displayName: string; name: string}[]>([]);
+  const [matchups, setMatchups] = useState<any[]>([]);
+  const [matchupWeek, setMatchupWeek] = useState<number | null>(null);
 
   // Gemini Assistant
   const [isAskingAssistant, setIsAskingAssistant] = useState(false);
@@ -795,9 +801,22 @@ export default function Home() {
     });
   }, [assistantRecs, isAskingAssistant, showAssistantModal]);
 
-  const { data: session } = useSession();
+  // Auto-select my team once myTeamName is resolved, or first team if unknown
+  useEffect(() => {
+    if (selectedTeam !== null) return; // already selected
+    
+    const teamList = activeSport === 'basketball' && teamRosters.length > 0
+      ? Array.from(new Set(teamRosters.map((r: any) => r.team_name)))
+      : Array.from(new Set(draftResults.filter(p => p.tm).map(p => p.tm as string)));
+    
+    if (teamList.length === 0) return; // data not loaded yet
+    
+    // Prefer myTeamName if it's in the list, otherwise first team
+    const target = teamList.includes(myTeamName) ? myTeamName : teamList[0];
+    setSelectedTeam(target);
+  }, [myTeamName, teamRosters, draftResults, activeSport, selectedTeam]);
 
-  // Mock NBA Data
+  const { data: session } = useSession();
   const nbaStats = {
     categories: [
       { label: "FG%", val: ".482", rk: 4 },
@@ -826,8 +845,9 @@ export default function Home() {
       fetch(`/api/player-stats?season=${selectedLeague.season}&sport=${selectedLeague.sport}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
       fetch(`/api/yahoo/league-settings?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
       fetch(`/api/team-data?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch(`/api/my-team?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({}))
-    ]).then(([draftData, notesData, chatData, statsData, leagueSettings, teamData, myTeamData]) => {
+      fetch(`/api/my-team?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/yahoo/scoreboard?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({}))
+    ]).then(([draftData, notesData, chatData, statsData, leagueSettings, teamData, myTeamData, scoreboardData]) => {
       if (draftData.roster) setMyRoster(draftData.roster);
       if (draftData.draft && draftData.draft.length > 0) {
         setDraftResults(draftData.draft);
@@ -858,8 +878,10 @@ export default function Home() {
       }
       if (leagueSettings?.success) {
         console.log('📋 League Settings:', leagueSettings.settings);
-        console.log('🏀 Roster Positions:', leagueSettings.settings.rosterPositions);
-        console.log('📊 Stat Categories:', leagueSettings.settings.statCategories);
+        // Extract stat categories for standings display
+        const cats = leagueSettings.settings.statCategories;
+        const allCats = cats?.stats || [...(cats?.batting || []), ...(cats?.pitching || [])];
+        if (allCats.length > 0) setStatCategories(allCats);
       }
       if (teamData?.success) {
         setTeamRosters(teamData.rosters || []);
@@ -877,6 +899,10 @@ export default function Home() {
         setMyTeamName(selectedLeague.team_name || 'My Team');
         setLeagueName(selectedLeague.league_name);
         setSelectedTeam(selectedLeague.team_name || 'My Team');
+      }
+      if (scoreboardData?.success && scoreboardData.matchups?.length > 0) {
+        setMatchups(scoreboardData.matchups);
+        setMatchupWeek(scoreboardData.week);
       }
       setIsDataLoaded(true);
       
@@ -946,7 +972,9 @@ export default function Home() {
     setIsSyncing(true);
     try {
       const response = await fetch('/api/yahoo/sync-all', {
-        method: 'POST'
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leagueId: selectedLeague?.id })
       });
       const data = await response.json();
 
@@ -989,19 +1017,19 @@ export default function Home() {
   // Load live Yahoo player rankings + projected stats
   const loadYahooPlayers = async () => {
     setIsLoadingYahoo(true);
+    const leagueId = selectedLeague?.id;
     try {
-      // Initial fetch: first 500 players in 10 parallel requests
       const results = await Promise.all([
-        fetch('/api/yahoo/players?start=0&count=50').then(r => r.json()),
-        fetch('/api/yahoo/players?start=50&count=50').then(r => r.json()),
-        fetch('/api/yahoo/players?start=100&count=50').then(r => r.json()),
-        fetch('/api/yahoo/players?start=150&count=50').then(r => r.json()),
-        fetch('/api/yahoo/players?start=200&count=50').then(r => r.json()),
-        fetch('/api/yahoo/players?start=250&count=50').then(r => r.json()),
-        fetch('/api/yahoo/players?start=300&count=50').then(r => r.json()),
-        fetch('/api/yahoo/players?start=350&count=50').then(r => r.json()),
-        fetch('/api/yahoo/players?start=400&count=50').then(r => r.json()),
-        fetch('/api/yahoo/players?start=450&count=50').then(r => r.json()),
+        fetch(`/api/yahoo/players?start=0&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=50&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=100&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=150&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=200&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=250&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=300&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=350&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=400&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=450&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
       ]);
       const combined = results.flatMap(d => d.players || []).map((p, i) => ({ ...p, rank: i + 1 }));
       setYahooPlayers(combined);
@@ -1042,7 +1070,7 @@ export default function Home() {
     '26': 'ERA', '27': 'WHIP', '28': 'W', '42': 'K', '50': 'IP', '83': 'QS',
   };
   // Lower = better (for sorting ascending)
-  const ASCENDING_STATS = new Set(['26', '27']); // ERA, WHIP
+  const ASCENDING_STATS = new Set(['26', '27', '19']); // ERA, WHIP, TO
   const BATTING_STAT_IDS = ['7', '12', '13', '16', '3', '55'];
   const PITCHING_STAT_IDS = ['28', '42', '50', '26', '27'];
 
@@ -1110,7 +1138,8 @@ export default function Home() {
         picksUntilTurn: waitPicks,
         customPrompt: userPromptText,
         chatHistory: newHistory,
-        leagueId: selectedLeague?.id
+        leagueId: selectedLeague?.id,
+        sport: activeSport
       };
 
       const res = await fetch('/api/assistant', {
@@ -1140,7 +1169,7 @@ export default function Home() {
 
         // Refetch AI notes so any new rationales are immediately rendered across the board
         try {
-          const notesRes = await fetch('/api/assistant/notes');
+          const notesRes = await fetch(`/api/assistant/notes?leagueId=${selectedLeague?.id}&t=${Date.now()}`);
           const notesData = await notesRes.json();
           if (notesData) {
             const normalizedNotes: Record<string, string> = {};
@@ -1583,6 +1612,9 @@ export default function Home() {
                   <button onClick={() => setViewMode('STANDINGS')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'STANDINGS' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
                     <BarChart3 className="w-3.5 h-3.5" /> Standings
                   </button>
+                  <button onClick={() => setViewMode('MATCHUP')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'MATCHUP' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                    <Activity className="w-3.5 h-3.5" /> Matchup
+                  </button>
                   <button onClick={() => setViewMode('PLAYERS')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'PLAYERS' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
                     <Search className="w-3.5 h-3.5" /> Pool
                   </button>
@@ -1631,7 +1663,7 @@ export default function Home() {
                   ref={assistantInputRef}
                   isAskingAssistant={isAskingAssistant}
                   onSubmit={(val) => askAssistant(val, true)}
-                  placeholder="Ask assistant: focus on closers, need a SS..."
+                  placeholder={activeSport === 'basketball' ? "Ask assistant: who to add, trade advice, waiver wire..." : "Ask assistant: focus on closers, need a SS..."}
                 />
               </div>
             </div>
@@ -1689,19 +1721,35 @@ export default function Home() {
                       <BarChart3 className={`w-3 h-3 ${isLoadingStats ? 'animate-pulse' : ''}`} />
                       {isLoadingStats ? 'Loading...' : Object.keys(yahooStats).length > 0 ? `Stats:${Object.keys(yahooStats).length}` : 'Stats'}
                     </button>
-                    {Object.keys(yahooStats).length > 0 && (
+                    {(Object.keys(yahooStats).length > 0 || (activeSport === 'basketball' && yahooPlayers.length > 0)) && (
                       <select
                         value={statSort || ''}
                         onChange={(e) => setStatSort(e.target.value || null)}
                         className="bg-slate-950 border border-slate-800 text-slate-300 text-[10px] font-bold uppercase tracking-widest rounded-xl px-2 py-1.5 focus:ring-1 focus:ring-emerald-500/50 outline-none"
                       >
                         <option value="">Sort by Rank</option>
-                        <optgroup label="Batting">
-                          {BATTING_STAT_IDS.map(id => <option key={`b-${id}`} value={id}>{YAHOO_STAT_LABELS[id] || id}</option>)}
-                        </optgroup>
-                        <optgroup label="Pitching">
-                          {PITCHING_STAT_IDS.map(id => <option key={`p-${id}`} value={id}>{YAHOO_STAT_LABELS[id] || id}</option>)}
-                        </optgroup>
+                        {activeSport === 'basketball' ? (
+                          <>
+                            <option value="12">PTS</option>
+                            <option value="15">REB</option>
+                            <option value="16">AST</option>
+                            <option value="17">ST</option>
+                            <option value="18">BLK</option>
+                            <option value="5">FG%</option>
+                            <option value="8">FT%</option>
+                            <option value="10">3PM</option>
+                            <option value="19">TO</option>
+                          </>
+                        ) : (
+                          <>
+                            <optgroup label="Batting">
+                              {BATTING_STAT_IDS.map(id => <option key={`b-${id}`} value={id}>{YAHOO_STAT_LABELS[id] || id}</option>)}
+                            </optgroup>
+                            <optgroup label="Pitching">
+                              {PITCHING_STAT_IDS.map(id => <option key={`p-${id}`} value={id}>{YAHOO_STAT_LABELS[id] || id}</option>)}
+                            </optgroup>
+                          </>
+                        )}
                       </select>
                     )}
                   </>
@@ -1721,6 +1769,7 @@ export default function Home() {
                     PITCHING_STAT_IDS={PITCHING_STAT_IDS}
                     YAHOO_STAT_LABELS={YAHOO_STAT_LABELS}
                     onAskAssistant={askAssistant}
+                    leagueId={selectedLeague?.id}
                   />
                 ))}
               </div>
@@ -1839,7 +1888,7 @@ export default function Home() {
               <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
                 <div className="flex items-baseline gap-3 mb-4 shrink-0">
-                  <h3 className="text-lg font-black italic tracking-tighter text-indigo-400">{selectedTeam}</h3>
+                  <h3 className="text-lg font-black italic tracking-tighter text-indigo-400">{selectedTeam || myTeamName}</h3>
                   {(() => {
                     // For basketball, show player count from team_rosters
                     if (activeSport === 'basketball' && teamRosters.length > 0) {
@@ -1943,68 +1992,183 @@ export default function Home() {
 
           {viewMode === 'STANDINGS' && (
             <div className="flex-1 overflow-y-auto">
-              <div className="mb-6">
-                <h3 className="text-lg font-black italic tracking-tighter text-indigo-400 mb-2">League Standings</h3>
-                <p className="text-xs text-slate-500">Current season rankings</p>
+              <div className="mb-4 flex items-baseline gap-3">
+                <h3 className="text-lg font-black italic tracking-tighter text-indigo-400">League Standings</h3>
+                <span className="text-xs text-slate-500">Click a team to view their roster</span>
               </div>
               
-              {standings.length > 0 ? (
-                <table className="w-full border-collapse text-sm">
-                  <thead className="sticky top-0 bg-slate-900 z-10">
-                    <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                      <th className="text-left py-3 px-4 w-12">Rank</th>
-                      <th className="text-left py-3 px-4">Team</th>
-                      <th className="text-center py-3 px-4 w-16">W</th>
-                      <th className="text-center py-3 px-4 w-16">L</th>
-                      <th className="text-center py-3 px-4 w-16">T</th>
-                      <th className="text-center py-3 px-4 w-24">Win %</th>
-                    </tr>
-                    <tr><td colSpan={6}><div className="h-px bg-slate-800 w-full" /></td></tr>
-                  </thead>
-                  <tbody>
-                    {standings.map((team: any, i: number) => {
-                      const winPct = team.wins + team.losses + team.ties > 0 
-                        ? (team.wins / (team.wins + team.losses + team.ties) * 100).toFixed(1)
-                        : '0.0';
-                      const isMyTeam = team.team_name === myTeamName;
-                      
-                      return (
-                        <tr 
-                          key={team.team_key}
-                          onClick={() => { setSelectedTeam(team.team_name); setViewMode('TEAM'); }}
-                          className={`border-b border-slate-800/30 cursor-pointer transition-colors hover:bg-slate-800/30 ${isMyTeam ? 'bg-indigo-500/10' : i % 2 === 0 ? 'bg-slate-950' : 'bg-slate-900/20'}`}
-                        >
-                          <td className="py-3 px-4">
-                            <span className={`text-sm font-black ${isMyTeam ? 'text-indigo-400' : 'text-slate-400'}`}>
-                              {team.rank}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className={`font-bold text-sm ${isMyTeam ? 'text-indigo-300' : 'text-slate-100'}`}>
-                              {isMyTeam ? `★ ${team.team_name}` : team.team_name}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <span className="text-sm font-bold text-green-400">{team.wins}</span>
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <span className="text-sm font-bold text-red-400">{team.losses}</span>
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <span className="text-sm font-bold text-slate-500">{team.ties}</span>
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <span className="text-sm font-bold text-slate-300">{winPct}%</span>
-                          </td>
+              {standings.length > 0 ? (() => {
+                // Basketball roto stat ID labels
+                const BBALL_STAT_LABELS: Record<string, string> = {
+                  '5': 'FG%', '8': 'FT%', '10': '3PM', '12': 'PTS',
+                  '15': 'REB', '16': 'AST', '17': 'ST', '18': 'BLK', '19': 'TO'
+                };
+                // Known good stat IDs to display (exclude ratio/composite keys like 9004003)
+                const KNOWN_BBALL_STAT_IDS = new Set(['5', '8', '10', '12', '15', '16', '17', '18', '19']);
+
+                // Build display columns from statCategories or fall back to known map
+                const hasRecord = standings.some((t: any) => (t.wins || 0) + (t.losses || 0) > 0);
+                
+                // Get stat keys from first row — only include known stat IDs
+                const sampleStats = standings.find((t: any) => t.stats_json && Object.keys(t.stats_json).length > 0)?.stats_json || {};
+                const statKeys = Object.keys(sampleStats).filter(k => KNOWN_BBALL_STAT_IDS.has(k));
+                
+                // Build column defs: prefer statCategories from league-settings, fall back to known map
+                const displayCols: { id: string; label: string }[] = statCategories.length > 0
+                  ? statCategories
+                      .filter((c: any) => KNOWN_BBALL_STAT_IDS.has(String(c.statId)))
+                      .map((c: any) => ({ id: String(c.statId), label: c.displayName || c.name }))
+                  : statKeys.map(id => ({ id, label: BBALL_STAT_LABELS[id] || `S${id}` }));
+
+                const colCount = 2 + (hasRecord ? 3 : 0) + displayCols.length;
+
+                return (
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-sm min-w-max">
+                      <thead className="sticky top-0 bg-slate-900 z-10">
+                        <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                          <th className="text-left py-3 px-3 w-10">#</th>
+                          <th className="text-left py-3 px-3 min-w-[140px]">Team</th>
+                          {hasRecord && <>
+                            <th className="text-center py-3 px-3 w-12">W</th>
+                            <th className="text-center py-3 px-3 w-12">L</th>
+                            <th className="text-center py-3 px-3 w-12">T</th>
+                          </>}
+                          {displayCols.map(col => (
+                            <th key={col.id} className="text-center py-3 px-3 w-16 whitespace-nowrap">{col.label}</th>
+                          ))}
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              ) : (
+                        <tr><td colSpan={colCount}><div className="h-px bg-slate-800 w-full" /></td></tr>
+                      </thead>
+                      <tbody>
+                        {standings.map((team: any, i: number) => {
+                          const isMyTeam = team.team_name === myTeamName;
+                          const statsJson = team.stats_json || {};
+                          
+                          return (
+                            <tr
+                              key={team.team_key || i}
+                              onClick={() => { setSelectedTeam(team.team_name); setViewMode('TEAM'); }}
+                              className={`border-b border-slate-800/30 cursor-pointer transition-colors hover:bg-slate-800/30 ${isMyTeam ? 'bg-indigo-500/10' : i % 2 === 0 ? 'bg-slate-950' : 'bg-slate-900/20'}`}
+                            >
+                              <td className="py-2.5 px-3">
+                                <span className={`text-sm font-black ${isMyTeam ? 'text-indigo-400' : 'text-slate-500'}`}>{team.rank || i + 1}</span>
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <span className={`font-bold text-sm ${isMyTeam ? 'text-indigo-300' : 'text-slate-100'}`}>
+                                  {isMyTeam ? `★ ${team.team_name}` : team.team_name}
+                                </span>
+                              </td>
+                              {hasRecord && <>
+                                <td className="py-2.5 px-3 text-center"><span className="text-sm font-bold text-green-400">{team.wins}</span></td>
+                                <td className="py-2.5 px-3 text-center"><span className="text-sm font-bold text-red-400">{team.losses}</span></td>
+                                <td className="py-2.5 px-3 text-center"><span className="text-sm font-bold text-slate-500">{team.ties}</span></td>
+                              </>}
+                              {displayCols.map(col => {
+                                const raw = statsJson[col.id];
+                                let display = '—';
+                                if (raw !== undefined && raw !== '-' && raw !== '') {
+                                  const num = parseFloat(raw);
+                                  if (!isNaN(num)) {
+                                    // Percentages (FG%, FT%) — already decimal like .493
+                                    if (col.label === 'FG%' || col.label === 'FT%') {
+                                      display = (num * 100).toFixed(1) + '%';
+                                    } else if (Number.isInteger(num)) {
+                                      display = String(num);
+                                    } else {
+                                      display = num.toFixed(1);
+                                    }
+                                  } else {
+                                    display = raw; // e.g. ratio strings
+                                  }
+                                }
+                                return (
+                                  <td key={col.id} className="py-2.5 px-3 text-center">
+                                    <span className={`text-xs font-bold tabular-nums ${isMyTeam ? 'text-indigo-200' : 'text-slate-300'}`}>{display}</span>
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })() : (
                 <div className="text-center mt-20 opacity-50 font-black tracking-widest text-slate-500">
                   NO STANDINGS DATA YET
-                  <p className="text-xs text-slate-600 mt-2 font-normal">Click "SYNC FROM YAHOO" to load standings</p>
+                  <p className="text-xs text-slate-600 mt-2 font-normal">Click &quot;SYNC FROM YAHOO&quot; to load standings</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {viewMode === 'MATCHUP' && (
+            <div className="flex-1 overflow-y-auto">
+              <div className="mb-4 flex items-baseline gap-3">
+                <h3 className="text-lg font-black italic tracking-tighter text-indigo-400">
+                  {matchupWeek ? `Week ${matchupWeek} Matchups` : 'Matchups'}
+                </h3>
+                {matchupWeek && <span className="text-xs text-slate-500">Current week</span>}
+              </div>
+
+              {matchups.length > 0 ? (
+                <div className="space-y-3">
+                  {matchups.map((m: any, i: number) => {
+                    const myInvolved = m.team1_name === myTeamName || m.team2_name === myTeamName;
+                    const t1Leading = parseFloat(m.team1_points) > parseFloat(m.team2_points);
+                    const t2Leading = parseFloat(m.team2_points) > parseFloat(m.team1_points);
+                    const tied = parseFloat(m.team1_points) === parseFloat(m.team2_points);
+
+                    return (
+                      <div
+                        key={i}
+                        className={`rounded-2xl border p-4 ${myInvolved ? 'border-indigo-500/40 bg-indigo-500/5' : 'border-slate-800/50 bg-slate-950'}`}
+                      >
+                        {myInvolved && (
+                          <div className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-2">Your Matchup</div>
+                        )}
+                        <div className="flex items-center gap-3">
+                          {/* Team 1 */}
+                          <div className={`flex-1 text-right ${m.team1_name === myTeamName ? 'text-indigo-300' : 'text-slate-200'}`}>
+                            <div className="font-black text-sm">
+                              {m.team1_name === myTeamName ? `★ ${m.team1_name}` : m.team1_name}
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-bold mt-0.5">
+                              {m.team1_wins}-{m.team1_losses}{m.team1_ties > 0 ? `-${m.team1_ties}` : ''}
+                            </div>
+                          </div>
+
+                          {/* Score */}
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className={`text-xl font-black tabular-nums ${t1Leading ? 'text-green-400' : tied ? 'text-slate-400' : 'text-slate-500'}`}>
+                              {m.team1_points > 0 ? m.team1_points : '—'}
+                            </span>
+                            <span className="text-slate-700 font-black text-sm">vs</span>
+                            <span className={`text-xl font-black tabular-nums ${t2Leading ? 'text-green-400' : tied ? 'text-slate-400' : 'text-slate-500'}`}>
+                              {m.team2_points > 0 ? m.team2_points : '—'}
+                            </span>
+                          </div>
+
+                          {/* Team 2 */}
+                          <div className={`flex-1 ${m.team2_name === myTeamName ? 'text-indigo-300' : 'text-slate-200'}`}>
+                            <div className="font-black text-sm">
+                              {m.team2_name === myTeamName ? `★ ${m.team2_name}` : m.team2_name}
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-bold mt-0.5">
+                              {m.team2_wins}-{m.team2_losses}{m.team2_ties > 0 ? `-${m.team2_ties}` : ''}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center mt-20 opacity-50 font-black tracking-widest text-slate-500">
+                  NO MATCHUP DATA YET
+                  <p className="text-xs text-slate-600 mt-2 font-normal">Click &quot;SYNC FROM YAHOO&quot; to load matchups</p>
                 </div>
               )}
             </div>
@@ -2149,7 +2313,7 @@ export default function Home() {
               {/* Filters & Sorting */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 shrink-0 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
                 <div className="flex gap-1.5 flex-wrap">
-                  {['ALL', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'SP', 'RP'].map(pos => (
+                  {availablePositions.map(pos => (
                     <button
                       key={pos}
                       onClick={() => setWatchlistPosFilter(pos)}
@@ -2250,6 +2414,7 @@ export default function Home() {
                             player={enrichedPlayer}
                             activeSport={activeSport}
                             isTaken={isTaken}
+                            leagueId={selectedLeague?.id}
                             isFirst={originalIndex === 0}
                             isLast={originalIndex === myRoster.length - 1}
                             onMoveUp={() => {

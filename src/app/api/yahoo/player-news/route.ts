@@ -15,13 +15,12 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Get Yahoo GUID from session
-        const yahooGuid = session.user.email.split('@')[0];
-        
-        console.log('🔍 Session debug:', {
-            email: session.user.email,
-            extractedGuid: yahooGuid
-        });
+        // Get Yahoo GUID from database using email
+        const userResult = await sql`SELECT yahoo_guid FROM users WHERE email = ${session.user.email} LIMIT 1`;
+        if (!userResult.length) {
+            return NextResponse.json({ error: 'User not found. Please re-login.' }, { status: 401 });
+        }
+        const yahooGuid = userResult[0].yahoo_guid;
         
         // Get valid access token (will refresh if needed)
         const accessToken = await getYahooAccessToken(yahooGuid);
@@ -153,19 +152,6 @@ export async function GET(request: Request) {
             }
         }
 
-        return NextResponse.json({
-            success: true,
-            player: {
-                name: fullName,
-                team: mlbTeam,
-                status,
-                statusFull,
-                imageUrl,
-                hasNotes,
-                notes
-            }
-        });
-        
         // Save to database for caching (don't await, let it happen in background)
         if (leagueId) {
             sql`
@@ -187,6 +173,19 @@ export async function GET(request: Request) {
                     fetched_at = CURRENT_TIMESTAMP
             `.catch(err => console.error('Failed to cache Yahoo news:', err));
         }
+
+        return NextResponse.json({
+            success: true,
+            player: {
+                name: fullName,
+                team: mlbTeam,
+                status,
+                statusFull,
+                imageUrl,
+                hasNotes,
+                notes
+            }
+        });
 
     } catch (error) {
         console.error('[Yahoo Player News] Error:', error);

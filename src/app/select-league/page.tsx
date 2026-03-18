@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Trophy, ArrowRight } from 'lucide-react';
+import { Trophy, ArrowRight, RefreshCw } from 'lucide-react';
 
 interface League {
   id: number;
@@ -17,6 +17,8 @@ export default function SelectLeague() {
   const router = useRouter();
   const [leagues, setLeagues] = useState<League[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState('');
 
   useEffect(() => {
     fetchLeagues();
@@ -33,6 +35,25 @@ export default function SelectLeague() {
       console.error('Error fetching leagues:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const syncFromYahoo = async () => {
+    setSyncing(true);
+    setSyncError('');
+    try {
+      const res = await fetch('/api/yahoo/user-leagues');
+      const data = await res.json();
+      if (data.success) {
+        // Leagues are now saved to DB, re-fetch from DB
+        await fetchLeagues();
+      } else {
+        setSyncError(data.error || 'Failed to sync from Yahoo. Make sure you are logged in.');
+      }
+    } catch (error) {
+      setSyncError('Error connecting to Yahoo. Please try again.');
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -103,9 +124,18 @@ export default function SelectLeague() {
           <h1 className="text-5xl font-black tracking-tighter mb-4 bg-clip-text text-transparent bg-gradient-to-br from-white via-slate-200 to-indigo-400">
             Select Your League
           </h1>
-          <p className="text-lg text-slate-400">
+          <p className="text-lg text-slate-400 mb-6">
             Choose a league to manage your team
           </p>
+          <button
+            onClick={syncFromYahoo}
+            disabled={syncing}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold rounded-full text-sm transition-all"
+          >
+            <RefreshCw size={16} className={syncing ? 'animate-spin' : ''} />
+            {syncing ? 'Syncing from Yahoo...' : 'Sync Leagues from Yahoo'}
+          </button>
+          {syncError && <p className="text-red-400 text-sm mt-3">{syncError}</p>}
         </div>
 
         {leagues.length === 0 ? (

@@ -19,34 +19,27 @@ export function getDb() {
 }
 
 // Get current user's selected league ID
-export async function getSelectedLeagueId(session?: any) {
+export async function getSelectedLeagueId(session?: any, leagueIdFromRequest?: number | null) {
   const sql = getDb();
   
-  let userGuid = 'default-user'; // Fallback for local development
-  
-  if (session?.user?.email) {
-    userGuid = session.user.email.split('@')[0];
+  // If leagueId was passed directly (from request body/params), use it
+  if (leagueIdFromRequest) {
+    return leagueIdFromRequest;
   }
   
-  // Handle legacy "yahoo" guid by trying "yahoo-user" as fallback
-  let result = await sql`
-    SELECT usl.league_id
-    FROM user_selected_league usl
-    JOIN users u ON u.id = usl.user_id
-    WHERE u.yahoo_guid = ${userGuid}
+  if (!session?.user?.email) return null;
+  
+  // Look up user by email to get their real yahoo_guid
+  const userResult = await sql`
+    SELECT u.id FROM users u WHERE u.email = ${session.user.email} LIMIT 1
   `;
   
-  // If not found and guid is "yahoo", try "yahoo-user"
-  if (!result.length && userGuid === 'yahoo') {
-    console.log('⚠️  User "yahoo" not found in getSelectedLeagueId, trying "yahoo-user" as fallback');
-    userGuid = 'yahoo-user';
-    result = await sql`
-      SELECT usl.league_id
-      FROM user_selected_league usl
-      JOIN users u ON u.id = usl.user_id
-      WHERE u.yahoo_guid = ${userGuid}
-    `;
-  }
+  if (!userResult.length) return null;
+  const userId = userResult[0].id;
+  
+  const result = await sql`
+    SELECT league_id FROM user_selected_league WHERE user_id = ${userId} LIMIT 1
+  `;
   
   return result.length > 0 ? result[0].league_id : null;
 }
@@ -150,42 +143,57 @@ export async function saveDraftPicks(picks: any[], leagueId?: number | null) {
   console.log(`📝 Processing ${picks.length} picks for league ${leagueId}...`);
   
   let insertedCount = 0;
+  let skippedCount = 0;
   
-  // First, clear existing data for this league to avoid conflicts
-  await sql`DELETE FROM draft_picks WHERE league_id = ${leagueId}`;
-  
-  // Batch insert all picks at once
-  const batchSize = 100; // Process in batches to avoid memory issues
-  
-  for (let i = 0; i < picks.length; i += batchSize) {
-    const batch = picks.slice(i, i + batchSize);
-    
-    // Insert each pick in the batch
-    for (const pick of batch) {
-      await sql`
-        INSERT INTO draft_picks (league_id, round, pick, rank, player_name, position, team_abbr, drafted_by, is_keeper)
-        VALUES (
-          ${leagueId},
-          ${pick.rd || 0},
-          ${pick.pk},
-          ${pick.rank},
-          ${pick.name},
-          ${pick.pos},
-          ${pick.playerTeam || null},
-          ${pick.tm || null},
-          ${pick.isKeeper || false}
-        )
+  // Only insert new picks - don't delete existing ones
+  for (const pick of picks) {
+    // Skip keepers and undrafted (no pick number)
+    if (pick.pk === null) {
+      // For keepers/undrafted, check by player name + team + round
+      const existing = await sql`
+        SELECT id FROM draft_picks 
+        WHERE league_id = ${leagueId} 
+          AND player_name = ${pick.name}
+          AND round = ${pick.rd}
+          AND drafted_by IS NOT DISTINCT FROM ${pick.tm}
       `;
-      insertedCount++;
+      
+      if (existing.length > 0) {
+        skippedCount++;
+        continue;
+      }
+    } else {
+      // For draft picks, check by pick number
+      const existing = await sql`
+        SELECT id FROM draft_picks 
+        WHERE league_id = ${leagueId} AND pick = ${pick.pk}
+      `;
+      
+      if (existing.length > 0) {
+        skippedCount++;
+        continue;
+      }
     }
     
-    // Log progress for large batches
-    if (picks.length > 1000) {
-      console.log(`   Processed ${Math.min(i + batchSize, picks.length)}/${picks.length} picks...`);
-    }
+    // Insert only if it's new
+    await sql`
+      INSERT INTO draft_picks (league_id, round, pick, rank, player_name, position, team_abbr, drafted_by, is_keeper)
+      VALUES (
+        ${leagueId},
+        ${pick.rd || 0},
+        ${pick.pk},
+        ${pick.rank},
+        ${pick.name},
+        ${pick.pos},
+        ${pick.playerTeam || null},
+        ${pick.tm || null},
+        ${pick.isKeeper || false}
+      )
+    `;
+    insertedCount++;
   }
   
-  console.log(`✅ Processed picks: ${insertedCount} inserted`);
+  console.log(`✅ Inserted ${insertedCount} new picks, skipped ${skippedCount} existing`);
   return insertedCount;
 }
 
