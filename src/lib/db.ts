@@ -8,13 +8,55 @@ export function getDb() {
     throw new Error('POSTGRES_URL environment variable is not set');
   }
   
-  return neon(databaseUrl);
+  // For local development, disable SSL verification
+  const sql = neon(databaseUrl, {
+    fetchOptions: {
+      cache: 'no-store',
+    }
+  });
+  
+  return sql;
+}
+
+// Get current user's selected league ID
+export async function getSelectedLeagueId(session?: any, leagueIdFromRequest?: number | null) {
+  const sql = getDb();
+  
+  // If leagueId was passed directly (from request body/params), use it
+  if (leagueIdFromRequest) {
+    return leagueIdFromRequest;
+  }
+  
+  if (!session?.user?.email) return null;
+  
+  // Look up user by email to get their real yahoo_guid
+  const userResult = await sql`
+    SELECT u.id FROM users u WHERE u.email = ${session.user.email} LIMIT 1
+  `;
+  
+  if (!userResult.length) return null;
+  const userId = userResult[0].id;
+  
+  const result = await sql`
+    SELECT league_id FROM user_selected_league WHERE user_id = ${userId} LIMIT 1
+  `;
+  
+  return result.length > 0 ? result[0].league_id : null;
 }
 
 // Player Notes
-export async function getPlayerNotes() {
+export async function getPlayerNotes(leagueId?: number | null) {
   const sql = getDb();
-  const rows = await sql`SELECT player_name_normalized, notes FROM player_notes`;
+  
+  if (!leagueId) {
+    return {};
+  }
+  
+  const rows = await sql`
+    SELECT player_name_normalized, notes 
+    FROM player_notes 
+    WHERE league_id = ${leagueId}
+  `;
   
   const notes: Record<string, string> = {};
   rows.forEach((row: any) => {
@@ -24,14 +66,18 @@ export async function getPlayerNotes() {
   return notes;
 }
 
-export async function savePlayerNote(playerName: string, playerNameNormalized: string, note: string) {
+export async function savePlayerNote(playerName: string, playerNameNormalized: string, note: string, leagueId?: number | null) {
   const sql = getDb();
+  
+  if (!leagueId) {
+    throw new Error('League ID required to save player note');
+  }
   
   // Upsert: update if exists, insert if not
   await sql`
-    INSERT INTO player_notes (player_name, player_name_normalized, notes, updated_at)
-    VALUES (${playerName}, ${playerNameNormalized}, ${note}, CURRENT_TIMESTAMP)
-    ON CONFLICT (player_name_normalized)
+    INSERT INTO player_notes (league_id, player_name, player_name_normalized, notes, updated_at)
+    VALUES (${leagueId}, ${playerName}, ${playerNameNormalized}, ${note}, CURRENT_TIMESTAMP)
+    ON CONFLICT (league_id, player_name_normalized)
     DO UPDATE SET 
       notes = ${note},
       updated_at = CURRENT_TIMESTAMP
@@ -39,71 +85,142 @@ export async function savePlayerNote(playerName: string, playerNameNormalized: s
 }
 
 // Chat History
-export async function saveChatHistory(prompt: string, rawResponse: string, recommendations: any[]) {
+export async function saveChatHistory(prompt: string, rawResponse: string, recommendations: any[], leagueId?: number | null) {
   const sql = getDb();
   
+  if (!leagueId) {
+    throw new Error('League ID required to save chat history');
+  }
+  
   await sql`
-    INSERT INTO chat_history (prompt, raw_response, recommendations)
-    VALUES (${prompt}, ${rawResponse}, ${JSON.stringify(recommendations)})
+    INSERT INTO chat_history (league_id, prompt, raw_response, recommendations)
+    VALUES (${leagueId}, ${prompt}, ${rawResponse}, ${JSON.stringify(recommendations)})
   `;
 }
 
-// Draft Picks
-export async function getDraftPicks() {
+export async function getChatHistory(leagueId?: number | null, limit: number = 20) {
   const sql = getDb();
+  
+  if (!leagueId) {
+    return [];
+  }
+  
+  const results = await sql`
+    SELECT prompt, raw_response, recommendations, created_at
+    FROM chat_history
+    WHERE league_id = ${leagueId}
+    ORDER BY created_at DESC
+    LIMIT ${limit}
+  `;
+  
+  return results.reverse(); // Return oldest first for chat display
+}
+
+// Draft Picks
+export async function getDraftPicks(leagueId?: number | null) {
+  const sql = getDb();
+  
+  if (!leagueId) {
+    return [];
+  }
+  
   return await sql`
     SELECT * FROM draft_picks 
+    WHERE league_id = ${leagueId}
     ORDER BY pick ASC
   `;
 }
 
-export async function saveDraftPicks(picks: any[]) {
+export async function saveDraftPicks(picks: any[], leagueId?: number | null) {
   const sql = getDb();
+  
+  if (!leagueId) {
+    throw new Error('League ID required to save draft picks');
+  }
   
   if (picks.length === 0) return 0;
   
-  // Get existing pick numbers to avoid duplicates
-  const existing = await sql`SELECT pick FROM draft_picks`;
-  const existingPicks = new Set(existing.map((row: any) => row.pick));
+  console.log(`📝 Processing ${picks.length} picks for league ${leagueId}...`);
   
-  // Filter to only new picks
-  const newPicks = picks.filter(pick => !existingPicks.has(pick.pk));
+  let insertedCount = 0;
+  let skippedCount = 0;
   
-  if (newPicks.length === 0) return 0;
-  
-  // Insert new picks one by one (Neon doesn't support batch UNNEST)
-  for (const pick of newPicks) {
+  // Only insert new picks - don't delete existing ones
+  for (const pick of picks) {
+    // Skip keepers and undrafted (no pick number)
+    if (pick.pk === null) {
+      // For keepers/undrafted, check by player name + team + round
+      const existing = await sql`
+        SELECT id FROM draft_picks 
+        WHERE league_id = ${leagueId} 
+          AND player_name = ${pick.name}
+          AND round = ${pick.rd}
+          AND drafted_by IS NOT DISTINCT FROM ${pick.tm}
+      `;
+      
+      if (existing.length > 0) {
+        skippedCount++;
+        continue;
+      }
+    } else {
+      // For draft picks, check by pick number
+      const existing = await sql`
+        SELECT id FROM draft_picks 
+        WHERE league_id = ${leagueId} AND pick = ${pick.pk}
+      `;
+      
+      if (existing.length > 0) {
+        skippedCount++;
+        continue;
+      }
+    }
+    
+    // Insert only if it's new
     await sql`
-      INSERT INTO draft_picks (round, pick, player_name, position, team_abbr, drafted_by, is_keeper)
+      INSERT INTO draft_picks (league_id, round, pick, rank, player_name, position, team_abbr, drafted_by, is_keeper)
       VALUES (
-        ${pick.rd}, 
-        ${pick.pk}, 
-        ${pick.name}, 
-        ${pick.pos}, 
-        ${pick.playerTeam || null}, 
-        ${pick.tm || null}, 
+        ${leagueId},
+        ${pick.rd || 0},
+        ${pick.pk},
+        ${pick.rank},
+        ${pick.name},
+        ${pick.pos},
+        ${pick.playerTeam || null},
+        ${pick.tm || null},
         ${pick.isKeeper || false}
       )
     `;
+    insertedCount++;
   }
   
-  return newPicks.length;
+  console.log(`✅ Inserted ${insertedCount} new picks, skipped ${skippedCount} existing`);
+  return insertedCount;
 }
 
 // Watchlist
-export async function getWatchlist() {
+export async function getWatchlist(leagueId?: number | null) {
   const sql = getDb();
+  
+  if (!leagueId) {
+    return [];
+  }
+  
   return await sql`
     SELECT * FROM watchlist 
+    WHERE league_id = ${leagueId}
     ORDER BY sort_order ASC
   `;
 }
 
-export async function saveWatchlist(players: any[]) {
+export async function saveWatchlist(players: any[], leagueId?: number | null) {
   const sql = getDb();
   
-  // Clear existing watchlist
-  await sql`DELETE FROM watchlist`;
+  if (!leagueId) {
+    throw new Error('League ID required to save watchlist');
+  }
+  
+  // Clear existing watchlist for this league
+  await sql`DELETE FROM watchlist WHERE league_id = ${leagueId}`;
   
   if (players.length === 0) return;
   
@@ -111,8 +228,9 @@ export async function saveWatchlist(players: any[]) {
   for (let index = 0; index < players.length; index++) {
     const player = players[index];
     await sql`
-      INSERT INTO watchlist (player_name, position, team_abbr, adp, rationale, sort_order)
+      INSERT INTO watchlist (league_id, player_name, position, team_abbr, adp, rationale, sort_order)
       VALUES (
+        ${leagueId},
         ${player.name}, 
         ${player.pos}, 
         ${player.team || null}, 
@@ -126,22 +244,21 @@ export async function saveWatchlist(players: any[]) {
 
 
 // Player Stats
-export async function getPlayerStats(season?: number) {
+export async function getPlayerStats(season?: number, sport?: string) {
   const sql = getDb();
   
-  const rows = season 
-    ? await sql`SELECT * FROM player_stats WHERE season = ${season}`
-    : await sql`SELECT * FROM player_stats ORDER BY season DESC`;
-  
-  const stats: Record<string, Record<string, string>> = {};
-  rows.forEach((row: any) => {
-    stats[row.player_name_normalized] = row.stats;
-  });
-  
-  return stats;
+  if (season && sport) {
+    return await sql`SELECT * FROM player_stats WHERE season = ${season} AND sport = ${sport}`;
+  } else if (season) {
+    return await sql`SELECT * FROM player_stats WHERE season = ${season}`;
+  } else if (sport) {
+    return await sql`SELECT * FROM player_stats WHERE sport = ${sport} ORDER BY season DESC`;
+  } else {
+    return await sql`SELECT * FROM player_stats ORDER BY season DESC`;
+  }
 }
 
-export async function savePlayerStats(players: any[], season: number) {
+export async function savePlayerStats(players: any[], season: number, sport: string = 'baseball') {
   const sql = getDb();
   
   for (const player of players) {
@@ -155,7 +272,7 @@ export async function savePlayerStats(players: any[], season: number) {
       .replace(/\s+/g, '');
     
     await sql`
-      INSERT INTO player_stats (player_name, player_name_normalized, team_abbr, position, stats, season, updated_at)
+      INSERT INTO player_stats (player_name, player_name_normalized, team_abbr, position, stats, season, sport, updated_at)
       VALUES (
         ${player.name}, 
         ${normalized}, 
@@ -163,15 +280,45 @@ export async function savePlayerStats(players: any[], season: number) {
         ${player.position || null}, 
         ${JSON.stringify(player.stats)}, 
         ${season},
+        ${sport},
         CURRENT_TIMESTAMP
       )
-      ON CONFLICT (player_name_normalized)
+      ON CONFLICT (player_name_normalized, sport, season)
       DO UPDATE SET 
         stats = ${JSON.stringify(player.stats)},
         team_abbr = ${player.team || null},
         position = ${player.position || null},
-        season = ${season},
         updated_at = CURRENT_TIMESTAMP
     `;
   }
+}
+
+// Team Rosters (in-season)
+export async function getTeamRosters(leagueId?: number | null) {
+  const sql = getDb();
+  
+  if (!leagueId) {
+    return [];
+  }
+  
+  return await sql`
+    SELECT * FROM team_rosters 
+    WHERE league_id = ${leagueId}
+    ORDER BY team_name, player_name
+  `;
+}
+
+// Standings
+export async function getStandings(leagueId?: number | null) {
+  const sql = getDb();
+  
+  if (!leagueId) {
+    return [];
+  }
+  
+  return await sql`
+    SELECT * FROM standings 
+    WHERE league_id = ${leagueId}
+    ORDER BY rank ASC
+  `;
 }

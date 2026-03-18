@@ -162,7 +162,7 @@ Scrape latest picks from Tapatalk forum.
 
 The AI assistant uses a comprehensive system prompt that includes:
 - League format (18-team, 7x7 categories)
-- Roster construction (C, 1B, 2B, 3B, SS, OF×3, Util, SP×4, RP×2, P×2, BN×4)
+- Roster construction (C, 1B, 2B, 3B, SS, OF×3, Util, SP×4, RP×3, P×2, BN×7)
 - Current roster state
 - Open position needs
 - Available player pool (top 150 by rank)
