@@ -1,25 +1,39 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/route";
+import { getDb } from '@/lib/db';
+import { getYahooAccessTokenByEmail } from '@/lib/yahoo-auth';
 
-// Correct Yahoo league key confirmed via /api/yahoo/debug
-const LEAGUE_KEY = '469.l.4136';
+const sql = getDb();
 
 export async function GET(request: Request) {
     try {
         const session = await getServerSession(authOptions);
 
-        if (!session || !(session as any).accessToken) {
+        if (!session?.user?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const accessToken = (session as any).accessToken;
+        const accessToken = await getYahooAccessTokenByEmail(session.user.email);
+        if (!accessToken) {
+            return NextResponse.json({ error: 'No valid Yahoo token. Please re-login.' }, { status: 401 });
+        }
 
         const { searchParams } = new URL(request.url);
         const start = searchParams.get('start') || '0';
         const count = searchParams.get('count') || '25';
+        const leagueIdParam = searchParams.get('leagueId');
 
-        const yahooUrl = `https://fantasysports.yahooapis.com/fantasy/v2/league/${LEAGUE_KEY}/players;sort=AR;sort_type=season;start=${start};count=${count};out=stats,player_notes?format=json`;
+        // Look up the league key from DB if leagueId provided, otherwise fall back to baseball
+        let leagueKey = '469.l.4136';
+        if (leagueIdParam) {
+            const leagueResult = await sql`SELECT league_key FROM user_leagues WHERE id = ${parseInt(leagueIdParam)} LIMIT 1`;
+            if (leagueResult[0]?.league_key) {
+                leagueKey = leagueResult[0].league_key;
+            }
+        }
+
+        const yahooUrl = `https://fantasysports.yahooapis.com/fantasy/v2/league/${leagueKey}/players;sort=AR;sort_type=season;start=${start};count=${count};out=stats,player_notes?format=json`;
 
         console.log('[Yahoo Players] Fetching:', yahooUrl);
 

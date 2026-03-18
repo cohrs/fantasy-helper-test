@@ -9,6 +9,8 @@ import {
   Play, Maximize2, Minimize2, CheckCircle2, MessageSquare, Send, X
 } from 'lucide-react';
 import { useSession, signIn, signOut } from 'next-auth/react';
+import LeagueSelector from '@/components/LeagueSelector';
+import { PlayerCard } from '@/components/PlayerCard';
 
 // Utility function to normalize player names for consistent lookups
 function normalizeName(name: string) {
@@ -54,13 +56,14 @@ AssistantInput.displayName = 'AssistantInput';
 
 const WatchlistItem = ({
   player, activeSport, isTaken, isFirst, isLast, onMoveUp, onMoveDown, onDelete,
-  index, draggedIndex, dragOverIndex, onDragStart, onDragOver, onDragEnd, onDrop, onAskAssistant
+  index, draggedIndex, dragOverIndex, onDragStart, onDragOver, onDragEnd, onDrop, onAskAssistant, leagueId
 }: {
   player: any; activeSport: string; isTaken: boolean; isFirst: boolean; isLast: boolean;
   onMoveUp: () => void; onMoveDown: () => void; onDelete: () => void;
   index: number; draggedIndex: number | null; dragOverIndex: number | null;
   onDragStart: (idx: number) => void; onDragOver: (idx: number) => void; onDragEnd: () => void; onDrop: (idx: number) => void;
   onAskAssistant?: (prompt: string) => void;
+  leagueId?: number | null;
 }) => {
   const [showNotes, setShowNotes] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -83,7 +86,8 @@ const WatchlistItem = ({
   const handleFetchYahooNews = async () => {
     setLoadingNews(true);
     try {
-      const response = await fetch(`/api/yahoo/player-news?name=${encodeURIComponent(player.name)}`);
+      const url = `/api/yahoo/player-news?name=${encodeURIComponent(player.name)}${leagueId ? `&leagueId=${leagueId}` : ''}`;
+      const response = await fetch(url);
       const data = await response.json();
       if (data.success) {
         setYahooNews(data.player);
@@ -106,7 +110,7 @@ const WatchlistItem = ({
       onDragEnd={onDragEnd}
       className={`bg-slate-950 rounded-xl border ${isTaken ? 'border-slate-800/30 opacity-50' : 'border-slate-800/50 hover:border-slate-700/50'} ${draggedIndex === index ? 'opacity-30' : ''} ${borderOverride} group transition-all relative overflow-hidden`}
     >
-      <div className={`absolute left-0 top-0 bottom-0 w-1 ${activeSport === 'MLB' ? 'bg-indigo-600' : 'bg-orange-600'} ${isTaken ? 'bg-slate-700' : ''}`} />
+      <div className={`absolute left-0 top-0 bottom-0 w-1 ${activeSport === 'baseball' ? 'bg-indigo-600' : 'bg-orange-600'} ${isTaken ? 'bg-slate-700' : ''}`} />
 
       <div className="flex justify-between items-center p-2 pl-3">
         <div className="flex items-center gap-3 flex-1 min-w-0 pr-2">
@@ -371,7 +375,7 @@ const WatchlistItem = ({
  * Includes: MLB Draft Tracker & NBA Standings Scaffold
  */
 
-const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWatchlist, activeSport, myRoster, BATTING_STAT_IDS, PITCHING_STAT_IDS, YAHOO_STAT_LABELS, onAskAssistant }: any) => {
+const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWatchlist, activeSport, myRoster, BATTING_STAT_IDS, PITCHING_STAT_IDS, YAHOO_STAT_LABELS, onAskAssistant, leagueId }: any) => {
   const isPitcher = /SP|RP|P/i.test(p.pos);
   const ids = isPitcher ? PITCHING_STAT_IDS : BATTING_STAT_IDS;
   const [showNotes, setShowNotes] = useState(false);
@@ -389,7 +393,8 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
   const handleFetchYahooNews = async () => {
     setLoadingNews(true);
     try {
-      const response = await fetch(`/api/yahoo/player-news?name=${encodeURIComponent(p.name)}`);
+      const url = `/api/yahoo/player-news?name=${encodeURIComponent(p.name)}${leagueId ? `&leagueId=${leagueId}` : ''}`;
+      const response = await fetch(url);
       const data = await response.json();
       if (data.success) {
         setYahooNews(data.player);
@@ -663,8 +668,36 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
 DraftBoardPlayerRow.displayName = 'DraftBoardPlayerRow';
 
 export default function Home() {
-  const [activeSport, setActiveSport] = useState('MLB');
+  // Read selected league from localStorage
+  const [selectedLeague, setSelectedLeague] = useState<any>(null);
+  const [activeSport, setActiveSport] = useState('baseball');
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Load selected league from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('selectedLeague');
+    if (stored) {
+      try {
+        const league = JSON.parse(stored);
+        setSelectedLeague(league);
+        setActiveSport(league.sport);
+        console.log('📍 Loaded league from localStorage:', league);
+      } catch (e) {
+        console.error('Failed to parse stored league:', e);
+      }
+    }
+  }, []);
+  
+  // Position filters based on sport
+  const positionsBySport: Record<string, string[]> = {
+    baseball: ['ALL', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'UTIL', 'SP', 'RP'],
+    basketball: ['ALL', 'PG', 'SG', 'SF', 'PF', 'C', 'G', 'F', 'UTIL'],
+    hockey: ['ALL', 'C', 'LW', 'RW', 'D', 'G', 'UTIL'],
+    football: ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DEF', 'FLEX']
+  };
+  
+  const availablePositions = positionsBySport[activeSport] || positionsBySport.baseball;
+  
   const [myRoster, setMyRoster] = useState<{ id: number; name: string; pos: string; team: string; adp: number; rationale?: string; }[]>([]);
   const [watchlistTab, setWatchlistTab] = useState<'AVAILABLE' | 'DRAFTED' | 'ALL'>('AVAILABLE');
   const [isSyncing, setIsSyncing] = useState(false);
@@ -702,15 +735,13 @@ export default function Home() {
       await fetch('/api/draft-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'SYNC_ROSTER', rosterData: newRoster })
+        body: JSON.stringify({ action: 'SYNC_ROSTER', rosterData: newRoster, leagueId: selectedLeague?.id })
       });
     } catch (err) {
       console.error('Failed to sync watchlist to JSON', err);
     }
   };
 
-  const leagueName = "Asshat Roto League";
-  const myTeamName = "New Jersey Nine";
   const totalTeams = 18;
   const myDraftPosition = 11; // Confirmed from Tapatalk Round 1 thread
 
@@ -721,9 +752,13 @@ export default function Home() {
   const [statSort, setStatSort] = useState<string | null>(null); // null = rank/ADP default
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
+  // User's team info (fetched from Yahoo)
+  const [myTeamName, setMyTeamName] = useState("Loading...");
+  const [leagueName, setLeagueName] = useState("Fantasy League");
+
   // New Layout States 
-  const [viewMode, setViewMode] = useState<'PLAYERS' | 'GRID' | 'TEAM' | 'NEEDS' | 'WATCHLIST'>('PLAYERS');
-  const [selectedTeam, setSelectedTeam] = useState(myTeamName);
+  const [viewMode, setViewMode] = useState<'PLAYERS' | 'GRID' | 'TEAM' | 'NEEDS' | 'WATCHLIST' | 'STANDINGS' | 'MATCHUP'>('TEAM');
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
 
   // Yahoo enriched player data (ranked + projected stats)
   const [yahooPlayers, setYahooPlayers] = useState<any[]>([]);
@@ -731,6 +766,13 @@ export default function Home() {
   // Yahoo last-season stats, keyed by lowercased player name
   const [yahooStats, setYahooStats] = useState<Record<string, Record<string, string>>>({});
   const [isLoadingStats, setIsLoadingStats] = useState(false);
+  
+  // Team rosters and standings (for in-season leagues)
+  const [teamRosters, setTeamRosters] = useState<any[]>([]);
+  const [standings, setStandings] = useState<any[]>([]);
+  const [statCategories, setStatCategories] = useState<{statId: string; displayName: string; name: string}[]>([]);
+  const [matchups, setMatchups] = useState<any[]>([]);
+  const [matchupWeek, setMatchupWeek] = useState<number | null>(null);
 
   // Gemini Assistant
   const [isAskingAssistant, setIsAskingAssistant] = useState(false);
@@ -759,9 +801,22 @@ export default function Home() {
     });
   }, [assistantRecs, isAskingAssistant, showAssistantModal]);
 
-  const { data: session } = useSession();
+  // Auto-select my team once myTeamName is resolved, or first team if unknown
+  useEffect(() => {
+    if (selectedTeam !== null) return; // already selected
+    
+    const teamList = activeSport === 'basketball' && teamRosters.length > 0
+      ? Array.from(new Set(teamRosters.map((r: any) => r.team_name)))
+      : Array.from(new Set(draftResults.filter(p => p.tm).map(p => p.tm as string)));
+    
+    if (teamList.length === 0) return; // data not loaded yet
+    
+    // Prefer myTeamName if it's in the list, otherwise first team
+    const target = teamList.includes(myTeamName) ? myTeamName : teamList[0];
+    setSelectedTeam(target);
+  }, [myTeamName, teamRosters, draftResults, activeSport, selectedTeam]);
 
-  // Mock NBA Data
+  const { data: session } = useSession();
   const nbaStats = {
     categories: [
       { label: "FG%", val: ".482", rk: 4 },
@@ -772,20 +827,34 @@ export default function Home() {
     matchup: { opp: "Gotham Knights", score: "5-4-0" }
   };
 
-  // Backend JSON Load
+  // Backend JSON Load - Load data for selected league
   useEffect(() => {
+    if (!selectedLeague) {
+      console.log('⚠️ No league selected, skipping data load');
+      setIsDataLoaded(true);
+      return;
+    }
+
+    const leagueId = selectedLeague.id;
+    console.log(`📊 Loading data for league ${leagueId} (${selectedLeague.league_name})`);
+
     Promise.all([
-      fetch('/api/draft-data', { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch('/api/assistant/notes', { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch('/api/player-stats?season=2025', { cache: 'no-store' }).then(res => res.json()).catch(() => ({}))
-    ]).then(([draftData, notesData, statsData]) => {
+      fetch(`/api/draft-data?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/assistant/notes?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/assistant/history?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({ history: [] })),
+      fetch(`/api/player-stats?season=${selectedLeague.season}&sport=${selectedLeague.sport}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/yahoo/league-settings?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/team-data?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/my-team?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/yahoo/scoreboard?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({}))
+    ]).then(([draftData, notesData, chatData, statsData, leagueSettings, teamData, myTeamData, scoreboardData]) => {
       if (draftData.roster) setMyRoster(draftData.roster);
       if (draftData.draft && draftData.draft.length > 0) {
         setDraftResults(draftData.draft);
-        // Current pick = number of non-keeper picks made + 1
-        // (Keepers don't count as draft picks)
-        const nonKeeperPicks = draftData.draft.filter((p: any) => p.tm && !p.isKeeper).length;
-        setCurrentPick(nonKeeperPicks + 1);
+        // Current pick = max pick number + 1 (not count of picks, since some picks may be missing)
+        const draftedPicks = draftData.draft.filter((p: any) => p.pk !== null && !p.isKeeper);
+        const maxPick = draftedPicks.length > 0 ? Math.max(...draftedPicks.map((p: any) => p.pk)) : 0;
+        setCurrentPick(maxPick + 1);
       }
       if (notesData) {
         // Normalize keys so they match the normalizeName function used for lookups
@@ -795,31 +864,99 @@ export default function Home() {
         }
         setAiNotes(normalizedNotes);
       }
+      if (chatData?.history && chatData.history.length > 0) {
+        console.log('💬 Restoring chat history:', chatData.history.length, 'messages');
+        setChatHistory(chatData.history);
+        // If there are recommendations in the last assistant message, show them
+        const lastMessage = chatData.history[chatData.history.length - 1];
+        if (lastMessage?.role === 'model' && lastMessage.recommendations?.length > 0) {
+          setAssistantRecs(lastMessage.recommendations);
+        }
+      }
       if (statsData) {
         setYahooStats(statsData);
       }
+      if (leagueSettings?.success) {
+        console.log('📋 League Settings:', leagueSettings.settings);
+        // Extract stat categories for standings display
+        const cats = leagueSettings.settings.statCategories;
+        const allCats = cats?.stats || [...(cats?.batting || []), ...(cats?.pitching || [])];
+        if (allCats.length > 0) setStatCategories(allCats);
+      }
+      if (teamData?.success) {
+        setTeamRosters(teamData.rosters || []);
+        setStandings(teamData.standings || []);
+        console.log('👥 Team Rosters:', teamData.rosters?.length || 0, 'players');
+        console.log('📊 Standings:', teamData.standings?.length || 0, 'teams');
+      }
+      if (myTeamData?.success) {
+        setMyTeamName(myTeamData.teamName || selectedLeague.team_name || 'My Team');
+        setLeagueName(myTeamData.leagueName || selectedLeague.league_name);
+        setSelectedTeam(myTeamData.teamName || selectedLeague.team_name || 'My Team');
+        console.log('⭐ My Team:', myTeamData.teamName);
+      } else {
+        // Fallback to league data if API fails
+        setMyTeamName(selectedLeague.team_name || 'My Team');
+        setLeagueName(selectedLeague.league_name);
+        setSelectedTeam(selectedLeague.team_name || 'My Team');
+      }
+      if (scoreboardData?.success && scoreboardData.matchups?.length > 0) {
+        setMatchups(scoreboardData.matchups);
+        setMatchupWeek(scoreboardData.week);
+      }
       setIsDataLoaded(true);
+      
+      // Auto-load Yahoo players for basketball
+      if (activeSport === 'basketball') {
+        loadYahooPlayers();
+      }
+      
+      // Don't auto-sync on load - user can manually sync with button
     }).catch(err => {
       console.error("Error loading initial data:", err);
       setIsDataLoaded(true);
     });
-  }, []);
+  }, [selectedLeague, activeSport]); // Re-run when league or sport changes
 
   const handleImport = async () => {
     setIsSyncing(true);
     try {
-      const response = await fetch('/api/scrape-draft');
+      let leagueId = selectedLeague?.id;
+      
+      // Fallback: try to get from localStorage if state is not set
+      if (!leagueId) {
+        try {
+          const stored = localStorage.getItem('selectedLeague');
+          if (stored) {
+            const league = JSON.parse(stored);
+            leagueId = league.id;
+            setSelectedLeague(league); // Update state
+            setActiveSport(league.sport);
+          }
+        } catch (e) {
+          console.error('Failed to parse stored league:', e);
+        }
+      }
+      
+      if (!leagueId) {
+        alert("No league selected. Please select a league first.");
+        setIsSyncing(false);
+        return;
+      }
+      
+      const response = await fetch(`/api/scrape-draft?leagueId=${leagueId}`);
       const data = await response.json();
 
       if (data.success) {
         if (data.picks && data.picks.length > 0) {
           setDraftResults(data.picks);
-          // Current pick = number of non-keeper picks made + 1
-          // (Keepers don't count as draft picks)
-          const nonKeeperPicks = data.picks.filter((p: any) => p.tm && !p.isKeeper).length;
-          setCurrentPick(nonKeeperPicks + 1);
+          // Current pick = max pick number + 1 (not count of picks, since some picks may be missing)
+          const draftedPicks = data.picks.filter((p: any) => p.pk !== null && !p.isKeeper);
+          const maxPick = draftedPicks.length > 0 ? Math.max(...draftedPicks.map((p: any) => p.pk)) : 0;
+          setCurrentPick(maxPick + 1);
         }
-        // Success even if no new picks - don't show error
+        // Reload data from database to show updated roster
+        window.location.reload();
       } else {
         alert("Failed to sync Draft! " + (data.error || "Unknown error"));
       }
@@ -831,31 +968,68 @@ export default function Home() {
     }
   };
 
-  // Auto-polling Cron: Sync every 5 minutes natively
+  const handleYahooSync = async () => {
+    setIsSyncing(true);
+    try {
+      const response = await fetch('/api/yahoo/sync-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leagueId: selectedLeague?.id })
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        const summary = [
+          `Draft: ${data.results.draft.count} picks`,
+          `Standings: ${data.results.standings.count} teams`,
+          `Rosters: ${data.results.rosters.count} players`
+        ].join('\n');
+        alert(`✅ Synced from Yahoo!\n\n${summary}`);
+        
+        // Reload page to show new data
+        window.location.reload();
+      } else {
+        alert("Failed to sync from Yahoo! " + (data.error || "Unknown error"));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error syncing from Yahoo.");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Auto-polling Cron: Sync every 5 minutes (only for baseball)
   useEffect(() => {
+    // Only auto-sync for baseball leagues
+    if (activeSport !== 'baseball') {
+      return;
+    }
+
     const intervalId = setInterval(() => {
+      console.log('🔄 Auto-syncing baseball draft...');
       handleImport();
     }, 5 * 60 * 1000); // 300,000ms = 5 minutes
 
     return () => clearInterval(intervalId);
-  }, []); // Run steadily on mount
+  }, [activeSport]); // Re-run if sport changes
 
   // Load live Yahoo player rankings + projected stats
   const loadYahooPlayers = async () => {
     setIsLoadingYahoo(true);
+    const leagueId = selectedLeague?.id;
     try {
-      // Initial fetch: first 500 players in 10 parallel requests
       const results = await Promise.all([
-        fetch('/api/yahoo/players?start=0&count=50').then(r => r.json()),
-        fetch('/api/yahoo/players?start=50&count=50').then(r => r.json()),
-        fetch('/api/yahoo/players?start=100&count=50').then(r => r.json()),
-        fetch('/api/yahoo/players?start=150&count=50').then(r => r.json()),
-        fetch('/api/yahoo/players?start=200&count=50').then(r => r.json()),
-        fetch('/api/yahoo/players?start=250&count=50').then(r => r.json()),
-        fetch('/api/yahoo/players?start=300&count=50').then(r => r.json()),
-        fetch('/api/yahoo/players?start=350&count=50').then(r => r.json()),
-        fetch('/api/yahoo/players?start=400&count=50').then(r => r.json()),
-        fetch('/api/yahoo/players?start=450&count=50').then(r => r.json()),
+        fetch(`/api/yahoo/players?start=0&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=50&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=100&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=150&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=200&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=250&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=300&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=350&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=400&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=450&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
       ]);
       const combined = results.flatMap(d => d.players || []).map((p, i) => ({ ...p, rank: i + 1 }));
       setYahooPlayers(combined);
@@ -896,7 +1070,7 @@ export default function Home() {
     '26': 'ERA', '27': 'WHIP', '28': 'W', '42': 'K', '50': 'IP', '83': 'QS',
   };
   // Lower = better (for sorting ascending)
-  const ASCENDING_STATS = new Set(['26', '27']); // ERA, WHIP
+  const ASCENDING_STATS = new Set(['26', '27', '19']); // ERA, WHIP, TO
   const BATTING_STAT_IDS = ['7', '12', '13', '16', '3', '55'];
   const PITCHING_STAT_IDS = ['28', '42', '50', '26', '27'];
 
@@ -963,7 +1137,9 @@ export default function Home() {
         allDrafted: draftResults.filter(r => r.tm), // The actual drafted pool for live AI feedback loop
         picksUntilTurn: waitPicks,
         customPrompt: userPromptText,
-        chatHistory: newHistory
+        chatHistory: newHistory,
+        leagueId: selectedLeague?.id,
+        sport: activeSport
       };
 
       const res = await fetch('/api/assistant', {
@@ -993,7 +1169,7 @@ export default function Home() {
 
         // Refetch AI notes so any new rationales are immediately rendered across the board
         try {
-          const notesRes = await fetch('/api/assistant/notes');
+          const notesRes = await fetch(`/api/assistant/notes?leagueId=${selectedLeague?.id}&t=${Date.now()}`);
           const notesData = await notesRes.json();
           if (notesData) {
             const normalizedNotes: Record<string, string> = {};
@@ -1014,7 +1190,7 @@ export default function Home() {
   };
 
   const waitPicks = useMemo(() => {
-    // Standard linear draft (not snake) - each round goes 1-18 in order
+    // Linear draft - same order every round (1-18)
     // Your position is always pick #11 in each round
     const currentRound = Math.floor((currentPick - 1) / totalTeams) + 1;
     const pickInRound = ((currentPick - 1) % totalTeams) + 1;
@@ -1035,6 +1211,49 @@ export default function Home() {
   }, [currentPick, totalTeams, myDraftPosition]);
 
   const displayPool = useMemo(() => {
+    // For basketball in-season: show Yahoo players (free agents)
+    // For baseball draft: show draft results
+    if (activeSport === 'basketball' && yahooPlayers.length > 0) {
+      // Get all rostered players from team_rosters
+      const rosteredPlayers = new Set(
+        teamRosters.map((r: any) => normalizeName(r.player_name))
+      );
+      
+      return yahooPlayers
+        .filter(p => {
+          // Search term filter
+          if (searchTerm && !p.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+          
+          // Position filter
+          if (positionFilter !== 'ALL') {
+            const eligiblePos = (p.eligiblePositions || p.position || '').split(/[\/,]/).map((pos: string) => pos.trim().toUpperCase());
+            if (!eligiblePos.includes(positionFilter)) return false;
+          }
+          
+          // Show/hide rostered players
+          const isRostered = rosteredPlayers.has(normalizeName(p.name));
+          if (!showDrafted && isRostered) return false;
+          
+          return true;
+        })
+        .map(p => ({
+          id: p.player_id || p.rank,
+          pk: p.rank,
+          name: p.name,
+          pos: p.eligiblePositions || p.position || 'UTIL',
+          team: p.team || 'FA',
+          adp: p.rank,
+          takenBy: rosteredPlayers.has(normalizeName(p.name)) ? 'Rostered' : null,
+          rationale: aiNotes[normalizeName(p.name)],
+          yahooRank: p.rank,
+          yahooStatus: p.status,
+          yahooStatusFull: p.statusFull,
+          yahooHasNotes: p.hasNotes,
+          yahooRecentNote: p.recentNote
+        }));
+    }
+    
+    // Baseball draft mode: use draft results
     return draftResults.filter(p => {
       // Search term filter
       if (!p.name.toLowerCase().includes(searchTerm.toLowerCase())) return false;
@@ -1061,7 +1280,7 @@ export default function Home() {
       takenBy: p.tm,
       rationale: aiNotes[normalizeName(p.name)]
     }));
-  }, [searchTerm, myRoster, draftResults, showDrafted, positionFilter, aiNotes]);
+  }, [searchTerm, myRoster, draftResults, showDrafted, positionFilter, aiNotes, activeSport, yahooPlayers, teamRosters]);
 
   const processedPool = useMemo(() => {
     let copy = [...displayPool] as any[];
@@ -1124,11 +1343,37 @@ export default function Home() {
   }, [displayPool, searchTerm, showDrafted, draftResults, positionFilter, statSort, yahooStats, yahooPlayers, activeSport]);
 
 
-  // Standard Yahoo Roster Slots (23-man with explicit Outfielders)
-  const ROSTER_SLOTS = ['C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'UTIL', 'SP', 'SP', 'SP', 'SP', 'SP', 'RP', 'RP', 'P', 'P', 'BN', 'BN', 'BN', 'BN'];
+  // Sport-specific roster slots (from Yahoo league settings)
+  const ROSTER_SLOTS_BY_SPORT: Record<string, string[]> = {
+    baseball: ['C', '1B', '2B', '3B', 'SS', 'OF', 'OF', 'OF', 'UTIL', 'SP', 'SP', 'SP', 'SP', 'RP', 'RP', 'RP', 'P', 'P', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN'],
+    basketball: ['PG', 'SG', 'G', 'SF', 'PF', 'F', 'C', 'C', 'UTIL', 'UTIL', 'UTIL', 'BN', 'BN', 'BN'],
+    hockey: ['C', 'C', 'LW', 'LW', 'RW', 'RW', 'D', 'D', 'D', 'D', 'G', 'G', 'BN', 'BN', 'BN', 'BN'],
+    football: ['QB', 'RB', 'RB', 'WR', 'WR', 'WR', 'TE', 'FLEX', 'K', 'DEF', 'BN', 'BN', 'BN', 'BN', 'BN', 'BN']
+  };
+  
+  const ROSTER_SLOTS = ROSTER_SLOTS_BY_SPORT[activeSport] || ROSTER_SLOTS_BY_SPORT.baseball;
 
   // Returns unique empty slot names (excluding BN) for a team's roster
   const getMissingSlots = (roster: { slot: string; player: any }[]) => {
+    // For baseball, P slots should be treated as RP slots
+    // Only count P as open if there aren't enough RPs to fill RP + P slots
+    if (activeSport === 'baseball') {
+      const rpSlots = roster.filter(r => r.slot === 'RP');
+      const pSlots = roster.filter(r => r.slot === 'P');
+      const filledRPs = rpSlots.filter(r => r.player).length;
+      const filledPs = pSlots.filter(r => r.player).length;
+      const totalRPandP = rpSlots.length + pSlots.length;
+      const totalFilledRPandP = filledRPs + filledPs;
+      
+      // If we have enough RPs to fill both RP and P slots, don't count P as missing
+      const shouldExcludeP = totalFilledRPandP >= totalRPandP;
+      
+      return roster
+        .filter(r => !r.player && r.slot !== 'BN' && (shouldExcludeP ? r.slot !== 'P' : true))
+        .map(r => r.slot);
+    }
+    
+    // For other sports, exclude P from missing slots
     return roster
       .filter(r => !r.player && r.slot !== 'BN' && r.slot !== 'P')
       .map(r => r.slot);
@@ -1137,79 +1382,144 @@ export default function Home() {
   const getTeamRoster = (picks: typeof draftResults) => {
     const roster = ROSTER_SLOTS.map(slot => ({ slot, player: null as any }));
 
-    // Helper to check if a player is an offensive player (hitter)
-    const isHitter = (eligiblePos: string[]) => {
-      // If they only have P, SP, or RP, they are not a hitter
-      if (eligiblePos.every(p => ['P', 'SP', 'RP'].includes(p))) return false;
-      return true;
-    };
+    // Sport-specific position matching logic
+    if (activeSport === 'basketball') {
+      // Basketball position matching
+      picks.forEach(pick => {
+        const posString = pick.pos?.toUpperCase() || '';
+        const eligiblePos = posString.split(/[\/,]/).map(p => p.trim());
+        let assigned = false;
 
-    // Assign to exact position match first
-    picks.forEach(pick => {
-      const posString = pick.pos?.toUpperCase() || '';
-      const eligiblePos = posString.split(/[\/,]/).map(p => p.trim());
-      let assigned = false;
-
-      // Try exact match or subset match (e.g. if player is OF, try to fit in LF/CF/RF if empty)
-      for (let i = 0; i < roster.length; i++) {
-        if (!roster[i].player) {
-          const slot = roster[i].slot;
-
-          // Direct Match (e.g. Player is '1B', slot is '1B')
-          if (eligiblePos.includes(slot)) {
-            roster[i].player = pick;
-            assigned = true;
-            break;
-          }
-
-          // If the player is explicitly ONLY listed as "OF" (and not specific LF/CF/RF), 
-          // allow them to slot into the first available LF/CF/RF
-          const hasSpecificOF = eligiblePos.some(p => ['LF', 'CF', 'RF'].includes(p));
-          if (eligiblePos.includes('OF') && !hasSpecificOF && (slot === 'LF' || slot === 'CF' || slot === 'RF')) {
-            roster[i].player = pick;
-            assigned = true;
-            break;
-          }
-
-          // Pitcher Fallbacks
-          if ((slot === 'SP' && eligiblePos.includes('SP')) || (slot === 'RP' && eligiblePos.includes('RP'))) {
-            roster[i].player = pick;
-            assigned = true;
-            break;
-          }
-        }
-      }
-
-      // Try UTIL or P or BN if exact/outfield match fails
-      if (!assigned) {
+        // Try exact position match first
         for (let i = 0; i < roster.length; i++) {
           if (!roster[i].player) {
             const slot = roster[i].slot;
 
-            // UTIL: Any hitting position (but not Pitchers)
-            if (slot === 'UTIL' && isHitter(eligiblePos)) {
+            // Direct match (PG, SG, SF, PF, C)
+            if (eligiblePos.includes(slot)) {
               roster[i].player = pick;
               assigned = true;
               break;
             }
 
-            // P: Any pitching position
-            if (slot === 'P' && (eligiblePos.includes('SP') || eligiblePos.includes('RP') || eligiblePos.includes('P'))) {
+            // G slot can take PG or SG
+            if (slot === 'G' && (eligiblePos.includes('PG') || eligiblePos.includes('SG'))) {
               roster[i].player = pick;
               assigned = true;
               break;
             }
 
-            // BN: Anyone
-            if (slot.startsWith('BN')) {
+            // F slot can take SF or PF
+            if (slot === 'F' && (eligiblePos.includes('SF') || eligiblePos.includes('PF'))) {
               roster[i].player = pick;
               assigned = true;
               break;
             }
           }
         }
-      }
-    });
+
+        // Try UTIL or BN if no exact match
+        if (!assigned) {
+          for (let i = 0; i < roster.length; i++) {
+            if (!roster[i].player) {
+              const slot = roster[i].slot;
+
+              // UTIL: Any position
+              if (slot === 'UTIL') {
+                roster[i].player = pick;
+                assigned = true;
+                break;
+              }
+
+              // BN: Anyone
+              if (slot.startsWith('BN')) {
+                roster[i].player = pick;
+                assigned = true;
+                break;
+              }
+            }
+          }
+        }
+      });
+    } else {
+      // Baseball position matching (original logic)
+      const isHitter = (eligiblePos: string[]) => {
+        if (eligiblePos.every(p => ['P', 'SP', 'RP'].includes(p))) return false;
+        return true;
+      };
+
+      // Sort picks so keepers get assigned to starting slots first
+      const sortedPicks = [...picks].sort((a, b) => {
+        if (a.isKeeper && !b.isKeeper) return -1;
+        if (!a.isKeeper && b.isKeeper) return 1;
+        return 0; // maintain original draft order for remainder
+      });
+
+      sortedPicks.forEach(pick => {
+        const posString = pick.pos?.toUpperCase() || '';
+        const eligiblePos = posString.split(/[\/,]/).map(p => p.trim());
+        let assigned = false;
+
+        // Try exact match or subset match
+        for (let i = 0; i < roster.length; i++) {
+          if (!roster[i].player) {
+            const slot = roster[i].slot;
+
+            // Direct Match
+            if (eligiblePos.includes(slot)) {
+              roster[i].player = pick;
+              assigned = true;
+              break;
+            }
+
+            // OF handling
+            const hasSpecificOF = eligiblePos.some(p => ['LF', 'CF', 'RF', 'OF'].includes(p));
+            if (hasSpecificOF && slot === 'OF') {
+              roster[i].player = pick;
+              assigned = true;
+              break;
+            }
+
+            // Pitcher Fallbacks
+            if ((slot === 'SP' && eligiblePos.includes('SP')) || (slot === 'RP' && eligiblePos.includes('RP'))) {
+              roster[i].player = pick;
+              assigned = true;
+              break;
+            }
+          }
+        }
+
+        // Try UTIL or P or BN if exact/outfield match fails
+        if (!assigned) {
+          for (let i = 0; i < roster.length; i++) {
+            if (!roster[i].player) {
+              const slot = roster[i].slot;
+
+              // UTIL: Any hitting position (but not Pitchers)
+              if (slot === 'UTIL' && isHitter(eligiblePos)) {
+                roster[i].player = pick;
+                assigned = true;
+                break;
+              }
+
+              // P: Any pitching position
+              if (slot === 'P' && (eligiblePos.includes('SP') || eligiblePos.includes('RP') || eligiblePos.includes('P'))) {
+                roster[i].player = pick;
+                assigned = true;
+                break;
+              }
+
+              // BN: Anyone
+              if (slot.startsWith('BN')) {
+                roster[i].player = pick;
+                assigned = true;
+                break;
+              }
+            }
+          }
+        }
+      });
+    }
 
     return roster;
   };
@@ -1218,36 +1528,52 @@ export default function Home() {
     <div className="h-screen overflow-hidden flex flex-col bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
       <header className="max-w-7xl w-full mx-auto shrink-0 flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4 border-b border-slate-900 pb-8">
         <div className="flex items-center gap-4">
-          <div className="bg-indigo-600 p-3 rounded-2xl shadow-lg"><Trophy className="w-7 h-7" /></div>
+          <div className={`p-3 rounded-2xl shadow-lg ${activeSport === 'baseball' ? 'bg-indigo-600' : 'bg-orange-600'}`}>
+            <Trophy className="w-7 h-7" />
+          </div>
           <div>
-            <h1 className="text-3xl font-black italic uppercase tracking-tighter">{leagueName}</h1>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">{myTeamName} • 18-Team Tracker</p>
+            <h1 className="text-3xl font-black italic uppercase tracking-tighter">
+              {selectedLeague ? selectedLeague.league_name : leagueName}
+            </h1>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">
+              {selectedLeague ? `${selectedLeague.season} ${selectedLeague.sport}` : `${myTeamName} • 18-Team Tracker`}
+            </p>
           </div>
         </div>
         <div className="flex gap-3 bg-slate-900 p-2 rounded-2xl border border-slate-800">
-          <button onClick={handleImport} disabled={isSyncing} className="px-4 py-2 bg-indigo-500/10 text-indigo-400 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-indigo-500/20 disabled:opacity-50">
-            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> {isSyncing ? 'SYNCING...' : 'SYNC LOCAL'}
+          <button 
+            onClick={() => window.location.href = '/select-league'}
+            className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-slate-700"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" /> CHANGE LEAGUE
           </button>
+          
+          {activeSport === 'baseball' ? (
+            <button onClick={handleImport} disabled={isSyncing} className="px-4 py-2 bg-indigo-500/10 text-indigo-400 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-indigo-500/20 disabled:opacity-50">
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> {isSyncing ? 'SYNCING...' : 'SYNC LOCAL'}
+            </button>
+          ) : (
+            <button onClick={handleYahooSync} disabled={isSyncing} className="px-4 py-2 bg-orange-500/10 text-orange-400 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-orange-500/20 disabled:opacity-50">
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> {isSyncing ? 'SYNCING...' : 'SYNC FROM YAHOO'}
+            </button>
+          )}
 
           {session ? (
-            <button onClick={() => signOut()} className="px-4 py-2 bg-green-500/10 text-green-400 border border-green-500/20 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-green-500/20 hover:text-red-400 transition-colors" title={session.user?.name || "Connected"}>
-              <ShieldCheck className="w-3.5 h-3.5" /> YAHOO LINKED
-            </button>
+            <>
+              <button onClick={() => signOut()} className="px-4 py-2 bg-green-500/10 text-green-400 border border-green-500/20 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-green-500/20 hover:text-red-400 transition-colors" title={session.user?.name || "Connected"}>
+                <ShieldCheck className="w-3.5 h-3.5" /> YAHOO LINKED
+              </button>
+            </>
           ) : (
             <button onClick={() => signIn('yahoo')} className="px-4 py-2 bg-purple-600 border border-purple-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-purple-500 transition-transform active:scale-95 shadow-lg shadow-purple-600/20">
               <Plug className="w-3.5 h-3.5" /> CONNECT YAHOO
             </button>
           )}
-
-          <div className="flex bg-black rounded-lg p-1 border border-slate-800 shadow-inner">
-            <button onClick={() => setActiveSport('MLB')} className={`px-4 py-1.5 rounded-md text-[10px] font-bold transition-all ${activeSport === 'MLB' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>MLB</button>
-            <button onClick={() => setActiveSport('NBA')} className={`px-4 py-1.5 rounded-md text-[10px] font-bold transition-all ${activeSport === 'NBA' ? 'bg-orange-600 text-white' : 'text-slate-500'}`}>NBA</button>
-          </div>
         </div>
       </header>
 
       {/* Compact Status Strip */}
-      {activeSport === 'MLB' && (
+      {activeSport === 'baseball' && (
         <div className={`max-w-7xl w-full mx-auto shrink-0 mb-4 rounded-2xl px-5 py-3 flex items-center gap-6 border ${waitPicks === 0 ? 'bg-green-500/10 border-green-500/30 text-green-300' : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-300'}`}>
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Pick</span>
@@ -1272,59 +1598,84 @@ export default function Home() {
         <div className="bg-slate-900 rounded-[2.5rem] p-8 border border-slate-800 flex-1 flex flex-col shadow-2xl min-h-0">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-10 shrink-0">
             <h2 className="text-3xl font-black italic uppercase tracking-tighter flex items-center gap-4">
-              <LayoutGrid className={`w-8 h-8 ${activeSport === 'MLB' ? 'text-indigo-500' : 'text-orange-500'}`} />
-              {activeSport === 'MLB' ? 'Draft Board' : 'NBA Stats'}
+              <LayoutGrid className={`w-8 h-8 ${activeSport === 'baseball' ? 'text-indigo-500' : 'text-orange-500'}`} />
+              {activeSport === 'baseball' ? 'Draft Board' : 'Team Manager'}
             </h2>
+            
             <div className="flex bg-slate-950 w-fit rounded-xl p-1 border border-slate-800 shadow-inner">
-              <button onClick={() => setViewMode('PLAYERS')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'PLAYERS' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
-                <Search className="w-3.5 h-3.5" /> Pool
-              </button>
-              <button onClick={() => setViewMode('GRID')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'GRID' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
-                <LayoutGrid className="w-3.5 h-3.5" /> Grid
-              </button>
-              <button onClick={() => setViewMode('TEAM')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'TEAM' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
-                <Users className="w-3.5 h-3.5" /> Team
-              </button>
-              <button onClick={() => setViewMode('NEEDS')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'NEEDS' ? 'bg-orange-600 text-white shadow shadow-orange-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
-                <BarChart3 className="w-3.5 h-3.5" /> Needs
-              </button>
-              <button onClick={() => setViewMode('WATCHLIST')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'WATCHLIST' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
-                <ListOrdered className="w-3.5 h-3.5" /> Watchlist
-              </button>
+              {/* Basketball in-season tabs */}
+              {activeSport === 'basketball' && (
+                <>
+                  <button onClick={() => setViewMode('TEAM')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'TEAM' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                    <Users className="w-3.5 h-3.5" /> Team
+                  </button>
+                  <button onClick={() => setViewMode('STANDINGS')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'STANDINGS' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                    <BarChart3 className="w-3.5 h-3.5" /> Standings
+                  </button>
+                  <button onClick={() => setViewMode('MATCHUP')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'MATCHUP' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                    <Activity className="w-3.5 h-3.5" /> Matchup
+                  </button>
+                  <button onClick={() => setViewMode('PLAYERS')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'PLAYERS' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                    <Search className="w-3.5 h-3.5" /> Pool
+                  </button>
+                  <button onClick={() => setViewMode('WATCHLIST')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'WATCHLIST' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                    <ListOrdered className="w-3.5 h-3.5" /> Watchlist
+                  </button>
+                </>
+              )}
+              
+              {/* Baseball draft tabs */}
+              {activeSport === 'baseball' && (
+                <>
+                  <button onClick={() => setViewMode('PLAYERS')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'PLAYERS' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                    <Search className="w-3.5 h-3.5" /> Pool
+                  </button>
+                  <button onClick={() => setViewMode('GRID')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'GRID' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                    <LayoutGrid className="w-3.5 h-3.5" /> Grid
+                  </button>
+                  <button onClick={() => setViewMode('TEAM')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'TEAM' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                    <Users className="w-3.5 h-3.5" /> Team
+                  </button>
+                  <button onClick={() => setViewMode('NEEDS')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'NEEDS' ? 'bg-orange-600 text-white shadow shadow-orange-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                    <BarChart3 className="w-3.5 h-3.5" /> Needs
+                  </button>
+                  <button onClick={() => setViewMode('WATCHLIST')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'WATCHLIST' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                    <ListOrdered className="w-3.5 h-3.5" /> Watchlist
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
           {/* === GLOBAL ROW: Assistant controls === */}
-          {session && (
-            <div className="flex items-center gap-2 mb-4 shrink-0 flex-wrap">
-              <div className="flex items-center gap-1.5 bg-sky-500/5 border border-sky-500/20 rounded-2xl px-3 py-2 flex-1 min-w-0">
-                {/* Toggle panel open/close without firing a query */}
-                <button
-                  onClick={() => setShowAssistantModal(v => !v)}
-                  title={showAssistantModal ? 'Close panel' : 'Open panel'}
-                  className="shrink-0 text-sky-400/60 hover:text-sky-400 transition-colors"
-                >
-                  <Sparkles className="w-4 h-4" />
-                </button>
-                <div className="flex-1 min-w-0">
-                  <AssistantInput
-                    ref={assistantInputRef}
-                    isAskingAssistant={isAskingAssistant}
-                    onSubmit={(val) => askAssistant(val, true)}
-                    placeholder="Ask assistant: focus on closers, need a SS..."
-                  />
-                </div>
-              </div>
+          <div className="flex items-center gap-2 mb-4 shrink-0 flex-wrap">
+            <div className="flex items-center gap-1.5 bg-sky-500/5 border border-sky-500/20 rounded-2xl px-3 py-2 flex-1 min-w-0">
+              {/* Toggle panel open/close without firing a query */}
               <button
-                onClick={() => askAssistant(assistantInputRef.current?.getValue() || '', true)}
-                disabled={isAskingAssistant}
-                className="px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-sky-500/20 text-sky-400 border border-sky-500/30 hover:bg-sky-500/30 disabled:opacity-50 flex items-center gap-2 transition-all whitespace-nowrap"
+                onClick={() => setShowAssistantModal(v => !v)}
+                title={showAssistantModal ? 'Close panel' : 'Open panel'}
+                className="shrink-0 text-sky-400/60 hover:text-sky-400 transition-colors"
               >
-                <Sparkles className={`w-4 h-4 ${isAskingAssistant ? 'animate-spin' : ''}`} />
-                {isAskingAssistant ? 'Analyzing...' : 'Ask Assistant'}
+                <Sparkles className="w-4 h-4" />
               </button>
+              <div className="flex-1 min-w-0">
+                <AssistantInput
+                  ref={assistantInputRef}
+                  isAskingAssistant={isAskingAssistant}
+                  onSubmit={(val) => askAssistant(val, true)}
+                  placeholder={activeSport === 'basketball' ? "Ask assistant: who to add, trade advice, waiver wire..." : "Ask assistant: focus on closers, need a SS..."}
+                />
+              </div>
             </div>
-          )}
+            <button
+              onClick={() => askAssistant(assistantInputRef.current?.getValue() || '', true)}
+              disabled={isAskingAssistant}
+              className="px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-sky-500/20 text-sky-400 border border-sky-500/30 hover:bg-sky-500/30 disabled:opacity-50 flex items-center gap-2 transition-all whitespace-nowrap"
+            >
+              <Sparkles className={`w-4 h-4 ${isAskingAssistant ? 'animate-spin' : ''}`} />
+              {isAskingAssistant ? 'Analyzing...' : 'Ask Assistant'}
+            </button>
+          </div>
 
           {viewMode === 'PLAYERS' && (
             <>
@@ -1337,7 +1688,7 @@ export default function Home() {
               <div className="flex items-center gap-3 mb-5 shrink-0 flex-wrap">
                 {/* Position filters */}
                 <div className="flex gap-1.5 overflow-x-auto pb-1 flex-1 min-w-0">
-                  {['ALL', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'UTIL', 'SP', 'RP'].map(pos => (
+                  {availablePositions.map(pos => (
                     <button
                       key={pos}
                       onClick={() => setPositionFilter(pos)}
@@ -1370,28 +1721,44 @@ export default function Home() {
                       <BarChart3 className={`w-3 h-3 ${isLoadingStats ? 'animate-pulse' : ''}`} />
                       {isLoadingStats ? 'Loading...' : Object.keys(yahooStats).length > 0 ? `Stats:${Object.keys(yahooStats).length}` : 'Stats'}
                     </button>
-                    {Object.keys(yahooStats).length > 0 && (
+                    {(Object.keys(yahooStats).length > 0 || (activeSport === 'basketball' && yahooPlayers.length > 0)) && (
                       <select
                         value={statSort || ''}
                         onChange={(e) => setStatSort(e.target.value || null)}
                         className="bg-slate-950 border border-slate-800 text-slate-300 text-[10px] font-bold uppercase tracking-widest rounded-xl px-2 py-1.5 focus:ring-1 focus:ring-emerald-500/50 outline-none"
                       >
                         <option value="">Sort by Rank</option>
-                        <optgroup label="Batting">
-                          {BATTING_STAT_IDS.map(id => <option key={`b-${id}`} value={id}>{YAHOO_STAT_LABELS[id] || id}</option>)}
-                        </optgroup>
-                        <optgroup label="Pitching">
-                          {PITCHING_STAT_IDS.map(id => <option key={`p-${id}`} value={id}>{YAHOO_STAT_LABELS[id] || id}</option>)}
-                        </optgroup>
+                        {activeSport === 'basketball' ? (
+                          <>
+                            <option value="12">PTS</option>
+                            <option value="15">REB</option>
+                            <option value="16">AST</option>
+                            <option value="17">ST</option>
+                            <option value="18">BLK</option>
+                            <option value="5">FG%</option>
+                            <option value="8">FT%</option>
+                            <option value="10">3PM</option>
+                            <option value="19">TO</option>
+                          </>
+                        ) : (
+                          <>
+                            <optgroup label="Batting">
+                              {BATTING_STAT_IDS.map(id => <option key={`b-${id}`} value={id}>{YAHOO_STAT_LABELS[id] || id}</option>)}
+                            </optgroup>
+                            <optgroup label="Pitching">
+                              {PITCHING_STAT_IDS.map(id => <option key={`p-${id}`} value={id}>{YAHOO_STAT_LABELS[id] || id}</option>)}
+                            </optgroup>
+                          </>
+                        )}
                       </select>
                     )}
                   </>
                 )}
               </div>
               <div className="flex-1 overflow-y-auto space-y-1 pr-2">
-                {processedPool.map((p: any) => (
+                {processedPool.map((p: any, idx: number) => (
                   <DraftBoardPlayerRow
-                    key={p.pk}
+                    key={p.pk !== null ? `pick-${p.pk}` : `player-${p.rank || idx}`}
                     p={{ ...p, rationale: aiNotes[normalizeName(p.name)] }}
                     yahooStats={yahooStats}
                     yahooPlayers={yahooPlayers}
@@ -1402,6 +1769,7 @@ export default function Home() {
                     PITCHING_STAT_IDS={PITCHING_STAT_IDS}
                     YAHOO_STAT_LABELS={YAHOO_STAT_LABELS}
                     onAskAssistant={askAssistant}
+                    leagueId={selectedLeague?.id}
                   />
                 ))}
               </div>
@@ -1489,26 +1857,46 @@ export default function Home() {
               {/* Team sidebar */}
               <div className="w-44 shrink-0 flex flex-col gap-1 overflow-y-auto pr-2 border-r border-slate-800">
                 <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 sticky top-0 bg-slate-900 py-2">Franchise</div>
-                {Array.from(new Set(draftResults.filter(p => p.tm).map(p => p.tm as string))).sort((a, b) => {
-                  if (a === myTeamName) return -1;
-                  if (b === myTeamName) return 1;
-                  return a.localeCompare(b);
-                }).map(team => (
-                  <button
-                    key={team}
-                    onClick={() => setSelectedTeam(team)}
-                    className={`text-left px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${selectedTeam === team ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
-                  >
-                    {team === myTeamName ? `★ ${team}` : team}
-                  </button>
-                ))}
+                {(() => {
+                  // For basketball (in-season), use team_rosters table
+                  // For baseball (draft mode), use draft_picks table
+                  const teamList = activeSport === 'basketball' && teamRosters.length > 0
+                    ? Array.from(new Set(teamRosters.map((r: any) => r.team_name))).sort((a, b) => {
+                        if (a === myTeamName) return -1;
+                        if (b === myTeamName) return 1;
+                        return a.localeCompare(b);
+                      })
+                    : Array.from(new Set(draftResults.filter(p => p.tm).map(p => p.tm as string))).sort((a, b) => {
+                        if (a === myTeamName) return -1;
+                        if (b === myTeamName) return 1;
+                        return a.localeCompare(b);
+                      });
+                  
+                  return teamList.map(team => (
+                    <button
+                      key={team}
+                      onClick={() => setSelectedTeam(team)}
+                      className={`text-left px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${selectedTeam === team ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
+                    >
+                      {team === myTeamName ? `★ ${team}` : team}
+                    </button>
+                  ));
+                })()}
               </div>
 
-              {/* Roster table */}
-              <div className="flex-1 overflow-y-auto">
-                <div className="flex items-baseline gap-3 mb-4">
-                  <h3 className="text-lg font-black italic tracking-tighter text-indigo-400">{selectedTeam}</h3>
+              {/* Roster - Card View */}
+              <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Header */}
+                <div className="flex items-baseline gap-3 mb-4 shrink-0">
+                  <h3 className="text-lg font-black italic tracking-tighter text-indigo-400">{selectedTeam || myTeamName}</h3>
                   {(() => {
+                    // For basketball, show player count from team_rosters
+                    if (activeSport === 'basketball' && teamRosters.length > 0) {
+                      const teamPlayers = teamRosters.filter((r: any) => r.team_name === selectedTeam);
+                      return <span className="text-[10px] font-black text-green-400 uppercase tracking-wider">{teamPlayers.length} players</span>;
+                    }
+                    
+                    // For baseball, show roster slots
                     const teamPicks = draftResults.filter(p => p.tm === selectedTeam);
                     const roster = getTeamRoster(teamPicks);
                     const missing = getMissingSlots(roster);
@@ -1517,47 +1905,272 @@ export default function Home() {
                       : <span className="text-[10px] font-black text-green-400 uppercase tracking-wider">Roster Full</span>;
                   })()}
                 </div>
-                <table className="w-full border-collapse text-sm">
-                  <thead className="sticky top-0 bg-slate-900 z-10">
-                    <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                      <th className="text-left py-2 px-3 w-14">Slot</th>
-                      <th className="text-left py-2 px-3">Player</th>
-                      <th className="text-left py-2 px-3 w-12">Team</th>
-                      <th className="text-left py-2 px-3 w-24">Pos</th>
-                      <th className="text-left py-2 px-3 w-24">Pick</th>
-                    </tr>
-                    <tr><td colSpan={5}><div className="h-px bg-slate-800 w-full" /></td></tr>
-                  </thead>
-                  <tbody>
-                    {getTeamRoster(draftResults.filter(p => p.tm === selectedTeam)).map((r, i) => (
-                      <tr key={i} className={`border-b border-slate-800/30 ${r.player ? (i % 2 === 0 ? 'bg-slate-950' : 'bg-slate-900/20') : 'opacity-40'}`}>
-                        <td className="py-2 px-3">
-                          <span className={`text-[10px] font-black uppercase ${r.player ? 'text-indigo-400' : 'text-slate-600 italic'}`}>{r.slot}</span>
-                        </td>
-                        <td className="py-2 px-3">
-                          {r.player
-                            ? <span className="font-bold text-sm text-slate-100">{r.player.name}</span>
-                            : <span className="text-xs text-slate-600 italic">Empty</span>
-                          }
-                        </td>
-                        <td className="py-2 px-3">
-                          <span className="text-[10px] text-slate-500 font-bold">{r.player?.playerTeam || ''}</span>
-                        </td>
-                        <td className="py-2 px-3">
-                          <span className="text-[10px] text-indigo-400 font-bold uppercase">{r.player?.pos || ''}</span>
-                        </td>
-                        <td className="py-2 px-3">
-                          {r.player && (
-                            <span className="text-[10px] text-slate-500 font-bold">
-                              {r.player.isKeeper ? 'KEEPER' : `#${r.player.pk} Rd ${r.player.rd}`}
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                
+                {/* Player Cards */}
+                <div className="flex-1 overflow-y-auto space-y-2 pr-2">{(() => {
+                  // For basketball (in-season), show current roster from team_rosters
+                  if (activeSport === 'basketball' && teamRosters.length > 0) {
+                    const teamPlayers = teamRosters.filter((r: any) => r.team_name === selectedTeam);
+                    
+                    if (teamPlayers.length === 0) {
+                      return (
+                        <div className="text-center mt-20 opacity-50 font-black tracking-widest text-slate-500">
+                          NO ROSTER DATA FOR THIS TEAM
+                        </div>
+                      );
+                    }
+                    
+                    return teamPlayers.map((player: any, i: number) => (
+                      <PlayerCard
+                        key={i}
+                        player={{
+                          name: player.player_name,
+                          pos: player.position || 'UTIL',
+                          team: player.nba_team || 'FA',
+                          yahooStatus: player.status !== 'Active' ? player.status : undefined,
+                        }}
+                        activeSport={activeSport}
+                        leagueId={selectedLeague?.id}
+                        onAskAssistant={askAssistant}
+                        context="team"
+                      />
+                    ));
+                  }
+                  
+                  // For baseball (draft mode), show roster from draft_picks
+                  const teamPicks = draftResults.filter(p => p.tm === selectedTeam);
+                  const roster = getTeamRoster(teamPicks);
+                  
+                  return roster.map((r, i) => {
+                    if (!r.player) {
+                      // Empty slot
+                      return (
+                        <div key={i} className="bg-slate-950/50 rounded-xl border border-dashed border-slate-800/50 p-3 opacity-40">
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10px] font-black uppercase text-slate-600 italic">{r.slot}</span>
+                            <span className="text-xs text-slate-600 italic">Empty</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    const yhStats = yahooStats?.[normalizeName(r.player.name)];
+                    let yahooStatsPairs = undefined;
+                    if (yhStats) {
+                      const isPitcher = /SP|RP|P/i.test(r.player.pos);
+                      const ids = isPitcher ? PITCHING_STAT_IDS : BATTING_STAT_IDS;
+                      yahooStatsPairs = ids
+                        .map(id => ({ id, label: YAHOO_STAT_LABELS[id] || id, val: yhStats[id] }))
+                        .filter(s => s.val && s.val !== '-' && s.val !== '0' && s.val !== '');
+                    }
+
+                    return (
+                      <PlayerCard
+                        key={i}
+                        player={{
+                          name: r.player.name,
+                          pos: r.player.pos,
+                          team: r.player.playerTeam,
+                          rank: r.player.rank,
+                          isKeeper: r.player.isKeeper,
+                          yahooStatsPairs: yahooStatsPairs
+                        }}
+                        slot={r.slot}
+                        yahooStats={yhStats}
+                        activeSport={activeSport}
+                        leagueId={selectedLeague?.id}
+                        onAskAssistant={askAssistant}
+                        context="team"
+                      />
+                    );
+                  });
+                })()}
+                </div>
               </div>
+            </div>
+          )}
+
+          {viewMode === 'STANDINGS' && (
+            <div className="flex-1 overflow-y-auto">
+              <div className="mb-4 flex items-baseline gap-3">
+                <h3 className="text-lg font-black italic tracking-tighter text-indigo-400">League Standings</h3>
+                <span className="text-xs text-slate-500">Click a team to view their roster</span>
+              </div>
+              
+              {standings.length > 0 ? (() => {
+                // Basketball roto stat ID labels
+                const BBALL_STAT_LABELS: Record<string, string> = {
+                  '5': 'FG%', '8': 'FT%', '10': '3PM', '12': 'PTS',
+                  '15': 'REB', '16': 'AST', '17': 'ST', '18': 'BLK', '19': 'TO'
+                };
+                // Known good stat IDs to display (exclude ratio/composite keys like 9004003)
+                const KNOWN_BBALL_STAT_IDS = new Set(['5', '8', '10', '12', '15', '16', '17', '18', '19']);
+
+                // Build display columns from statCategories or fall back to known map
+                const hasRecord = standings.some((t: any) => (t.wins || 0) + (t.losses || 0) > 0);
+                
+                // Get stat keys from first row — only include known stat IDs
+                const sampleStats = standings.find((t: any) => t.stats_json && Object.keys(t.stats_json).length > 0)?.stats_json || {};
+                const statKeys = Object.keys(sampleStats).filter(k => KNOWN_BBALL_STAT_IDS.has(k));
+                
+                // Build column defs: prefer statCategories from league-settings, fall back to known map
+                const displayCols: { id: string; label: string }[] = statCategories.length > 0
+                  ? statCategories
+                      .filter((c: any) => KNOWN_BBALL_STAT_IDS.has(String(c.statId)))
+                      .map((c: any) => ({ id: String(c.statId), label: c.displayName || c.name }))
+                  : statKeys.map(id => ({ id, label: BBALL_STAT_LABELS[id] || `S${id}` }));
+
+                const colCount = 2 + (hasRecord ? 3 : 0) + displayCols.length;
+
+                return (
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-sm min-w-max">
+                      <thead className="sticky top-0 bg-slate-900 z-10">
+                        <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                          <th className="text-left py-3 px-3 w-10">#</th>
+                          <th className="text-left py-3 px-3 min-w-[140px]">Team</th>
+                          {hasRecord && <>
+                            <th className="text-center py-3 px-3 w-12">W</th>
+                            <th className="text-center py-3 px-3 w-12">L</th>
+                            <th className="text-center py-3 px-3 w-12">T</th>
+                          </>}
+                          {displayCols.map(col => (
+                            <th key={col.id} className="text-center py-3 px-3 w-16 whitespace-nowrap">{col.label}</th>
+                          ))}
+                        </tr>
+                        <tr><td colSpan={colCount}><div className="h-px bg-slate-800 w-full" /></td></tr>
+                      </thead>
+                      <tbody>
+                        {standings.map((team: any, i: number) => {
+                          const isMyTeam = team.team_name === myTeamName;
+                          const statsJson = team.stats_json || {};
+                          
+                          return (
+                            <tr
+                              key={team.team_key || i}
+                              onClick={() => { setSelectedTeam(team.team_name); setViewMode('TEAM'); }}
+                              className={`border-b border-slate-800/30 cursor-pointer transition-colors hover:bg-slate-800/30 ${isMyTeam ? 'bg-indigo-500/10' : i % 2 === 0 ? 'bg-slate-950' : 'bg-slate-900/20'}`}
+                            >
+                              <td className="py-2.5 px-3">
+                                <span className={`text-sm font-black ${isMyTeam ? 'text-indigo-400' : 'text-slate-500'}`}>{team.rank || i + 1}</span>
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <span className={`font-bold text-sm ${isMyTeam ? 'text-indigo-300' : 'text-slate-100'}`}>
+                                  {isMyTeam ? `★ ${team.team_name}` : team.team_name}
+                                </span>
+                              </td>
+                              {hasRecord && <>
+                                <td className="py-2.5 px-3 text-center"><span className="text-sm font-bold text-green-400">{team.wins}</span></td>
+                                <td className="py-2.5 px-3 text-center"><span className="text-sm font-bold text-red-400">{team.losses}</span></td>
+                                <td className="py-2.5 px-3 text-center"><span className="text-sm font-bold text-slate-500">{team.ties}</span></td>
+                              </>}
+                              {displayCols.map(col => {
+                                const raw = statsJson[col.id];
+                                let display = '—';
+                                if (raw !== undefined && raw !== '-' && raw !== '') {
+                                  const num = parseFloat(raw);
+                                  if (!isNaN(num)) {
+                                    // Percentages (FG%, FT%) — already decimal like .493
+                                    if (col.label === 'FG%' || col.label === 'FT%') {
+                                      display = (num * 100).toFixed(1) + '%';
+                                    } else if (Number.isInteger(num)) {
+                                      display = String(num);
+                                    } else {
+                                      display = num.toFixed(1);
+                                    }
+                                  } else {
+                                    display = raw; // e.g. ratio strings
+                                  }
+                                }
+                                return (
+                                  <td key={col.id} className="py-2.5 px-3 text-center">
+                                    <span className={`text-xs font-bold tabular-nums ${isMyTeam ? 'text-indigo-200' : 'text-slate-300'}`}>{display}</span>
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })() : (
+                <div className="text-center mt-20 opacity-50 font-black tracking-widest text-slate-500">
+                  NO STANDINGS DATA YET
+                  <p className="text-xs text-slate-600 mt-2 font-normal">Click &quot;SYNC FROM YAHOO&quot; to load standings</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {viewMode === 'MATCHUP' && (
+            <div className="flex-1 overflow-y-auto">
+              <div className="mb-4 flex items-baseline gap-3">
+                <h3 className="text-lg font-black italic tracking-tighter text-indigo-400">
+                  {matchupWeek ? `Week ${matchupWeek} Matchups` : 'Matchups'}
+                </h3>
+                {matchupWeek && <span className="text-xs text-slate-500">Current week</span>}
+              </div>
+
+              {matchups.length > 0 ? (
+                <div className="space-y-3">
+                  {matchups.map((m: any, i: number) => {
+                    const myInvolved = m.team1_name === myTeamName || m.team2_name === myTeamName;
+                    const t1Leading = parseFloat(m.team1_points) > parseFloat(m.team2_points);
+                    const t2Leading = parseFloat(m.team2_points) > parseFloat(m.team1_points);
+                    const tied = parseFloat(m.team1_points) === parseFloat(m.team2_points);
+
+                    return (
+                      <div
+                        key={i}
+                        className={`rounded-2xl border p-4 ${myInvolved ? 'border-indigo-500/40 bg-indigo-500/5' : 'border-slate-800/50 bg-slate-950'}`}
+                      >
+                        {myInvolved && (
+                          <div className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-2">Your Matchup</div>
+                        )}
+                        <div className="flex items-center gap-3">
+                          {/* Team 1 */}
+                          <div className={`flex-1 text-right ${m.team1_name === myTeamName ? 'text-indigo-300' : 'text-slate-200'}`}>
+                            <div className="font-black text-sm">
+                              {m.team1_name === myTeamName ? `★ ${m.team1_name}` : m.team1_name}
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-bold mt-0.5">
+                              {m.team1_wins}-{m.team1_losses}{m.team1_ties > 0 ? `-${m.team1_ties}` : ''}
+                            </div>
+                          </div>
+
+                          {/* Score */}
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className={`text-xl font-black tabular-nums ${t1Leading ? 'text-green-400' : tied ? 'text-slate-400' : 'text-slate-500'}`}>
+                              {m.team1_points > 0 ? m.team1_points : '—'}
+                            </span>
+                            <span className="text-slate-700 font-black text-sm">vs</span>
+                            <span className={`text-xl font-black tabular-nums ${t2Leading ? 'text-green-400' : tied ? 'text-slate-400' : 'text-slate-500'}`}>
+                              {m.team2_points > 0 ? m.team2_points : '—'}
+                            </span>
+                          </div>
+
+                          {/* Team 2 */}
+                          <div className={`flex-1 ${m.team2_name === myTeamName ? 'text-indigo-300' : 'text-slate-200'}`}>
+                            <div className="font-black text-sm">
+                              {m.team2_name === myTeamName ? `★ ${m.team2_name}` : m.team2_name}
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-bold mt-0.5">
+                              {m.team2_wins}-{m.team2_losses}{m.team2_ties > 0 ? `-${m.team2_ties}` : ''}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center mt-20 opacity-50 font-black tracking-widest text-slate-500">
+                  NO MATCHUP DATA YET
+                  <p className="text-xs text-slate-600 mt-2 font-normal">Click &quot;SYNC FROM YAHOO&quot; to load matchups</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -1700,7 +2313,7 @@ export default function Home() {
               {/* Filters & Sorting */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 shrink-0 bg-slate-950/50 p-4 rounded-2xl border border-slate-800/50">
                 <div className="flex gap-1.5 flex-wrap">
-                  {['ALL', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'SP', 'RP'].map(pos => (
+                  {availablePositions.map(pos => (
                     <button
                       key={pos}
                       onClick={() => setWatchlistPosFilter(pos)}
@@ -1801,6 +2414,7 @@ export default function Home() {
                             player={enrichedPlayer}
                             activeSport={activeSport}
                             isTaken={isTaken}
+                            leagueId={selectedLeague?.id}
                             isFirst={originalIndex === 0}
                             isLast={originalIndex === myRoster.length - 1}
                             onMoveUp={() => {
@@ -1900,8 +2514,15 @@ export default function Home() {
                     Load Test
                   </button>
                 )}
-                {assistantRecs.length > 0 && !isAskingAssistant && (
-                  <button onClick={() => { setAssistantRecs([]); setChatHistory([]); }} className="text-slate-500 hover:text-red-400 bg-slate-800/50 hover:bg-slate-800 p-2 rounded-full transition-all">
+                {(assistantRecs.length > 0 || chatHistory.length > 0) && !isAskingAssistant && (
+                  <button 
+                    onClick={() => { 
+                      setAssistantRecs([]); 
+                      setChatHistory([]); 
+                    }} 
+                    className="text-slate-500 hover:text-red-400 bg-slate-800/50 hover:bg-slate-800 p-2 rounded-full transition-all"
+                    title="Clear chat history"
+                  >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 )}
@@ -1966,7 +2587,9 @@ export default function Home() {
                         {!isUser && msg.recommendations && msg.recommendations.length > 0 && (
                           <div className="flex flex-col gap-3 w-[95%]">
                             {msg.recommendations.map((rec: any, i: number) => {
-                              const targetPlayer = displayPool.find(p => p.name.toLowerCase() === rec.name.toLowerCase() || p.name.includes(rec.name.split(' ')[1]));
+                              // Try exact match first, then fuzzy match
+                              const targetPlayer = displayPool.find(p => p.name.toLowerCase() === rec.name.toLowerCase()) 
+                                || displayPool.find(p => normalizeName(p.name) === normalizeName(rec.name));
                               const rankToDisplay = targetPlayer ? (yahooPlayers.length > 0 && yahooPlayers.find(y => normalizeName(y.name) === normalizeName(targetPlayer.name))?.rank) : rec.rank;
                               const posToDisplay = targetPlayer ? targetPlayer.pos : rec.pos;
                               const teamToDisplay = targetPlayer ? targetPlayer.team : rec.team;
@@ -1987,11 +2610,10 @@ export default function Home() {
                                     </div>
                                     <button
                                       onClick={() => {
-                                        const targetPlayer = displayPool.find(p =>
-                                          p.name.toLowerCase() === rec.name.toLowerCase() ||
-                                          p.name.toLowerCase().includes(rec.name.split(' ').pop()?.toLowerCase() || '')
-                                        );
-                                        const alreadyIn = myRoster.find(r => r.name.toLowerCase() === rec.name.toLowerCase());
+                                        // Try exact match first, then normalized match
+                                        const targetPlayer = displayPool.find(p => p.name.toLowerCase() === rec.name.toLowerCase())
+                                          || displayPool.find(p => normalizeName(p.name) === normalizeName(rec.name));
+                                        const alreadyIn = myRoster.find(r => normalizeName(r.name) === normalizeName(rec.name));
                                         if (!alreadyIn) {
                                           const entry = targetPlayer
                                             ? { ...targetPlayer, rationale: rec.rationale }

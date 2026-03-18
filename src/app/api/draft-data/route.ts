@@ -1,14 +1,33 @@
 import { NextResponse } from 'next/server';
-import { getDraftPicks, getWatchlist, saveWatchlist } from '@/lib/db';
+import { getDraftPicks, getWatchlist, saveWatchlist, getSelectedLeagueId } from '@/lib/db';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]/route";
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
+        const { searchParams } = new URL(request.url);
+        const leagueIdParam = searchParams.get('leagueId');
+        
+        let leagueId: number | null = null;
+        
+        if (leagueIdParam) {
+            leagueId = parseInt(leagueIdParam);
+        } else {
+            // Fallback to session-based league selection
+            const session = await getServerSession(authOptions);
+            leagueId = await getSelectedLeagueId(session);
+        }
+        
+        console.log('📊 draft-data GET - leagueId:', leagueId);
+        
         const [draftPicks, watchlist] = await Promise.all([
-            getDraftPicks(),
-            getWatchlist()
+            getDraftPicks(leagueId),
+            getWatchlist(leagueId)
         ]);
+        
+        console.log('📊 draft-data results - picks:', draftPicks.length, 'watchlist:', watchlist.length);
         
         // Transform database format to match expected format
         const draft = draftPicks.map((pick: any) => ({
@@ -30,19 +49,38 @@ export async function GET() {
             rationale: item.rationale
         }));
         
-        return NextResponse.json({ draft, roster });
+        const response = NextResponse.json({ draft, roster });
+        
+        // Prevent caching at all levels (browser, CDN, edge)
+        response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+        response.headers.set('Pragma', 'no-cache');
+        response.headers.set('Expires', '0');
+        
+        return response;
     } catch (err) {
         console.error("Error reading from database:", err);
-        return NextResponse.json({ draft: [], roster: [] });
+        const response = NextResponse.json({ draft: [], roster: [] });
+        response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+        response.headers.set('Pragma', 'no-cache');
+        response.headers.set('Expires', '0');
+        return response;
     }
 }
 
 export async function POST(req: Request) {
     try {
-        const { action, rosterData } = await req.json();
+        const { action, rosterData, leagueId: payloadLeagueId } = await req.json();
+        
+        const session = await getServerSession(authOptions);
+        const sessionLeagueId = await getSelectedLeagueId(session);
+        const finalLeagueId = payloadLeagueId || sessionLeagueId;
+        
+        if (!finalLeagueId) {
+            return NextResponse.json({ success: false, error: "No league selected" }, { status: 400 });
+        }
 
         if (action === 'SYNC_ROSTER') {
-            await saveWatchlist(rosterData);
+            await saveWatchlist(rosterData, finalLeagueId);
             return NextResponse.json({ success: true });
         }
 

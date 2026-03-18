@@ -1,23 +1,78 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/route";
+import { getYahooAccessToken } from '@/lib/yahoo-auth';
+import { getDb } from '@/lib/db';
 
+const sql = getDb();
 const LEAGUE_KEY = '469.l.4136';
 
 export async function GET(request: Request) {
     try {
         const session = await getServerSession(authOptions);
 
-        if (!session || !(session as any).accessToken) {
+        if (!session?.user?.email) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const accessToken = (session as any).accessToken;
+        // Get Yahoo GUID from database using email
+        const userResult = await sql`SELECT yahoo_guid FROM users WHERE email = ${session.user.email} LIMIT 1`;
+        if (!userResult.length) {
+            return NextResponse.json({ error: 'User not found. Please re-login.' }, { status: 401 });
+        }
+        const yahooGuid = userResult[0].yahoo_guid;
+        
+        // Get valid access token (will refresh if needed)
+        const accessToken = await getYahooAccessToken(yahooGuid);
+        
+        if (!accessToken) {
+            return NextResponse.json({ error: 'Failed to get Yahoo access token. Please re-login.' }, { status: 401 });
+        }
         const { searchParams } = new URL(request.url);
         const playerName = searchParams.get('name');
+        const leagueIdParam = searchParams.get('leagueId');
 
         if (!playerName) {
             return NextResponse.json({ error: 'Player name required' }, { status: 400 });
+        }
+        
+        const leagueId = leagueIdParam ? parseInt(leagueIdParam) : null;
+        
+        // Normalize player name for database lookup
+        const normalizedName = playerName
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .replace(/[^a-z\s]/g, '')
+            .replace(/\s+(jr|sr|ii|iii)$/, '')
+            .trim()
+            .replace(/\s+/g, '');
+        
+        // Check if we have cached news (less than 1 hour old)
+        if (leagueId) {
+            const cached = await sql`
+                SELECT * FROM yahoo_player_news
+                WHERE league_id = ${leagueId}
+                AND player_name_normalized = ${normalizedName}
+                AND fetched_at > NOW() - INTERVAL '1 hour'
+            `;
+            
+            if (cached.length > 0) {
+                console.log('📦 Returning cached Yahoo news for', playerName);
+                return NextResponse.json({
+                    success: true,
+                    cached: true,
+                    player: {
+                        name: cached[0].player_name,
+                        team: 'N/A',
+                        status: cached[0].status,
+                        statusFull: cached[0].status_full,
+                        imageUrl: cached[0].image_url,
+                        hasNotes: cached[0].notes && cached[0].notes.length > 0,
+                        notes: cached[0].notes || []
+                    }
+                });
+            }
         }
 
         // Search for player by name - request player notes only (editorial not supported)
@@ -77,6 +132,12 @@ export async function GET(request: Request) {
         const notes: any[] = [];
         const notesBlock = findField('player_notes');
         
+        console.log('🔍 Yahoo News Debug:', {
+            playerName: fullName,
+            hasNotes,
+            notesBlock: JSON.stringify(notesBlock, null, 2)
+        });
+        
         if (notesBlock && Array.isArray(notesBlock)) {
             for (const noteNode of notesBlock) {
                 if (noteNode?.player_note) {
@@ -89,6 +150,28 @@ export async function GET(request: Request) {
                     });
                 }
             }
+        }
+
+        // Save to database for caching (don't await, let it happen in background)
+        if (leagueId) {
+            sql`
+                INSERT INTO yahoo_player_news (
+                    league_id, player_name, player_name_normalized,
+                    status, status_full, image_url, notes, fetched_at
+                )
+                VALUES (
+                    ${leagueId}, ${fullName}, ${normalizedName},
+                    ${status}, ${statusFull}, ${imageUrl}, ${JSON.stringify(notes)}, CURRENT_TIMESTAMP
+                )
+                ON CONFLICT (league_id, player_name_normalized)
+                DO UPDATE SET
+                    player_name = ${fullName},
+                    status = ${status},
+                    status_full = ${statusFull},
+                    image_url = ${imageUrl},
+                    notes = ${JSON.stringify(notes)},
+                    fetched_at = CURRENT_TIMESTAMP
+            `.catch(err => console.error('Failed to cache Yahoo news:', err));
         }
 
         return NextResponse.json({

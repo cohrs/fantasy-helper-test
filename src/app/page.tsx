@@ -50,12 +50,12 @@ export default function Home() {
           The ultimate platform for the Asshat Fantasy league. Prepare for relentless competition, ruined friendships, and eternal glory.
         </p>
         <div className="flex flex-col sm:flex-row items-center gap-4">
-          <Link href="/draft-room" className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-full transition-all flex items-center gap-2 shadow-[0_0_30px_-5px_rgba(79,70,229,0.5)] hover:shadow-[0_0_40px_-5px_rgba(79,70,229,0.7)] hover:-translate-y-1">
-            Enter the Draft Room <ArrowRight size={20} />
+          <Link href="/select-league" className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-full transition-all flex items-center gap-2 shadow-[0_0_30px_-5px_rgba(79,70,229,0.5)] hover:shadow-[0_0_40px_-5px_rgba(79,70,229,0.7)] hover:-translate-y-1">
+            Select Your League <ArrowRight size={20} />
           </Link>
-          <button className="px-8 py-4 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-white font-bold rounded-full transition-all flex items-center gap-2">
-            View Rulebook
-          </button>
+          <Link href="/draft-room" className="px-8 py-4 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-white font-bold rounded-full transition-all flex items-center gap-2">
+            Go to Draft Room
+          </Link>
         </div>
       </main>
 
