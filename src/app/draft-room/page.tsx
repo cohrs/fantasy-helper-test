@@ -1781,7 +1781,11 @@ export default function Home() {
               .filter(pick => pick.tm && !pick.isKeeper)
               .sort((a, b) => a.pk - b.pk);
 
-            if (drafted.length === 0) {
+            const keepers = draftResults
+              .filter(pick => pick.tm && pick.isKeeper)
+              .sort((a, b) => (a.tm || '').localeCompare(b.tm || ''));
+
+            if (drafted.length === 0 && keepers.length === 0) {
               return (
                 <div className="flex-1 overflow-y-auto pr-2">
                   <div className="text-center mt-20 opacity-50 font-black tracking-widest text-slate-500">NO DRAFT DATA SYNCED YET</div>
@@ -1801,6 +1805,37 @@ export default function Home() {
 
             return (
               <div className="flex-1 overflow-y-auto pr-2 pb-10 space-y-8">
+                {keepers.length > 0 && (
+                  <div className="bg-slate-900/50 rounded-2xl border border-yellow-800/30 overflow-hidden">
+                    <div className="bg-yellow-900/20 px-5 py-3 border-b border-yellow-800/30 flex items-center justify-between sticky top-0 backdrop-blur-md z-10">
+                      <h3 className="font-black tracking-widest text-yellow-400 uppercase text-xs">Keepers</h3>
+                      <span className="text-[10px] font-bold text-slate-500">{keepers.length} Players</span>
+                    </div>
+                    <table className="w-full border-collapse text-sm">
+                      <tbody>
+                        {keepers.map((p, i) => (
+                          <tr key={`keeper-${i}`} className={`border-b border-slate-800/30 transition-colors hover:bg-slate-800/30 ${i % 2 === 0 ? 'bg-slate-950/30' : 'bg-transparent'} last:border-0`}>
+                            <td className="py-2 px-5 w-24">
+                              <span className="text-[10px] font-black text-yellow-400 border border-yellow-500/20 bg-yellow-500/10 px-1.5 py-0.5 rounded">K</span>
+                            </td>
+                            <td className="py-2 px-2">
+                              <span className="font-bold text-slate-200 text-sm tracking-tight">{p.name}</span>
+                            </td>
+                            <td className="py-2 px-2 w-24">
+                              <span className="text-[9px] font-black text-slate-500 bg-slate-800/50 px-1.5 py-0.5 rounded uppercase tracking-wider">{p.pos}</span>
+                            </td>
+                            <td className="py-2 px-2 w-20">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase">{p.playerTeam}</span>
+                            </td>
+                            <td className="py-2 px-5 text-right">
+                              <span className="text-[11px] font-black text-slate-300 italic tracking-wide">{p.tm}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
                 {sortedRounds.map(rd => (
                   <div key={`round-${rd}`} className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden">
                     <div className="bg-slate-800/50 px-5 py-3 border-b border-slate-800/80 flex items-center justify-between sticky top-0 backdrop-blur-md z-10">

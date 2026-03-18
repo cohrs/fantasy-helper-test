@@ -93,3 +93,18 @@
 - Draft rounds completed: R1-R13 (18 picks each)
 - R14 in progress — 1 pick made so far
 - NJN has 13 draft picks (R1-R13) + 10 keepers = 23 total
+
+## Known Manual Fixes (NOT in Tapatalk player list)
+These picks exist in the individual round threads but NOT in the main player list.
+The scraper will NOT find them — they must be preserved in the DB.
+- **R4: Max Meyer** (SP, MIA) — drafted by Amazins (position 1 in round)
+- **R6: Colton Cowser** (OF, BAL) — drafted by The Joshua Trees (position 16 in round)
+
+## Known Trades
+- Mountain Diehards traded R2 and R4 picks (has extra picks in R10, R11)
+- No Talent Ass Clowns has extra picks in R4 and R5 (from trades)
+
+## Scraper Behavior
+- Default: UPSERT mode — inserts new players, updates existing, preserves manual additions
+- Pass `?fullReplace=true` to do a full delete + re-insert (use only if duplicates detected)
+- UPSERT matches on player_name + position within the league
