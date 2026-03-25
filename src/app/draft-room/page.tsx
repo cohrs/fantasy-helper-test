@@ -1542,10 +1542,16 @@ export default function Home() {
         </div>
         <div className="flex gap-3 bg-slate-900 p-2 rounded-2xl border border-slate-800">
           <button 
-            onClick={() => window.location.href = '/select-league'}
+            onClick={() => window.location.href = '/'}
             className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-slate-700"
           >
             <LayoutGrid className="w-3.5 h-3.5" /> CHANGE LEAGUE
+          </button>
+          <button
+            onClick={() => window.location.href = '/chat'}
+            className="px-4 py-2 bg-sky-500/10 text-sky-400 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-sky-500/20"
+          >
+            <MessageSquare className="w-3.5 h-3.5" /> CHAT
           </button>
           
           {activeSport === 'baseball' ? (
