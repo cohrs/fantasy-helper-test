@@ -256,13 +256,19 @@ export default function ChatPage() {
             <div className="text-6xl">{sportEmoji}</div>
             <p className="text-lg font-medium">Ask me anything about your team</p>
             <div className="flex flex-wrap gap-2 justify-center max-w-lg">
-              {[
+              {(sport === 'basketball' ? [
+                'Who should I pick up off waivers?',
+                'Analyze my roster strengths and weaknesses',
+                'Any good buy-low trade targets?',
+                'Who should I sit this week?',
+                'Which categories should I punt?',
+              ] : [
                 'Who should I pick up to replace Burnes?',
                 'How are my DTD players looking?',
                 'Analyze my pitching staff',
                 'Who should I start this week?',
                 'Any good buy-low trade targets?',
-              ].map((suggestion) => (
+              ]).map((suggestion) => (
                 <button
                   key={suggestion}
                   onClick={() => { setInput(suggestion); inputRef.current?.focus(); }}

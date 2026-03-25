@@ -1578,8 +1578,8 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Compact Status Strip */}
-      {activeSport === 'baseball' && (
+      {/* Compact Status Strip — only show during active draft (not in-season) */}
+      {activeSport === 'baseball' && teamRosters.length === 0 && draftResults.length > 0 && (
         <div className={`max-w-7xl w-full mx-auto shrink-0 mb-4 rounded-2xl px-5 py-3 flex items-center gap-6 border ${waitPicks === 0 ? 'bg-green-500/10 border-green-500/30 text-green-300' : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-300'}`}>
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Pick</span>
