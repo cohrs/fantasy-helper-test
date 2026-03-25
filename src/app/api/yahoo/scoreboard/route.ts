@@ -8,32 +8,32 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
-        const leagueIdParam = searchParams.get('leagueId');
+        const leagueKeyParam = searchParams.get('leagueKey');
         const weekParam = searchParams.get('week');
 
-        if (!leagueIdParam) {
-            return NextResponse.json({ error: 'leagueId required' }, { status: 400 });
+        if (!leagueKeyParam) {
+            return NextResponse.json({ error: 'leagueKey required' }, { status: 400 });
         }
 
-        const leagueId = parseInt(leagueIdParam);
+        const leagueKey = leagueKeyParam;
 
         // Get matchups — latest week if no week specified
         let matchups;
         if (weekParam) {
             matchups = await sql`
-                SELECT * FROM matchups WHERE league_id = ${leagueId} AND week = ${parseInt(weekParam)}
+                SELECT * FROM matchups WHERE league_key = ${leagueKey} AND week = ${parseInt(weekParam)}
                 ORDER BY team1_name ASC
             `;
         } else {
             // Get the most recent week
             const latestWeek = await sql`
-                SELECT MAX(week) as week FROM matchups WHERE league_id = ${leagueId}
+                SELECT MAX(week) as week FROM matchups WHERE league_key = ${leagueKey}
             `;
             const week = latestWeek[0]?.week;
             if (!week) return NextResponse.json({ matchups: [], week: null });
 
             matchups = await sql`
-                SELECT * FROM matchups WHERE league_id = ${leagueId} AND week = ${week}
+                SELECT * FROM matchups WHERE league_key = ${leagueKey} AND week = ${week}
                 ORDER BY team1_name ASC
             `;
         }

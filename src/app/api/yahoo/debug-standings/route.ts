@@ -9,8 +9,8 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
-    const leagueIdParam = searchParams.get('leagueId');
-    if (!leagueIdParam) return NextResponse.json({ error: 'leagueId required' }, { status: 400 });
+    const leagueKeyParam = searchParams.get('leagueKey');
+    if (!leagueKeyParam) return NextResponse.json({ error: 'leagueKey required' }, { status: 400 });
 
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     const accessToken = await getYahooAccessToken(userResult[0].yahoo_guid);
     if (!accessToken) return NextResponse.json({ error: 'No access token' }, { status: 401 });
 
-    const leagueResult = await sql`SELECT league_key FROM user_leagues WHERE id = ${parseInt(leagueIdParam)}`;
+    const leagueResult = await sql`SELECT league_key FROM user_leagues WHERE league_key = ${leagueKeyParam}`;
     if (!leagueResult.length) return NextResponse.json({ error: 'League not found' }, { status: 404 });
 
     const leagueKey = leagueResult[0].league_key;

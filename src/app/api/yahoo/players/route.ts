@@ -22,12 +22,12 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const start = searchParams.get('start') || '0';
         const count = searchParams.get('count') || '25';
-        const leagueIdParam = searchParams.get('leagueId');
+        const leagueKeyParam = searchParams.get('leagueKey');
 
-        // Look up the league key from DB if leagueId provided, otherwise fall back to baseball
+        // Look up the league key from DB if leagueKey provided, otherwise fall back to baseball
         let leagueKey = '469.l.4136';
-        if (leagueIdParam) {
-            const leagueResult = await sql`SELECT league_key FROM user_leagues WHERE id = ${parseInt(leagueIdParam)} LIMIT 1`;
+        if (leagueKeyParam) {
+            const leagueResult = await sql`SELECT league_key FROM user_leagues WHERE league_key = ${leagueKeyParam} LIMIT 1`;
             if (leagueResult[0]?.league_key) {
                 leagueKey = leagueResult[0].league_key;
             }

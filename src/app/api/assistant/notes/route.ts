@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getPlayerNotes, getSelectedLeagueId } from '@/lib/db';
+import { getPlayerNotes, getSelectedLeagueKey } from '@/lib/db';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/route";
 
@@ -8,20 +8,20 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
-        const leagueIdParam = searchParams.get('leagueId');
+        const leagueKeyParam = searchParams.get('leagueKey');
         const playerName = searchParams.get('playerName');
         
-        let leagueId: number | null = null;
+        let leagueKey: string | null = null;
         
-        if (leagueIdParam) {
-            leagueId = parseInt(leagueIdParam);
+        if (leagueKeyParam) {
+            leagueKey = leagueKeyParam;
         } else {
             // Fallback to session-based league selection
             const session = await getServerSession(authOptions);
-            leagueId = await getSelectedLeagueId(session);
+            leagueKey = await getSelectedLeagueKey(session);
         }
         
-        const notes = await getPlayerNotes(leagueId);
+        const notes = await getPlayerNotes(leagueKey);
         
         // If requesting a specific player, return just their notes
         if (playerName) {

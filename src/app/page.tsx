@@ -172,7 +172,7 @@ export default function Home() {
                     <div className="grid gap-4">
                       {sportLeagues.map((league) => (
                         <button
-                          key={league.id}
+                          key={league.league_key}
                           onClick={() => handleSelectLeague(league)}
                           className="w-full text-left p-6 rounded-2xl border transition-all bg-zinc-900/50 border-zinc-800 hover:border-indigo-500/50 hover:bg-zinc-900 group"
                         >

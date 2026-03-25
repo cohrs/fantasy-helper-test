@@ -56,14 +56,14 @@ AssistantInput.displayName = 'AssistantInput';
 
 const WatchlistItem = ({
   player, activeSport, isTaken, isFirst, isLast, onMoveUp, onMoveDown, onDelete,
-  index, draggedIndex, dragOverIndex, onDragStart, onDragOver, onDragEnd, onDrop, onAskAssistant, leagueId
+  index, draggedIndex, dragOverIndex, onDragStart, onDragOver, onDragEnd, onDrop, onAskAssistant, leagueKey
 }: {
   player: any; activeSport: string; isTaken: boolean; isFirst: boolean; isLast: boolean;
   onMoveUp: () => void; onMoveDown: () => void; onDelete: () => void;
   index: number; draggedIndex: number | null; dragOverIndex: number | null;
   onDragStart: (idx: number) => void; onDragOver: (idx: number) => void; onDragEnd: () => void; onDrop: (idx: number) => void;
   onAskAssistant?: (prompt: string) => void;
-  leagueId?: number | null;
+  leagueKey?: string | null;
 }) => {
   const [showNotes, setShowNotes] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -86,7 +86,7 @@ const WatchlistItem = ({
   const handleFetchYahooNews = async () => {
     setLoadingNews(true);
     try {
-      const url = `/api/yahoo/player-news?name=${encodeURIComponent(player.name)}${leagueId ? `&leagueId=${leagueId}` : ''}`;
+      const url = `/api/yahoo/player-news?name=${encodeURIComponent(player.name)}${leagueKey ? `&leagueKey=${leagueKey}` : ''}`;
       const response = await fetch(url);
       const data = await response.json();
       if (data.success) {
@@ -375,7 +375,7 @@ const WatchlistItem = ({
  * Includes: MLB Draft Tracker & NBA Standings Scaffold
  */
 
-const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWatchlist, activeSport, myRoster, BATTING_STAT_IDS, PITCHING_STAT_IDS, YAHOO_STAT_LABELS, onAskAssistant, leagueId }: any) => {
+const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWatchlist, activeSport, myRoster, BATTING_STAT_IDS, PITCHING_STAT_IDS, YAHOO_STAT_LABELS, onAskAssistant, leagueKey }: any) => {
   const isPitcher = /SP|RP|P/i.test(p.pos);
   const ids = isPitcher ? PITCHING_STAT_IDS : BATTING_STAT_IDS;
   const [showNotes, setShowNotes] = useState(false);
@@ -393,7 +393,7 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
   const handleFetchYahooNews = async () => {
     setLoadingNews(true);
     try {
-      const url = `/api/yahoo/player-news?name=${encodeURIComponent(p.name)}${leagueId ? `&leagueId=${leagueId}` : ''}`;
+      const url = `/api/yahoo/player-news?name=${encodeURIComponent(p.name)}${leagueKey ? `&leagueKey=${leagueKey}` : ''}`;
       const response = await fetch(url);
       const data = await response.json();
       if (data.success) {
@@ -735,7 +735,7 @@ export default function Home() {
       await fetch('/api/draft-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'SYNC_ROSTER', rosterData: newRoster, leagueId: selectedLeague?.id })
+        body: JSON.stringify({ action: 'SYNC_ROSTER', rosterData: newRoster, leagueKey: selectedLeague?.league_key })
       });
     } catch (err) {
       console.error('Failed to sync watchlist to JSON', err);
@@ -835,18 +835,18 @@ export default function Home() {
       return;
     }
 
-    const leagueId = selectedLeague.id;
-    console.log(`📊 Loading data for league ${leagueId} (${selectedLeague.league_name})`);
+    const leagueKey = selectedLeague.league_key;
+    console.log(`📊 Loading data for league ${leagueKey} (${selectedLeague.league_name})`);
 
     Promise.all([
-      fetch(`/api/draft-data?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch(`/api/assistant/notes?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch(`/api/assistant/history?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({ history: [] })),
+      fetch(`/api/draft-data?leagueKey=${leagueKey}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/assistant/notes?leagueKey=${leagueKey}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/assistant/history?leagueKey=${leagueKey}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({ history: [] })),
       fetch(`/api/player-stats?season=${selectedLeague.season}&sport=${selectedLeague.sport}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch(`/api/yahoo/league-settings?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch(`/api/team-data?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch(`/api/my-team?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch(`/api/yahoo/scoreboard?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({}))
+      fetch(`/api/yahoo/league-settings?leagueKey=${leagueKey}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/team-data?leagueKey=${leagueKey}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/my-team?leagueKey=${leagueKey}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/yahoo/scoreboard?leagueKey=${leagueKey}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({}))
     ]).then(([draftData, notesData, chatData, statsData, leagueSettings, teamData, myTeamData, scoreboardData]) => {
       if (draftData.roster) setMyRoster(draftData.roster);
       if (draftData.draft && draftData.draft.length > 0) {
@@ -921,15 +921,15 @@ export default function Home() {
   const handleImport = async () => {
     setIsSyncing(true);
     try {
-      let leagueId = selectedLeague?.id;
+      let leagueKey = selectedLeague?.league_key;
       
       // Fallback: try to get from localStorage if state is not set
-      if (!leagueId) {
+      if (!leagueKey) {
         try {
           const stored = localStorage.getItem('selectedLeague');
           if (stored) {
             const league = JSON.parse(stored);
-            leagueId = league.id;
+            leagueKey = league.league_key;
             setSelectedLeague(league); // Update state
             setActiveSport(league.sport);
           }
@@ -938,13 +938,13 @@ export default function Home() {
         }
       }
       
-      if (!leagueId) {
+      if (!leagueKey) {
         alert("No league selected. Please select a league first.");
         setIsSyncing(false);
         return;
       }
       
-      const response = await fetch(`/api/scrape-draft?leagueId=${leagueId}`);
+      const response = await fetch(`/api/scrape-draft?leagueKey=${leagueKey}`);
       const data = await response.json();
 
       if (data.success) {
@@ -974,7 +974,7 @@ export default function Home() {
       const response = await fetch('/api/yahoo/sync-all', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leagueId: selectedLeague?.id })
+        body: JSON.stringify({ leagueKey: selectedLeague?.league_key })
       });
       const data = await response.json();
 
@@ -1017,19 +1017,19 @@ export default function Home() {
   // Load live Yahoo player rankings + projected stats
   const loadYahooPlayers = async () => {
     setIsLoadingYahoo(true);
-    const leagueId = selectedLeague?.id;
+    const leagueKey = selectedLeague?.league_key;
     try {
       const results = await Promise.all([
-        fetch(`/api/yahoo/players?start=0&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
-        fetch(`/api/yahoo/players?start=50&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
-        fetch(`/api/yahoo/players?start=100&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
-        fetch(`/api/yahoo/players?start=150&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
-        fetch(`/api/yahoo/players?start=200&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
-        fetch(`/api/yahoo/players?start=250&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
-        fetch(`/api/yahoo/players?start=300&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
-        fetch(`/api/yahoo/players?start=350&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
-        fetch(`/api/yahoo/players?start=400&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
-        fetch(`/api/yahoo/players?start=450&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=0&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=50&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=100&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=150&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=200&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=250&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=300&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=350&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=400&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=450&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
       ]);
       const combined = results.flatMap(d => d.players || []).map((p, i) => ({ ...p, rank: i + 1 }));
       setYahooPlayers(combined);
@@ -1138,7 +1138,7 @@ export default function Home() {
         picksUntilTurn: waitPicks,
         customPrompt: userPromptText,
         chatHistory: newHistory,
-        leagueId: selectedLeague?.id,
+        leagueKey: selectedLeague?.league_key,
         sport: activeSport
       };
 
@@ -1169,7 +1169,7 @@ export default function Home() {
 
         // Refetch AI notes so any new rationales are immediately rendered across the board
         try {
-          const notesRes = await fetch(`/api/assistant/notes?leagueId=${selectedLeague?.id}&t=${Date.now()}`);
+          const notesRes = await fetch(`/api/assistant/notes?leagueKey=${selectedLeague?.league_key}&t=${Date.now()}`);
           const notesData = await notesRes.json();
           if (notesData) {
             const normalizedNotes: Record<string, string> = {};
@@ -1775,7 +1775,7 @@ export default function Home() {
                     PITCHING_STAT_IDS={PITCHING_STAT_IDS}
                     YAHOO_STAT_LABELS={YAHOO_STAT_LABELS}
                     onAskAssistant={askAssistant}
-                    leagueId={selectedLeague?.id}
+                    leagueKey={selectedLeague?.league_key}
                   />
                 ))}
               </div>
@@ -1971,7 +1971,7 @@ export default function Home() {
                           yahooStatus: player.status !== 'Active' ? player.status : undefined,
                         }}
                         activeSport={activeSport}
-                        leagueId={selectedLeague?.id}
+                        leagueKey={selectedLeague?.league_key}
                         onAskAssistant={askAssistant}
                         context="team"
                       />
@@ -2019,7 +2019,7 @@ export default function Home() {
                         slot={r.slot}
                         yahooStats={yhStats}
                         activeSport={activeSport}
-                        leagueId={selectedLeague?.id}
+                        leagueKey={selectedLeague?.league_key}
                         onAskAssistant={askAssistant}
                         context="team"
                       />
@@ -2455,7 +2455,7 @@ export default function Home() {
                             player={enrichedPlayer}
                             activeSport={activeSport}
                             isTaken={isTaken}
-                            leagueId={selectedLeague?.id}
+                            leagueKey={selectedLeague?.league_key}
                             isFirst={originalIndex === 0}
                             isLast={originalIndex === myRoster.length - 1}
                             onMoveUp={() => {

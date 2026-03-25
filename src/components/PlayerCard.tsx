@@ -20,7 +20,7 @@ interface PlayerCardProps {
   slot?: string;
   yahooStats?: Record<string, string>;
   activeSport: string;
-  leagueId?: number;
+  leagueKey?: string;
   onAskAssistant?: (prompt: string) => void;
   showControls?: boolean;
   controls?: React.ReactNode;
@@ -32,7 +32,7 @@ export function PlayerCard({
   slot,
   yahooStats,
   activeSport, 
-  leagueId,
+  leagueKey,
   onAskAssistant,
   showControls = false,
   controls,
@@ -48,15 +48,15 @@ export function PlayerCard({
 
   // Fetch player notes from database when card is opened
   useEffect(() => {
-    if (showNotes && leagueId && !playerNotes && !player.rationale) {
+    if (showNotes && leagueKey && !playerNotes && !player.rationale) {
       fetchPlayerNotes();
     }
-  }, [showNotes, leagueId]);
+  }, [showNotes, leagueKey]);
 
   const fetchPlayerNotes = async () => {
     setLoadingNotes(true);
     try {
-      const response = await fetch(`/api/assistant/notes?leagueId=${leagueId}&playerName=${encodeURIComponent(player.name)}`);
+      const response = await fetch(`/api/assistant/notes?leagueKey=${leagueKey}&playerName=${encodeURIComponent(player.name)}`);
       const data = await response.json();
       if (data.notes) {
         setPlayerNotes(data.notes);
@@ -93,8 +93,8 @@ export function PlayerCard({
   const handleFetchYahooNews = async () => {
     setLoadingNews(true);
     try {
-      const url = leagueId 
-        ? `/api/yahoo/player-news?name=${encodeURIComponent(player.name)}&leagueId=${leagueId}`
+      const url = leagueKey 
+        ? `/api/yahoo/player-news?name=${encodeURIComponent(player.name)}&leagueKey=${leagueKey}`
         : `/api/yahoo/player-news?name=${encodeURIComponent(player.name)}`;
       const response = await fetch(url);
       const data = await response.json();

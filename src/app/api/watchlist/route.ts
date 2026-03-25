@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
-import { getDb, getSelectedLeagueId } from '@/lib/db';
+import { getDb, getSelectedLeagueKey } from '@/lib/db';
 
 const sql = getDb();
 export const dynamic = 'force-dynamic';
@@ -14,19 +14,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { name, pos, team, leagueId: bodyLeagueId } = await request.json();
+    const { name, pos, team, leagueKey: bodyLeagueKey } = await request.json();
     if (!name) {
       return NextResponse.json({ error: 'Player name required' }, { status: 400 });
     }
 
-    const leagueId = bodyLeagueId || await getSelectedLeagueId(session);
-    if (!leagueId) {
+    const leagueKey = bodyLeagueKey || await getSelectedLeagueKey(session);
+    if (!leagueKey) {
       return NextResponse.json({ error: 'No league selected' }, { status: 400 });
     }
 
     // Check if already on watchlist
     const existing = await sql`
-      SELECT id FROM watchlist WHERE league_id = ${leagueId} AND player_name = ${name}
+      SELECT id FROM watchlist WHERE league_key = ${leagueKey} AND player_name = ${name}
     `;
     if (existing.length > 0) {
       return NextResponse.json({ success: false, error: 'Already on watchlist' });
@@ -34,13 +34,13 @@ export async function POST(request: NextRequest) {
 
     // Get max sort_order
     const maxOrder = await sql`
-      SELECT COALESCE(MAX(sort_order), -1) as max_order FROM watchlist WHERE league_id = ${leagueId}
+      SELECT COALESCE(MAX(sort_order), -1) as max_order FROM watchlist WHERE league_key = ${leagueKey}
     `;
     const nextOrder = (maxOrder[0]?.max_order ?? -1) + 1;
 
     await sql`
-      INSERT INTO watchlist (league_id, player_name, position, team_abbr, sort_order)
-      VALUES (${leagueId}, ${name}, ${pos || 'UTIL'}, ${team || null}, ${nextOrder})
+      INSERT INTO watchlist (league_key, player_name, position, team_abbr, sort_order)
+      VALUES (${leagueKey}, ${name}, ${pos || 'UTIL'}, ${team || null}, ${nextOrder})
     `;
 
     return NextResponse.json({ success: true });
@@ -58,17 +58,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { name, leagueId: bodyLeagueId } = await request.json();
+    const { name, leagueKey: bodyLeagueKey } = await request.json();
     if (!name) {
       return NextResponse.json({ error: 'Player name required' }, { status: 400 });
     }
 
-    const leagueId = bodyLeagueId || await getSelectedLeagueId(session);
-    if (!leagueId) {
+    const leagueKey = bodyLeagueKey || await getSelectedLeagueKey(session);
+    if (!leagueKey) {
       return NextResponse.json({ error: 'No league selected' }, { status: 400 });
     }
 
-    await sql`DELETE FROM watchlist WHERE league_id = ${leagueId} AND player_name = ${name}`;
+    await sql`DELETE FROM watchlist WHERE league_key = ${leagueKey} AND player_name = ${name}`;
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -86,14 +86,14 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const bodyLeagueId = searchParams.get('leagueId');
-    const leagueId = bodyLeagueId ? parseInt(bodyLeagueId) : await getSelectedLeagueId(session);
-    if (!leagueId) {
+    const leagueKeyParam = searchParams.get('leagueKey');
+    const leagueKey = leagueKeyParam || await getSelectedLeagueKey(session);
+    if (!leagueKey) {
       return NextResponse.json({ error: 'No league selected' }, { status: 400 });
     }
 
     const rows = await sql`
-      SELECT player_name FROM watchlist WHERE league_id = ${leagueId} ORDER BY sort_order ASC
+      SELECT player_name FROM watchlist WHERE league_key = ${leagueKey} ORDER BY sort_order ASC
     `;
 
     return NextResponse.json({ success: true, players: rows.map((r: any) => r.player_name) });

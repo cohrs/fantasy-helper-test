@@ -30,9 +30,9 @@ function extractPlayerMentions(text: string): { name: string; team?: string; pos
   return players;
 }
 
-function WatchlistButton({ player, leagueId, watchlistNames, onAdded }: {
+function WatchlistButton({ player, leagueKey, watchlistNames, onAdded }: {
   player: { name: string; team?: string; pos?: string };
-  leagueId: number | null;
+  leagueKey: string | null;
   watchlistNames: Set<string>;
   onAdded: (name: string) => void;
 }) {
@@ -40,13 +40,13 @@ function WatchlistButton({ player, leagueId, watchlistNames, onAdded }: {
   const isOnWatchlist = watchlistNames.has(player.name.toLowerCase());
 
   const handleAdd = async () => {
-    if (isOnWatchlist || adding || !leagueId) return;
+    if (isOnWatchlist || adding || !leagueKey) return;
     setAdding(true);
     try {
       const res = await fetch('/api/watchlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: player.name, pos: player.pos, team: player.team, leagueId }),
+        body: JSON.stringify({ name: player.name, pos: player.pos, team: player.team, leagueKey }),
       });
       const data = await res.json();
       if (data.success) {
@@ -79,9 +79,9 @@ function WatchlistButton({ player, leagueId, watchlistNames, onAdded }: {
   );
 }
 
-function PlayerMentions({ text, leagueId, watchlistNames, onAdded }: {
+function PlayerMentions({ text, leagueKey, watchlistNames, onAdded }: {
   text: string;
-  leagueId: number | null;
+  leagueKey: string | null;
   watchlistNames: Set<string>;
   onAdded: (name: string) => void;
 }) {
@@ -97,7 +97,7 @@ function PlayerMentions({ text, leagueId, watchlistNames, onAdded }: {
             <span className="text-xs text-slate-300">{p.name}</span>
             {p.team && <span className="text-[10px] text-slate-500">{p.team}</span>}
             {p.pos && <span className="text-[10px] text-slate-500">{p.pos}</span>}
-            <WatchlistButton player={p} leagueId={leagueId} watchlistNames={watchlistNames} onAdded={onAdded} />
+            <WatchlistButton player={p} leagueKey={leagueKey} watchlistNames={watchlistNames} onAdded={onAdded} />
           </div>
         ))}
       </div>
@@ -110,7 +110,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [leagueId, setLeagueId] = useState<number | null>(null);
+  const [leagueKey, setLeagueKey] = useState<string | null>(null);
   const [leagueName, setLeagueName] = useState('');
   const [sport, setSport] = useState('');
   const [watchlistNames, setWatchlistNames] = useState<Set<string>>(new Set());
@@ -122,7 +122,7 @@ export default function ChatPage() {
     if (stored) {
       try {
         const league = JSON.parse(stored);
-        setLeagueId(league.id);
+        setLeagueKey(league.league_key);
         setLeagueName(league.league_name || league.name || '');
         setSport(league.sport || '');
       } catch {}
@@ -131,15 +131,15 @@ export default function ChatPage() {
 
   // Load watchlist names for the current league
   const loadWatchlist = useCallback(async () => {
-    if (!leagueId) return;
+    if (!leagueKey) return;
     try {
-      const res = await fetch(`/api/watchlist?leagueId=${leagueId}`);
+      const res = await fetch(`/api/watchlist?leagueKey=${leagueKey}`);
       const data = await res.json();
       if (data.success) {
         setWatchlistNames(new Set(data.players.map((n: string) => n.toLowerCase())));
       }
     } catch {}
-  }, [leagueId]);
+  }, [leagueKey]);
 
   useEffect(() => {
     loadWatchlist();
@@ -169,7 +169,7 @@ export default function ChatPage() {
       const resp = await fetch('/api/assistant/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMsg, chatHistory: messages, leagueId }),
+        body: JSON.stringify({ message: userMsg, chatHistory: messages, leagueKey }),
       });
 
       const data = await resp.json();
@@ -291,7 +291,7 @@ export default function ChatPage() {
               {msg.role === 'model' && (
                 <PlayerMentions
                   text={msg.parts[0]?.text || ''}
-                  leagueId={leagueId}
+                  leagueKey={leagueKey}
                   watchlistNames={watchlistNames}
                   onAdded={handlePlayerAdded}
                 />

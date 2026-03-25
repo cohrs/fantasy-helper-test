@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDraftPicks, getWatchlist, saveWatchlist, getSelectedLeagueId } from '@/lib/db';
+import { getDraftPicks, getWatchlist, saveWatchlist, getSelectedLeagueKey } from '@/lib/db';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
 
@@ -8,23 +8,23 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
-        const leagueIdParam = searchParams.get('leagueId');
+        const leagueKeyParam = searchParams.get('leagueKey');
         
-        let leagueId: number | null = null;
+        let leagueKey: string | null = null;
         
-        if (leagueIdParam) {
-            leagueId = parseInt(leagueIdParam);
+        if (leagueKeyParam) {
+            leagueKey = leagueKeyParam;
         } else {
             // Fallback to session-based league selection
             const session = await getServerSession(authOptions);
-            leagueId = await getSelectedLeagueId(session);
+            leagueKey = await getSelectedLeagueKey(session);
         }
         
-        console.log('📊 draft-data GET - leagueId:', leagueId);
+        console.log('📊 draft-data GET - leagueKey:', leagueKey);
         
         const [draftPicks, watchlist] = await Promise.all([
-            getDraftPicks(leagueId),
-            getWatchlist(leagueId)
+            getDraftPicks(leagueKey),
+            getWatchlist(leagueKey)
         ]);
         
         console.log('📊 draft-data results - picks:', draftPicks.length, 'watchlist:', watchlist.length);
@@ -69,18 +69,18 @@ export async function GET(request: Request) {
 
 export async function POST(req: Request) {
     try {
-        const { action, rosterData, leagueId: payloadLeagueId } = await req.json();
+        const { action, rosterData, leagueKey: payloadLeagueKey } = await req.json();
         
         const session = await getServerSession(authOptions);
-        const sessionLeagueId = await getSelectedLeagueId(session);
-        const finalLeagueId = payloadLeagueId || sessionLeagueId;
+        const sessionLeagueKey = await getSelectedLeagueKey(session);
+        const finalLeagueKey = payloadLeagueKey || sessionLeagueKey;
         
-        if (!finalLeagueId) {
+        if (!finalLeagueKey) {
             return NextResponse.json({ success: false, error: "No league selected" }, { status: 400 });
         }
 
         if (action === 'SYNC_ROSTER') {
-            await saveWatchlist(rosterData, finalLeagueId);
+            await saveWatchlist(rosterData, finalLeagueKey);
             return NextResponse.json({ success: true });
         }
 

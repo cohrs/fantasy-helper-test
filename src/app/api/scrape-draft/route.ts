@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
-import { getSelectedLeagueId, getDb } from '@/lib/db';
+import { getSelectedLeagueKey, getDb } from '@/lib/db';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
 
@@ -67,18 +67,18 @@ function normalizeTeamName(name: string | null): string | null {
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
-        const leagueIdParam = searchParams.get('leagueId');
+        const leagueKeyParam = searchParams.get('leagueKey');
         
-        let leagueId: number | null = null;
+        let leagueKey: string | null = null;
         
-        if (leagueIdParam) {
-            leagueId = parseInt(leagueIdParam);
+        if (leagueKeyParam) {
+            leagueKey = leagueKeyParam;
         } else {
             const session = await getServerSession(authOptions);
-            leagueId = await getSelectedLeagueId(session);
+            leagueKey = await getSelectedLeagueKey(session);
         }
         
-        if (!leagueId) {
+        if (!leagueKey) {
             return NextResponse.json({ 
                 success: false, 
                 error: "No league selected. Please select a league first." 
@@ -86,7 +86,7 @@ export async function GET(request: Request) {
         }
 
         const leagueInfo = await sql`
-            SELECT sport FROM user_leagues WHERE id = ${leagueId}
+            SELECT sport FROM user_leagues WHERE league_key = ${leagueKey}
         `;
         
         if (!leagueInfo.length) {
@@ -106,7 +106,7 @@ export async function GET(request: Request) {
             }, { status: 400 });
         }
 
-        console.log(`🔄 Scraping ${sport} draft for league ${leagueId}...`);
+        console.log(`🔄 Scraping ${sport} draft for league ${leagueKey}...`);
 
         const { data } = await axios.get(TARGET_URL, {
             headers: {
@@ -250,8 +250,8 @@ export async function GET(request: Request) {
         const fullReplace = searchParams.get('fullReplace') === 'true';
         
         if (fullReplace) {
-            console.log(`🗑️ FULL REPLACE mode: Clearing existing draft data for league ${leagueId}...`);
-            await sql`DELETE FROM draft_picks WHERE league_id = ${leagueId}`;
+            console.log(`🗑️ FULL REPLACE mode: Clearing existing draft data for league ${leagueKey}...`);
+            await sql`DELETE FROM draft_picks WHERE league_key = ${leagueKey}`;
         } else {
             console.log(`🔄 UPSERT mode: Preserving existing manual additions...`);
         }
@@ -262,9 +262,9 @@ export async function GET(request: Request) {
         for (const pick of results) {
             if (fullReplace) {
                 await sql`
-                    INSERT INTO draft_picks (league_id, round, pick, rank, player_name, position, team_abbr, drafted_by, is_keeper)
+                    INSERT INTO draft_picks (league_key, round, pick, rank, player_name, position, team_abbr, drafted_by, is_keeper)
                     VALUES (
-                        ${leagueId},
+                        ${leagueKey},
                         ${pick.rd || 0},
                         ${pick.pk},
                         ${pick.rank},
@@ -280,7 +280,7 @@ export async function GET(request: Request) {
                 // Check if player already exists for this league
                 const existing = await sql`
                     SELECT id FROM draft_picks 
-                    WHERE league_id = ${leagueId} AND player_name = ${pick.name} AND position = ${pick.pos}
+                    WHERE league_key = ${leagueKey} AND player_name = ${pick.name} AND position = ${pick.pos}
                     LIMIT 1
                 `;
                 
@@ -299,9 +299,9 @@ export async function GET(request: Request) {
                     updatedCount++;
                 } else {
                     await sql`
-                        INSERT INTO draft_picks (league_id, round, pick, rank, player_name, position, team_abbr, drafted_by, is_keeper)
+                        INSERT INTO draft_picks (league_key, round, pick, rank, player_name, position, team_abbr, drafted_by, is_keeper)
                         VALUES (
-                            ${leagueId},
+                            ${leagueKey},
                             ${pick.rd || 0},
                             ${pick.pk},
                             ${pick.rank},

@@ -35,7 +35,7 @@ export async function GET() {
 // Select a league (store in session/cookie)
 export async function POST(request: Request) {
   try {
-    const { leagueId } = await request.json();
+    const { leagueKey } = await request.json();
     const sql = getDb();
     
     const result = await sql`
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
         is_active,
         team_name
       FROM user_leagues
-      WHERE id = ${leagueId}
+      WHERE league_key = ${leagueKey}
     `;
 
     if (result.length === 0) {

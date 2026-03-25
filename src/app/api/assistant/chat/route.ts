@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/route";
-import { getDb, getSelectedLeagueId, saveChatHistory } from '@/lib/db';
+import { getDb, getSelectedLeagueKey, saveChatHistory } from '@/lib/db';
 import { getYahooAccessTokenByEmail } from '@/lib/yahoo-auth';
 
 const sql = getDb();
@@ -19,15 +19,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { message, chatHistory = [], leagueId: bodyLeagueId } = body;
+    const { message, chatHistory = [], leagueKey: bodyLeagueKey } = body;
 
-    const leagueId = bodyLeagueId || await getSelectedLeagueId(session);
-    if (!leagueId) {
+    const leagueKey = bodyLeagueKey || await getSelectedLeagueKey(session);
+    if (!leagueKey) {
       return NextResponse.json({ error: 'No league selected' }, { status: 400 });
     }
 
     // Get league info
-    const leagueResult = await sql`SELECT league_key, sport, league_name, team_key FROM user_leagues WHERE id = ${leagueId}`;
+    const leagueResult = await sql`SELECT league_key, sport, league_name, team_key FROM user_leagues WHERE league_key = ${leagueKey}`;
     if (!leagueResult.length) {
       return NextResponse.json({ error: 'League not found' }, { status: 404 });
     }
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
         const dbRoster = await sql`
           SELECT player_name, position, nba_team as mlb_team, status 
           FROM team_rosters 
-          WHERE league_id = ${leagueId} AND team_key = ${team_key}
+          WHERE league_key = ${leagueKey} AND team_key = ${team_key}
           ORDER BY player_name
         `;
         if (dbRoster.length > 0) {
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
     // Fetch standings
     let standingsContext = '';
     try {
-      const standings = await sql`SELECT team_name, rank, wins, losses, ties, points_for FROM standings WHERE league_id = ${leagueId} ORDER BY rank ASC`;
+      const standings = await sql`SELECT team_name, rank, wins, losses, ties, points_for FROM standings WHERE league_key = ${leagueKey} ORDER BY rank ASC`;
       if (standings.length > 0) {
         standingsContext = '\n=== STANDINGS ===\n' + standings.map((s) =>
           `${s.rank}. ${s.team_name} (${s.wins}-${s.losses}-${s.ties}, ${s.points_for} pts)`
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
       const allRosters = await sql`
         SELECT team_name, player_name, position, nba_team as mlb_team, status 
         FROM team_rosters 
-        WHERE league_id = ${leagueId} 
+        WHERE league_key = ${leagueKey} 
         ORDER BY team_name, player_name
       `;
       if (allRosters.length > 0) {
@@ -210,7 +210,7 @@ ${allRostersContext}
 
     // Save to chat history
     try {
-      await saveChatHistory(message, text, [], leagueId);
+      await saveChatHistory(message, text, [], leagueKey);
     } catch (e) {
       console.error('Failed to save chat history:', e);
     }

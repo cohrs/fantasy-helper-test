@@ -4,14 +4,14 @@ import { getChatHistory } from '@/lib/db';
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
-        const leagueIdParam = searchParams.get('leagueId');
+        const leagueKeyParam = searchParams.get('leagueKey');
         
-        if (!leagueIdParam) {
-            return NextResponse.json({ error: 'League ID required' }, { status: 400 });
+        if (!leagueKeyParam) {
+            return NextResponse.json({ error: 'League key required' }, { status: 400 });
         }
         
-        const leagueId = parseInt(leagueIdParam);
-        const history = await getChatHistory(leagueId);
+        const leagueKey = leagueKeyParam;
+        const history = await getChatHistory(leagueKey);
         
         // Transform to chat format
         const chatMessages = history.flatMap((entry: any) => {
