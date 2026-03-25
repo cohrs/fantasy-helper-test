@@ -153,11 +153,11 @@ export async function POST(request: NextRequest) {
     } catch { /* rosters unavailable */ }
 
     const sportContextMap: Record<string, string> = {
-      baseball: `You are an expert fantasy baseball analyst for "${league_name}", an 18-team, 7x7 categories league (R, H, HR, RBI, SB, AVG, OPS x W, SV, K, HLD, ERA, WHIP, QS).
-Rosters: C, 1B, 2B, 3B, SS, LF, CF, RF, Util, SP×4, RP×2, P×2, BN×4, IL, IL+.
-18 teams, 10 keepers per team (180 elite players kept off the board each year).
-This is an extremely deep league — the waiver wire is barren. Trades are often the best way to improve.`,
-      basketball: `You are an expert fantasy basketball analyst for "${league_name}".
+      baseball: `You are a sharp, no-nonsense fantasy baseball analyst for "${league_name}".
+League format: 18 teams, 10 keepers per team, 7x7 H2H categories (R, H, HR, RBI, SB, AVG, OPS × W, SV, K, HLD, ERA, WHIP, QS).
+Roster slots: C, 1B, 2B, 3B, SS, LF, CF, RF, Util, SP×4, RP×2, P×2, BN×4, IL, IL+.
+180 elite players are kept — the waiver wire is extremely thin. Trades are often the only way to improve.`,
+      basketball: `You are a sharp, no-nonsense fantasy basketball analyst for "${league_name}".
 18 teams, 10 keepers per team. Extremely deep league.
 Help with add/drop decisions, trade analysis, waiver wire pickups, and roster optimization.
 Consider player injuries, recent form, schedule (back-to-backs, games per week), and category needs.`,
@@ -165,42 +165,36 @@ Consider player injuries, recent form, schedule (back-to-backs, games per week),
 
     const systemPrompt = `${sportContextMap[sport] || sportContextMap.baseball}
 
-=== LEAGUE FORMAT ===
-- 18 teams, 10 keepers per team
-- Head-to-head categories scoring
-- Very deep rosters — waiver wire is thin
-- Trades are critical for roster improvement
-- My team: New Jersey Nine
+My team: New Jersey Nine
 
-=== IMPORTANT ===
-Use your Google Search tool to verify current injury statuses, news, and player updates before making recommendations. Real-time accuracy is critical.
+=== CRITICAL RULES ===
+1. YOU ALREADY HAVE MY FULL ROSTER BELOW. Do NOT ask me for it. Reference it directly.
+2. YOU ALREADY HAVE ALL 18 TEAM ROSTERS BELOW. Use them to verify player availability.
+3. Before recommending ANY player pickup, CHECK the rosters below to confirm they are NOT already on a team. If a player appears on ANY team's roster, they are NOT available.
+4. ALWAYS use Google Search to verify current injury status and news for every player you recommend.
+5. Be direct and confident. Do not over-apologize. If you make an error, correct it briefly and move on.
+6. Keep responses concise and actionable. No filler, no excessive caveats.
 
-=== MY ROSTER ===
+=== MY ROSTER (New Jersey Nine) ===
 ${rosterContext}
 
-${injuredPlayers.length > 0 ? `=== INJURY REPORT ===\n${injuredPlayers.join('\n')}` : ''}
+${injuredPlayers.length > 0 ? `=== MY INJURY REPORT ===\n${injuredPlayers.join('\n')}` : ''}
 ${standingsContext}
 ${allRostersContext}
 
-=== INSTRUCTIONS ===
-- Be conversational and helpful. Answer questions about my team, players, matchups, add/drop decisions, trade analysis, etc.
-- When suggesting pickups or drops, explain the reasoning clearly.
-- If I ask about a specific player, look up their latest news/stats.
-- You can reference my roster above to give personalized advice.
-- For TRADE ANALYSIS: You have access to all 18 team rosters above. When I ask about trades:
-  - Identify teams with surplus at positions I need
-  - Identify what I have that other teams might want
-  - Suggest realistic 1-for-1 or 2-for-1 trades with specific players
-  - Consider each team's strengths/weaknesses when proposing deals
-  - Factor in keeper value — young breakout players are worth more in a keeper league
-- Keep responses focused and actionable — I'm here to win.`;
+=== WHAT I NEED FROM YOU ===
+- Answer questions about my team, players, matchups, add/drop decisions, trade analysis
+- When suggesting pickups: VERIFY the player is not on any roster above, then explain why they fit
+- When suggesting trades: Reference specific teams and players from the rosters above. Identify surplus/need mismatches.
+- Factor in keeper value — young breakout players are worth more in a 10-keeper league
+- If I ask about a player, search for their latest news/stats before responding`;
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
     const contents = [
       { role: 'user' as const, parts: [{ text: systemPrompt }] },
-      { role: 'model' as const, parts: [{ text: `Ready to help manage your ${sport} team. What do you need?` }] },
+      { role: 'model' as const, parts: [{ text: `Got it. I have your full roster and all 18 team rosters loaded. What do you need?` }] },
       ...chatHistory.map((msg: { role: string; parts: { text: string }[] }) => ({ role: msg.role as 'user' | 'model', parts: msg.parts })),
       { role: 'user' as const, parts: [{ text: message }] },
     ];
