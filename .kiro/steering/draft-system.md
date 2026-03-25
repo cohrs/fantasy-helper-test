@@ -1,11 +1,10 @@
 # Fantasy League System - Critical Context
 
 ## Leagues Overview
-| ID | League Key | Name | Sport | Status |
-|----|-----------|------|-------|--------|
-| 2 | 469.l.4136 | Asshat Baseball 2026 | baseball | In-season (Week 1, started 2026-03-25) |
-| 5 | 469.l.4136 | Asshat Baseball 2026 | baseball | Duplicate Yahoo entry — use league 2 |
-| 6 | 466.l.8873 | Asshat Basketball 2025-2026 | basketball | Season ending soon, offline draft upcoming |
+| League Key | Name | Sport | Status |
+|-----------|------|-------|--------|
+| 469.l.4136 | Asshat Baseball 2026 | baseball | In-season (Week 1, started 2026-03-25) |
+| 466.l.8873 | Asshat Basketball 2025-2026 | basketball | Season ending soon, offline draft upcoming |
 
 - User's team: **New Jersey Nine** (team key: 469.l.4136.t.13)
 - User's Yahoo GUID: UIXKGRGJKTS7A6TYUVFIZRKJ3A (sdcohrs@yahoo.com)
