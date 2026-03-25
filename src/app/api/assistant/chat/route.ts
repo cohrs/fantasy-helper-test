@@ -35,9 +35,10 @@ export async function POST(request: NextRequest) {
 
     // Get Yahoo token for live data
     const accessToken = await getYahooAccessTokenByEmail(session.user.email);
+    console.log('🔑 Yahoo token available:', !!accessToken, '| team_key:', team_key);
 
     // Fetch live roster from Yahoo
-    let rosterContext = 'Roster data unavailable.';
+    let rosterContext = '';
     const injuredPlayers: string[] = [];
     if (accessToken && team_key) {
       try {
@@ -45,6 +46,7 @@ export async function POST(request: NextRequest) {
           `https://fantasysports.yahooapis.com/fantasy/v2/team/${team_key}/roster/players?format=json`,
           { headers: { 'Authorization': `Bearer ${accessToken}` } }
         );
+        console.log('📋 Yahoo roster response:', rosterResp.status);
         if (rosterResp.ok) {
           const rosterData = await rosterResp.json();
           const playersRaw = rosterData?.fantasy_content?.team?.[1]?.roster?.['0']?.players;
@@ -79,8 +81,39 @@ export async function POST(request: NextRequest) {
           }
         }
       } catch (e) {
-        console.error('Error fetching roster:', e);
+        console.error('Error fetching live roster:', e);
       }
+    }
+
+    // Fallback: load roster from DB if Yahoo fetch failed
+    if (!rosterContext && team_key) {
+      try {
+        console.log('📋 Falling back to DB roster data...');
+        const dbRoster = await sql`
+          SELECT player_name, position, nba_team as mlb_team, status 
+          FROM team_rosters 
+          WHERE league_id = ${leagueId} AND team_key = ${team_key}
+          ORDER BY player_name
+        `;
+        if (dbRoster.length > 0) {
+          const players: string[] = [];
+          for (const r of dbRoster) {
+            const statusTag = r.status && r.status !== 'Active' ? ` [${r.status}]` : '';
+            players.push(`${r.player_name} (${r.mlb_team}, ${r.position})${statusTag}`);
+            if (r.status && r.status !== 'Active') {
+              injuredPlayers.push(`${r.player_name} (${r.mlb_team}, ${r.position}) — ${r.status}`);
+            }
+          }
+          rosterContext = players.join('\n');
+          console.log(`✅ Loaded ${dbRoster.length} players from DB`);
+        }
+      } catch (e) {
+        console.error('Error loading DB roster:', e);
+      }
+    }
+
+    if (!rosterContext) {
+      rosterContext = 'Roster data unavailable — Yahoo token may be expired. Please re-login.';
     }
 
     // Fetch standings
