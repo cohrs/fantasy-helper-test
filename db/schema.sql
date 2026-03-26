@@ -143,9 +143,12 @@ CREATE TABLE IF NOT EXISTS team_rosters (
   player_name VARCHAR(255) NOT NULL,
   player_key VARCHAR(255),
   position VARCHAR(50),
+  selected_position VARCHAR(20),
+  eligible_positions VARCHAR(255),
   nba_team VARCHAR(50),
   status VARCHAR(50),
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(league_key, team_key, player_key)
 );
 
 -- Weekly matchups/scoreboard
