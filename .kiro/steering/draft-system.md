@@ -85,7 +85,8 @@
 
 ## Deployment
 - Git: `main` = production, `dev` = working branch
-- Vercel project: `asshat-fantasy-2026` (linked via `.vercel/`)
+- Vercel project: `fantasy-helper-test` (linked via `.vercel/`)
+- Production URL: https://fantasy-helper-test.vercel.app
 - Production branch: `main` (set in Vercel dashboard)
 - DB: Neon PostgreSQL (`POSTGRES_URL` in `.env.local`)
 - Auth: Yahoo OAuth via NextAuth
