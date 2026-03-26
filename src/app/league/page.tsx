@@ -1627,14 +1627,31 @@ export default function Home() {
                 </>
               )}
               
-              {/* Baseball draft tabs */}
-              {activeSport === 'baseball' && (
+              {/* Baseball tabs — context-aware for in-season vs draft */}
+              {activeSport === 'baseball' && teamRosters.length > 0 && (
+                <>
+                  <button onClick={() => setViewMode('TEAM')} className={`px-3 sm:px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 rounded-lg transition-all whitespace-nowrap ${viewMode === 'TEAM' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                    <Users className="w-3.5 h-3.5" /> Team
+                  </button>
+                  <button onClick={() => setViewMode('STANDINGS')} className={`px-3 sm:px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 rounded-lg transition-all whitespace-nowrap ${viewMode === 'STANDINGS' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                    <BarChart3 className="w-3.5 h-3.5" /> Standings
+                  </button>
+                  <button onClick={() => setViewMode('MATCHUP')} className={`px-3 sm:px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 rounded-lg transition-all whitespace-nowrap ${viewMode === 'MATCHUP' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                    <Activity className="w-3.5 h-3.5" /> Matchup
+                  </button>
+                  <button onClick={() => setViewMode('WATCHLIST')} className={`px-3 sm:px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 rounded-lg transition-all whitespace-nowrap ${viewMode === 'WATCHLIST' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                    <ListOrdered className="w-3.5 h-3.5" /> Watchlist
+                  </button>
+                </>
+              )}
+              {/* Baseball draft tabs — only when no in-season data */}
+              {activeSport === 'baseball' && teamRosters.length === 0 && (
                 <>
                   <button onClick={() => setViewMode('PLAYERS')} className={`px-3 sm:px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 rounded-lg transition-all whitespace-nowrap ${viewMode === 'PLAYERS' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
                     <Search className="w-3.5 h-3.5" /> Pool
                   </button>
                   <button onClick={() => setViewMode('GRID')} className={`px-3 sm:px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 rounded-lg transition-all whitespace-nowrap ${viewMode === 'GRID' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
-                    <LayoutGrid className="w-3.5 h-3.5" /> Grid
+                    <LayoutGrid className="w-3.5 h-3.5" /> Draft
                   </button>
                   <button onClick={() => setViewMode('TEAM')} className={`px-3 sm:px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 rounded-lg transition-all whitespace-nowrap ${viewMode === 'TEAM' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
                     <Users className="w-3.5 h-3.5" /> Team
@@ -1858,7 +1875,7 @@ export default function Home() {
                       </thead>
                       <tbody>
                         {roundsMap[rd].map((p, i) => (
-                          <tr key={p.pk} className={`border-b border-slate-800/30 transition-colors hover:bg-slate-800/30 ${i % 2 === 0 ? 'bg-slate-950/30' : 'bg-transparent'} last:border-0`}>
+                          <tr key={`${rd}-${p.pk}-${i}`} className={`border-b border-slate-800/30 transition-colors hover:bg-slate-800/30 ${i % 2 === 0 ? 'bg-slate-950/30' : 'bg-transparent'} last:border-0`}>
                             <td className="py-2 px-5 w-24">
                               <div className="flex items-center gap-2">
                                 <span title={`Pick number within Round ${rd}`} className="text-[10px] font-black text-indigo-300 border border-indigo-500/20 bg-indigo-500/10 px-1.5 py-0.5 rounded">
