@@ -212,8 +212,8 @@ export default function ChatPage() {
             </span>
           </Link>
           <span className="text-slate-700 hidden sm:inline">|</span>
-          <Link href="/draft-room" className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors">
-            <LayoutGrid size={14} /> <span className="hidden sm:inline">Draft Room</span>
+          <Link href="/league" className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors">
+            <LayoutGrid size={14} /> <span className="hidden sm:inline">League</span>
           </Link>
           <span className="flex items-center gap-1.5 text-xs text-indigo-400 font-medium">
             <MessageSquare size={14} /> Chat
@@ -263,11 +263,11 @@ export default function ChatPage() {
                 'Who should I sit this week?',
                 'Which categories should I punt?',
               ] : [
-                'Who should I pick up to replace Burnes?',
-                'How are my DTD players looking?',
-                'Analyze my pitching staff',
-                'Who should I start this week?',
+                'Who are the best free agents available?',
+                'Analyze my roster strengths and weaknesses',
                 'Any good buy-low trade targets?',
+                'Who should I start this week?',
+                'Do I have any injured players to address?',
               ]).map((suggestion) => (
                 <button
                   key={suggestion}

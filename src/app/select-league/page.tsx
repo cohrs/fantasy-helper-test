@@ -62,7 +62,7 @@ export default function SelectLeague() {
     localStorage.setItem('selectedLeague', JSON.stringify(league));
     
     // Navigate to draft room
-    router.push('/draft-room');
+    router.push('/league');
   };
 
   const sportEmoji: Record<string, string> = {

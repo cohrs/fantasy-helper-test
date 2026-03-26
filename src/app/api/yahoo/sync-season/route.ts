@@ -121,9 +121,9 @@ export async function POST(request: Request) {
                   const nameObj = findField('name');
                   const fullName = (typeof nameObj === 'object' && nameObj?.full) ? nameObj.full : 'Unknown';
                   const positions = findField('eligible_positions');
-                  const position = Array.isArray(positions) ? positions.map((p: any) => typeof p === 'object' && p.position ? p.position : p).join(',') : 'UTIL';
+                  const eligiblePos = Array.isArray(positions) ? positions.map((p: any) => typeof p === 'object' && p.position ? p.position : p).join(',') : 'UTIL';
                   const selectedPos = playerObj.player[1]?.selected_position?.[1]?.position || null;
-                  await sql`INSERT INTO team_rosters (league_key, team_key, team_name, player_name, player_key, position, nba_team, status) VALUES (${leagueKey}, ${team.teamKey}, ${team.teamName}, ${fullName}, ${findField('player_key')}, ${selectedPos || position}, ${findField('editorial_team_abbr') || 'FA'}, ${findField('status') || 'Active'}) ON CONFLICT (league_key, team_key, player_key) DO NOTHING`;
+                  await sql`INSERT INTO team_rosters (league_key, team_key, team_name, player_name, player_key, position, selected_position, eligible_positions, nba_team, status) VALUES (${leagueKey}, ${team.teamKey}, ${team.teamName}, ${fullName}, ${findField('player_key')}, ${selectedPos || eligiblePos}, ${selectedPos}, ${eligiblePos}, ${findField('editorial_team_abbr') || 'FA'}, ${findField('status') || 'Active'}) ON CONFLICT (league_key, team_key, player_key) DO UPDATE SET position = ${selectedPos || eligiblePos}, selected_position = ${selectedPos}, eligible_positions = ${eligiblePos}, status = ${findField('status') || 'Active'}, nba_team = ${findField('editorial_team_abbr') || 'FA'}`;
                   rosterCount++;
                 }
               }

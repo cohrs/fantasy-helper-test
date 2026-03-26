@@ -1602,7 +1602,7 @@ export default function Home() {
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-10 shrink-0">
             <h2 className="text-xl sm:text-3xl font-black italic uppercase tracking-tighter flex items-center gap-2 sm:gap-4">
               <LayoutGrid className={`w-5 sm:w-8 h-5 sm:h-8 ${activeSport === 'baseball' ? 'text-indigo-500' : 'text-orange-500'}`} />
-              {activeSport === 'baseball' ? 'Draft Board' : 'Team Manager'}
+              {activeSport === 'baseball' ? (teamRosters.length > 0 ? 'League Manager' : 'Draft Board') : 'Team Manager'}
             </h2>
             
             <div className="flex bg-slate-950 w-full sm:w-fit rounded-xl p-1 border border-slate-800 shadow-inner overflow-x-auto scrollbar-hide">
@@ -1901,7 +1901,7 @@ export default function Home() {
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-200 focus:ring-2 focus:ring-indigo-500/40 focus:outline-none"
                 >
                   {(() => {
-                    const teamList = activeSport === 'basketball' && teamRosters.length > 0
+                    const teamList = teamRosters.length > 0
                       ? Array.from(new Set(teamRosters.map((r: any) => r.team_name))).sort((a, b) => {
                           if (a === myTeamName) return -1;
                           if (b === myTeamName) return 1;
@@ -1924,9 +1924,7 @@ export default function Home() {
               <div className="hidden sm:flex w-44 shrink-0 flex-col gap-1 overflow-y-auto pr-2 border-r border-slate-800">
                 <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 sticky top-0 bg-slate-900 py-2">Franchise</div>
                 {(() => {
-                  // For basketball (in-season), use team_rosters table
-                  // For baseball (draft mode), use draft_picks table
-                  const teamList = activeSport === 'basketball' && teamRosters.length > 0
+                  const teamList = teamRosters.length > 0
                     ? Array.from(new Set(teamRosters.map((r: any) => r.team_name))).sort((a, b) => {
                         if (a === myTeamName) return -1;
                         if (b === myTeamName) return 1;
@@ -1956,13 +1954,13 @@ export default function Home() {
                 <div className="flex items-baseline gap-3 mb-4 shrink-0">
                   <h3 className="text-lg font-black italic tracking-tighter text-indigo-400">{selectedTeam || myTeamName}</h3>
                   {(() => {
-                    // For basketball, show player count from team_rosters
-                    if (activeSport === 'basketball' && teamRosters.length > 0) {
+                    // For in-season, show player count from team_rosters
+                    if (teamRosters.length > 0) {
                       const teamPlayers = teamRosters.filter((r: any) => r.team_name === selectedTeam);
                       return <span className="text-[10px] font-black text-green-400 uppercase tracking-wider">{teamPlayers.length} players</span>;
                     }
                     
-                    // For baseball, show roster slots
+                    // For draft mode, show roster slots
                     const teamPicks = draftResults.filter(p => p.tm === selectedTeam);
                     const roster = getTeamRoster(teamPicks);
                     const missing = getMissingSlots(roster);
@@ -1974,8 +1972,8 @@ export default function Home() {
                 
                 {/* Player Cards */}
                 <div className="flex-1 overflow-y-auto space-y-2 pr-1 sm:pr-2">{(() => {
-                  // For basketball (in-season), show current roster from team_rosters
-                  if (activeSport === 'basketball' && teamRosters.length > 0) {
+                  // In-season: use team_rosters data (has selected_position from Yahoo)
+                  if (teamRosters.length > 0) {
                     const teamPlayers = teamRosters.filter((r: any) => r.team_name === selectedTeam);
                     
                     if (teamPlayers.length === 0) {
@@ -1985,31 +1983,102 @@ export default function Home() {
                         </div>
                       );
                     }
-                    
-                    return teamPlayers.map((player: any, i: number) => (
-                      <PlayerCard
-                        key={i}
-                        player={{
-                          name: player.player_name,
-                          pos: player.position || 'UTIL',
-                          team: player.nba_team || 'FA',
-                          yahooStatus: player.status !== 'Active' ? player.status : undefined,
-                        }}
-                        activeSport={activeSport}
-                        leagueKey={selectedLeague?.league_key}
-                        onAskAssistant={askAssistant}
-                        context="team"
-                      />
-                    ));
+
+                    // Group players by section based on their roster slot (position field = selected_position)
+                    const batterSlots = ['C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'OF', 'UTIL'];
+                    const spSlots = ['SP'];
+                    const rpSlots = ['RP'];
+                    const pSlots = ['P'];
+                    const bnSlots = ['BN'];
+                    const ilSlots = ['IL', 'IL+', 'IL60', 'DL', 'NA'];
+                    // Basketball slots
+                    const bballSlots = ['PG', 'SG', 'G', 'SF', 'PF', 'F', 'C', 'UTIL'];
+
+                    const getSection = (slot: string) => {
+                      const s = slot?.toUpperCase() || 'BN';
+                      if (activeSport === 'basketball') {
+                        if (bballSlots.includes(s)) return 'Active';
+                        if (bnSlots.includes(s)) return 'Bench';
+                        if (ilSlots.includes(s)) return 'IL';
+                        return 'Bench';
+                      }
+                      if (batterSlots.includes(s)) return 'Batters';
+                      if (spSlots.includes(s)) return 'Starters';
+                      if (rpSlots.includes(s)) return 'Relievers';
+                      if (pSlots.includes(s)) return 'Pitchers';
+                      if (ilSlots.includes(s)) return 'Injured';
+                      if (bnSlots.includes(s)) return 'Bench';
+                      return 'Bench';
+                    };
+
+                    const sections: Record<string, any[]> = {};
+                    const sectionOrder = activeSport === 'basketball'
+                      ? ['Active', 'Bench', 'IL']
+                      : ['Batters', 'Starters', 'Relievers', 'Pitchers', 'Bench', 'Injured'];
+
+                    for (const player of teamPlayers) {
+                      const section = getSection(player.selected_position || player.position);
+                      if (!sections[section]) sections[section] = [];
+                      sections[section].push(player);
+                    }
+
+                    const sectionColors: Record<string, string> = {
+                      Batters: 'text-indigo-400', Starters: 'text-emerald-400', Relievers: 'text-orange-400',
+                      Pitchers: 'text-sky-400', Bench: 'text-slate-500', Injured: 'text-red-400',
+                      Active: 'text-indigo-400', IL: 'text-red-400'
+                    };
+
+                    return (
+                      <>
+                        {sectionOrder.filter(s => sections[s]?.length > 0).map(section => (
+                          <div key={section} className="mb-4">
+                            <div className={`text-[10px] font-black uppercase tracking-widest mb-2 ${sectionColors[section] || 'text-slate-500'}`}>
+                              {section} ({sections[section].length})
+                            </div>
+                            <div className="space-y-1.5">
+                              {sections[section].map((player: any, i: number) => {
+                                const yhStats = yahooStats?.[normalizeName(player.player_name)];
+                                let yahooStatsPairs = undefined;
+                                if (yhStats) {
+                                  const slot = player.selected_position || player.position || '';
+                                  const isPitcher = /^(SP|RP|P)$/i.test(slot) || /SP|RP/i.test(player.eligible_positions || '');
+                                  const ids = isPitcher ? PITCHING_STAT_IDS : BATTING_STAT_IDS;
+                                  yahooStatsPairs = ids
+                                    .map((id: string) => ({ id, label: YAHOO_STAT_LABELS[id] || id, val: yhStats[id] }))
+                                    .filter((s: any) => s.val && s.val !== '-' && s.val !== '0' && s.val !== '');
+                                }
+                                return (
+                                  <PlayerCard
+                                    key={i}
+                                    player={{
+                                      name: player.player_name,
+                                      pos: player.eligible_positions || player.position || 'UTIL',
+                                      team: player.nba_team || 'FA',
+                                      yahooStatus: player.status !== 'Active' ? player.status : undefined,
+                                      yahooStatsPairs,
+                                    }}
+                                    slot={player.selected_position || player.position?.split(',')[0]}
+                                    yahooStats={yhStats}
+                                    activeSport={activeSport}
+                                    leagueKey={selectedLeague?.league_key}
+                                    onAskAssistant={askAssistant}
+                                    context="team"
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    );
                   }
                   
-                  // For baseball (draft mode), show roster from draft_picks
+                  // Fallback: draft mode — show roster from draft_picks
                   const teamPicks = draftResults.filter(p => p.tm === selectedTeam);
                   const roster = getTeamRoster(teamPicks);
                   
                   return roster.map((r, i) => {
                     if (!r.player) {
-                      // Empty slot
                       return (
                         <div key={i} className="bg-slate-950/50 rounded-xl border border-dashed border-slate-800/50 p-3 opacity-40">
                           <div className="flex items-center gap-3">
