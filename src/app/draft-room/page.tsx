@@ -971,7 +971,7 @@ export default function Home() {
   const handleYahooSync = async () => {
     setIsSyncing(true);
     try {
-      const response = await fetch('/api/yahoo/sync-all', {
+      const response = await fetch('/api/yahoo/sync-season', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ leagueKey: selectedLeague?.league_key })
@@ -979,14 +979,11 @@ export default function Home() {
       const data = await response.json();
 
       if (data.success) {
-        const summary = [
-          `Draft: ${data.results.draft.count} picks`,
-          `Standings: ${data.results.standings.count} teams`,
-          `Rosters: ${data.results.rosters.count} players`
-        ].join('\n');
-        alert(`✅ Synced from Yahoo!\n\n${summary}`);
-        
-        // Reload page to show new data
+        const parts = [];
+        if (data.results.standings?.count) parts.push(`Standings: ${data.results.standings.count} teams`);
+        if (data.results.rosters?.count) parts.push(`Rosters: ${data.results.rosters.count} players`);
+        if (data.results.matchups?.count) parts.push(`Matchups: ${data.results.matchups.count}`);
+        alert(`✅ Synced from Yahoo!\n\n${parts.join('\n')}`);
         window.location.reload();
       } else {
         alert("Failed to sync from Yahoo! " + (data.error || "Unknown error"));
@@ -1555,12 +1552,12 @@ export default function Home() {
           </button>
           
           {activeSport === 'baseball' ? (
-            <button onClick={handleImport} disabled={isSyncing} className="px-3 sm:px-4 py-2 bg-indigo-500/10 text-indigo-400 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-indigo-500/20 disabled:opacity-50 whitespace-nowrap">
-              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> <span className="hidden sm:inline">{isSyncing ? 'SYNCING...' : 'SYNC LOCAL'}</span>
+            <button onClick={handleYahooSync} disabled={isSyncing} className="px-3 sm:px-4 py-2 bg-indigo-500/10 text-indigo-400 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-indigo-500/20 disabled:opacity-50 whitespace-nowrap">
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> <span className="hidden sm:inline">{isSyncing ? 'SYNCING...' : 'SYNC YAHOO'}</span>
             </button>
           ) : (
             <button onClick={handleYahooSync} disabled={isSyncing} className="px-3 sm:px-4 py-2 bg-orange-500/10 text-orange-400 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-orange-500/20 disabled:opacity-50 whitespace-nowrap">
-              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> <span className="hidden sm:inline">{isSyncing ? 'SYNCING...' : 'SYNC FROM YAHOO'}</span>
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> <span className="hidden sm:inline">{isSyncing ? 'SYNCING...' : 'SYNC YAHOO'}</span>
             </button>
           )}
 
