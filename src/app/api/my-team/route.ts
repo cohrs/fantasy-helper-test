@@ -26,14 +26,27 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'No league selected' }, { status: 400 });
     }
 
-    console.log(`⭐ [My Team] Fetching for league key: ${leagueKey}`);
+    // Get user_id to scope the query
+    const session2 = await getServerSession(authOptions);
+    const userId = session2?.user?.email
+      ? (await sql`SELECT id FROM users WHERE email = ${session2.user.email} LIMIT 1`)[0]?.id
+      : null;
 
-    // Get user's team name for this league
-    const result = await sql`
-      SELECT team_name, team_key, league_name, sport
-      FROM user_leagues
-      WHERE league_key = ${leagueKey}
-    `;
+    console.log(`⭐ [My Team] Fetching for league key: ${leagueKey}, user_id: ${userId}`);
+
+    // Get user's team name for this league (scoped to user)
+    const result = userId
+      ? await sql`
+          SELECT team_name, team_key, league_name, sport
+          FROM user_leagues
+          WHERE league_key = ${leagueKey} AND user_id = ${userId}
+        `
+      : await sql`
+          SELECT team_name, team_key, league_name, sport
+          FROM user_leagues
+          WHERE league_key = ${leagueKey}
+          LIMIT 1
+        `;
 
     if (!result.length) {
       return NextResponse.json({ error: 'League not found' }, { status: 404 });
@@ -62,7 +75,11 @@ export async function GET(request: Request) {
               if (rosterTeam.length) {
                 teamName = rosterTeam[0].team_name;
                 // Persist it so we don't have to look it up again
-                await sql`UPDATE user_leagues SET team_name = ${teamName} WHERE league_key = ${leagueKey}`;
+                if (userId) {
+                  await sql`UPDATE user_leagues SET team_name = ${teamName} WHERE league_key = ${leagueKey} AND user_id = ${userId}`;
+                } else {
+                  await sql`UPDATE user_leagues SET team_name = ${teamName} WHERE league_key = ${leagueKey}`;
+                }
               }
             }
             
@@ -97,7 +114,11 @@ export async function GET(request: Request) {
                       if (isMe && tk && tn) {
                         teamKey = tk;
                         teamName = tn;
-                        await sql`UPDATE user_leagues SET team_key = ${tk}, team_name = ${tn} WHERE league_key = ${leagueKey}`;
+                        if (userId) {
+                          await sql`UPDATE user_leagues SET team_key = ${tk}, team_name = ${tn} WHERE league_key = ${leagueKey} AND user_id = ${userId}`;
+                        } else {
+                          await sql`UPDATE user_leagues SET team_key = ${tk}, team_name = ${tn} WHERE league_key = ${leagueKey}`;
+                        }
                         console.log(`⭐ [My Team] Resolved via Yahoo: ${tn} (${tk})`);
                         break;
                       }

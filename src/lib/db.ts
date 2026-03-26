@@ -50,21 +50,12 @@ export async function getPlayerNotes(leagueKey?: string | null, userId?: number 
 export async function savePlayerNote(playerName: string, playerNameNormalized: string, note: string, leagueKey?: string | null, userId?: number | null) {
   const sql = getDb();
   if (!leagueKey) throw new Error('League key required to save player note');
-  if (userId) {
-    await sql`
-      INSERT INTO player_notes (league_key, user_id, player_name, player_name_normalized, notes, updated_at)
-      VALUES (${leagueKey}, ${userId}, ${playerName}, ${playerNameNormalized}, ${note}, CURRENT_TIMESTAMP)
-      ON CONFLICT (league_key, player_name_normalized)
-      DO UPDATE SET notes = ${note}, user_id = ${userId}, updated_at = CURRENT_TIMESTAMP
-    `;
-  } else {
-    await sql`
-      INSERT INTO player_notes (league_key, player_name, player_name_normalized, notes, updated_at)
-      VALUES (${leagueKey}, ${playerName}, ${playerNameNormalized}, ${note}, CURRENT_TIMESTAMP)
-      ON CONFLICT (league_key, player_name_normalized)
-      DO UPDATE SET notes = ${note}, updated_at = CURRENT_TIMESTAMP
-    `;
-  }
+  await sql`
+    INSERT INTO player_notes (league_key, user_id, player_name, player_name_normalized, notes, updated_at)
+    VALUES (${leagueKey}, ${userId || null}, ${playerName}, ${playerNameNormalized}, ${note}, CURRENT_TIMESTAMP)
+    ON CONFLICT (league_key, user_id, player_name_normalized)
+    DO UPDATE SET notes = ${note}, updated_at = CURRENT_TIMESTAMP
+  `;
 }
 
 // Chat History

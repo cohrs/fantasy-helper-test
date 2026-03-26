@@ -37,16 +37,17 @@ CREATE TABLE IF NOT EXISTS user_selected_league (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Player notes from AI analysis (league-specific)
+-- Player notes from AI analysis (per user + league)
 CREATE TABLE IF NOT EXISTS player_notes (
   id SERIAL PRIMARY KEY,
   league_key VARCHAR(255) NOT NULL,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
   player_name VARCHAR(255) NOT NULL,
   player_name_normalized VARCHAR(255) NOT NULL,
   notes TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(league_key, player_name_normalized)
+  UNIQUE(league_key, user_id, player_name_normalized)
 );
 
 -- Yahoo player news cache (league-specific)
@@ -63,10 +64,11 @@ CREATE TABLE IF NOT EXISTS yahoo_player_news (
   UNIQUE(league_key, player_name_normalized)
 );
 
--- Chat history with AI assistant (league-specific)
+-- Chat history with AI assistant (per user + league)
 CREATE TABLE IF NOT EXISTS chat_history (
   id SERIAL PRIMARY KEY,
   league_key VARCHAR(255) NOT NULL,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
   prompt TEXT,
   raw_response TEXT NOT NULL,
   recommendations JSONB,
@@ -88,10 +90,11 @@ CREATE TABLE IF NOT EXISTS draft_picks (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- User watchlist (league-specific)
+-- User watchlist (per user + league)
 CREATE TABLE IF NOT EXISTS watchlist (
   id SERIAL PRIMARY KEY,
   league_key VARCHAR(255) NOT NULL,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
   player_name VARCHAR(255) NOT NULL,
   position VARCHAR(50) NOT NULL,
   team_abbr VARCHAR(50),
