@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getChatHistory } from '@/lib/db';
+import { getChatHistory, getUserId } from '@/lib/db';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../auth/[...nextauth]/route";
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
     try {
@@ -10,32 +14,25 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'League key required' }, { status: 400 });
         }
         
-        const leagueKey = leagueKeyParam;
-        const history = await getChatHistory(leagueKey);
+        const session = await getServerSession(authOptions);
+        const userId = await getUserId(session);
+        const history = await getChatHistory(leagueKeyParam, 20, userId);
         
-        // Transform to chat format
         const chatMessages = history.flatMap((entry: any) => {
             const messages = [];
-            
-            // User message
             messages.push({
                 role: 'user' as const,
                 parts: [{ text: entry.prompt }],
                 timestamp: entry.created_at
             });
-            
-            // Assistant response
             const recommendations = typeof entry.recommendations === 'string' 
-                ? JSON.parse(entry.recommendations)
-                : entry.recommendations;
-            
+                ? JSON.parse(entry.recommendations) : entry.recommendations;
             messages.push({
                 role: 'model' as const,
                 parts: [{ text: entry.raw_response }],
                 recommendations: recommendations || [],
                 timestamp: entry.created_at
             });
-            
             return messages;
         });
         

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/route";
-import { getDb, getSelectedLeagueKey, saveChatHistory } from '@/lib/db';
+import { getDb, getSelectedLeagueKey, getUserId, saveChatHistory } from '@/lib/db';
 import { getYahooAccessTokenByEmail } from '@/lib/yahoo-auth';
 
 const sql = getDb();
@@ -209,8 +209,9 @@ ${allRostersContext}
     const text = response.response.text();
 
     // Save to chat history
+    const userId = await getUserId(session);
     try {
-      await saveChatHistory(message, text, [], leagueKey);
+      await saveChatHistory(message, text, [], leagueKey, userId);
     } catch (e) {
       console.error('Failed to save chat history:', e);
     }

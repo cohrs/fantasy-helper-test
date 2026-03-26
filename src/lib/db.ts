@@ -10,6 +10,14 @@ export function getDb() {
   return sql;
 }
 
+// Get current user's ID from session
+export async function getUserId(session?: any): Promise<number | null> {
+  if (!session?.user?.email) return null;
+  const sql = getDb();
+  const result = await sql`SELECT id FROM users WHERE email = ${session.user.email} LIMIT 1`;
+  return result.length > 0 ? result[0].id : null;
+}
+
 // Get current user's selected league key
 export async function getSelectedLeagueKey(session?: any, leagueKeyFromRequest?: string | null) {
   const sql = getDb();
@@ -28,44 +36,61 @@ export async function getSelectedLeagueKey(session?: any, leagueKeyFromRequest?:
 export const getSelectedLeagueId = getSelectedLeagueKey;
 
 // Player Notes
-export async function getPlayerNotes(leagueKey?: string | null) {
+export async function getPlayerNotes(leagueKey?: string | null, userId?: number | null) {
   const sql = getDb();
   if (!leagueKey) return {};
-  const rows = await sql`SELECT player_name_normalized, notes FROM player_notes WHERE league_key = ${leagueKey}`;
+  const rows = userId
+    ? await sql`SELECT player_name_normalized, notes FROM player_notes WHERE league_key = ${leagueKey} AND user_id = ${userId}`
+    : await sql`SELECT player_name_normalized, notes FROM player_notes WHERE league_key = ${leagueKey}`;
   const notes: Record<string, string> = {};
   rows.forEach((row: any) => { notes[row.player_name_normalized] = row.notes; });
   return notes;
 }
 
-export async function savePlayerNote(playerName: string, playerNameNormalized: string, note: string, leagueKey?: string | null) {
+export async function savePlayerNote(playerName: string, playerNameNormalized: string, note: string, leagueKey?: string | null, userId?: number | null) {
   const sql = getDb();
   if (!leagueKey) throw new Error('League key required to save player note');
-  await sql`
-    INSERT INTO player_notes (league_key, player_name, player_name_normalized, notes, updated_at)
-    VALUES (${leagueKey}, ${playerName}, ${playerNameNormalized}, ${note}, CURRENT_TIMESTAMP)
-    ON CONFLICT (league_key, player_name_normalized)
-    DO UPDATE SET notes = ${note}, updated_at = CURRENT_TIMESTAMP
-  `;
+  if (userId) {
+    await sql`
+      INSERT INTO player_notes (league_key, user_id, player_name, player_name_normalized, notes, updated_at)
+      VALUES (${leagueKey}, ${userId}, ${playerName}, ${playerNameNormalized}, ${note}, CURRENT_TIMESTAMP)
+      ON CONFLICT (league_key, player_name_normalized)
+      DO UPDATE SET notes = ${note}, user_id = ${userId}, updated_at = CURRENT_TIMESTAMP
+    `;
+  } else {
+    await sql`
+      INSERT INTO player_notes (league_key, player_name, player_name_normalized, notes, updated_at)
+      VALUES (${leagueKey}, ${playerName}, ${playerNameNormalized}, ${note}, CURRENT_TIMESTAMP)
+      ON CONFLICT (league_key, player_name_normalized)
+      DO UPDATE SET notes = ${note}, updated_at = CURRENT_TIMESTAMP
+    `;
+  }
 }
 
 // Chat History
-export async function saveChatHistory(prompt: string, rawResponse: string, recommendations: any[], leagueKey?: string | null) {
+export async function saveChatHistory(prompt: string, rawResponse: string, recommendations: any[], leagueKey?: string | null, userId?: number | null) {
   const sql = getDb();
   if (!leagueKey) throw new Error('League key required to save chat history');
   await sql`
-    INSERT INTO chat_history (league_key, prompt, raw_response, recommendations)
-    VALUES (${leagueKey}, ${prompt}, ${rawResponse}, ${JSON.stringify(recommendations)})
+    INSERT INTO chat_history (league_key, user_id, prompt, raw_response, recommendations)
+    VALUES (${leagueKey}, ${userId || null}, ${prompt}, ${rawResponse}, ${JSON.stringify(recommendations)})
   `;
 }
 
-export async function getChatHistory(leagueKey?: string | null, limit: number = 20) {
+export async function getChatHistory(leagueKey?: string | null, limit: number = 20, userId?: number | null) {
   const sql = getDb();
   if (!leagueKey) return [];
-  const results = await sql`
-    SELECT prompt, raw_response, recommendations, created_at
-    FROM chat_history WHERE league_key = ${leagueKey}
-    ORDER BY created_at DESC LIMIT ${limit}
-  `;
+  const results = userId
+    ? await sql`
+        SELECT prompt, raw_response, recommendations, created_at
+        FROM chat_history WHERE league_key = ${leagueKey} AND user_id = ${userId}
+        ORDER BY created_at DESC LIMIT ${limit}
+      `
+    : await sql`
+        SELECT prompt, raw_response, recommendations, created_at
+        FROM chat_history WHERE league_key = ${leagueKey}
+        ORDER BY created_at DESC LIMIT ${limit}
+      `;
   return results.reverse();
 }
 
@@ -110,22 +135,28 @@ export async function saveDraftPicks(picks: any[], leagueKey?: string | null) {
 }
 
 // Watchlist
-export async function getWatchlist(leagueKey?: string | null) {
+export async function getWatchlist(leagueKey?: string | null, userId?: number | null) {
   const sql = getDb();
   if (!leagueKey) return [];
-  return await sql`SELECT * FROM watchlist WHERE league_key = ${leagueKey} ORDER BY sort_order ASC`;
+  return userId
+    ? await sql`SELECT * FROM watchlist WHERE league_key = ${leagueKey} AND user_id = ${userId} ORDER BY sort_order ASC`
+    : await sql`SELECT * FROM watchlist WHERE league_key = ${leagueKey} ORDER BY sort_order ASC`;
 }
 
-export async function saveWatchlist(players: any[], leagueKey?: string | null) {
+export async function saveWatchlist(players: any[], leagueKey?: string | null, userId?: number | null) {
   const sql = getDb();
   if (!leagueKey) throw new Error('League key required to save watchlist');
-  await sql`DELETE FROM watchlist WHERE league_key = ${leagueKey}`;
+  if (userId) {
+    await sql`DELETE FROM watchlist WHERE league_key = ${leagueKey} AND user_id = ${userId}`;
+  } else {
+    await sql`DELETE FROM watchlist WHERE league_key = ${leagueKey}`;
+  }
   if (players.length === 0) return;
   for (let index = 0; index < players.length; index++) {
     const player = players[index];
     await sql`
-      INSERT INTO watchlist (league_key, player_name, position, team_abbr, adp, rationale, sort_order)
-      VALUES (${leagueKey}, ${player.name}, ${player.pos}, ${player.team || null},
+      INSERT INTO watchlist (league_key, user_id, player_name, position, team_abbr, adp, rationale, sort_order)
+      VALUES (${leagueKey}, ${userId || null}, ${player.name}, ${player.pos}, ${player.team || null},
         ${player.adp || null}, ${player.rationale || null}, ${index})
     `;
   }
