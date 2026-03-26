@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { saveDraftPicks, getSelectedLeagueId, getDb } from '@/lib/db';
+import { saveDraftPicks, getSelectedLeagueKey, getDb } from '@/lib/db';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
 
@@ -161,19 +161,19 @@ function parsePlayerData(textContent: string): ParsedPlayer[] {
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
-        const leagueIdParam = searchParams.get('leagueId');
+        const leagueKeyParam = searchParams.get('leagueKey');
         const textContent = searchParams.get('textContent');
         
-        let leagueId: number | null = null;
+        let leagueKey: string | null = null;
         
-        if (leagueIdParam) {
-            leagueId = parseInt(leagueIdParam);
+        if (leagueKeyParam) {
+            leagueKey = leagueKeyParam;
         } else {
             const session = await getServerSession(authOptions);
-            leagueId = await getSelectedLeagueId(session);
+            leagueKey = await getSelectedLeagueKey(session);
         }
         
-        if (!leagueId) {
+        if (!leagueKey) {
             return NextResponse.json({ 
                 success: false, 
                 error: "No league selected. Please select a league first." 
@@ -181,7 +181,7 @@ export async function GET(request: Request) {
         }
 
         const leagueInfo = await sql`
-            SELECT sport FROM user_leagues WHERE id = ${leagueId}
+            SELECT sport FROM user_leagues WHERE league_key = ${leagueKey}
         `;
         
         if (!leagueInfo.length) {
@@ -201,7 +201,7 @@ export async function GET(request: Request) {
             }, { status: 400 });
         }
 
-        console.log(`🔄 Scraping ${sport} draft for league ${leagueId} using Playwright...`);
+        console.log(`🔄 Scraping ${sport} draft for league ${leagueKey} using Playwright...`);
 
         // Check if text content was provided (from AI assistant using Playwright MCP)
         if (!textContent) {
@@ -220,7 +220,7 @@ export async function GET(request: Request) {
         console.log(`✅ Parsed ${parsedData.length} players`);
 
         // Save to database
-        const saved = await saveDraftPicks(parsedData, leagueId);
+        const saved = await saveDraftPicks(parsedData, leagueKey);
         console.log(`💾 Saved ${saved} draft picks to database`);
 
         return NextResponse.json({ 
@@ -229,7 +229,7 @@ export async function GET(request: Request) {
             playersFound: parsedData.length,
             playersSaved: saved,
             sport,
-            leagueId
+            leagueKey
         });
 
     } catch (error) {

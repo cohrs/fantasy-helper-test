@@ -1,41 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getChatHistory } from '@/lib/db';
+import { getChatHistory, getUserId } from '@/lib/db';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../auth/[...nextauth]/route";
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
-        const leagueIdParam = searchParams.get('leagueId');
+        const leagueKeyParam = searchParams.get('leagueKey');
         
-        if (!leagueIdParam) {
-            return NextResponse.json({ error: 'League ID required' }, { status: 400 });
+        if (!leagueKeyParam) {
+            return NextResponse.json({ error: 'League key required' }, { status: 400 });
         }
         
-        const leagueId = parseInt(leagueIdParam);
-        const history = await getChatHistory(leagueId);
+        const session = await getServerSession(authOptions);
+        const userId = await getUserId(session);
+        const history = await getChatHistory(leagueKeyParam, 20, userId);
         
-        // Transform to chat format
         const chatMessages = history.flatMap((entry: any) => {
             const messages = [];
-            
-            // User message
             messages.push({
                 role: 'user' as const,
                 parts: [{ text: entry.prompt }],
                 timestamp: entry.created_at
             });
-            
-            // Assistant response
             const recommendations = typeof entry.recommendations === 'string' 
-                ? JSON.parse(entry.recommendations)
-                : entry.recommendations;
-            
+                ? JSON.parse(entry.recommendations) : entry.recommendations;
             messages.push({
                 role: 'model' as const,
                 parts: [{ text: entry.raw_response }],
                 recommendations: recommendations || [],
                 timestamp: entry.created_at
             });
-            
             return messages;
         });
         

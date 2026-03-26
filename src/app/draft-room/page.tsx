@@ -56,14 +56,14 @@ AssistantInput.displayName = 'AssistantInput';
 
 const WatchlistItem = ({
   player, activeSport, isTaken, isFirst, isLast, onMoveUp, onMoveDown, onDelete,
-  index, draggedIndex, dragOverIndex, onDragStart, onDragOver, onDragEnd, onDrop, onAskAssistant, leagueId
+  index, draggedIndex, dragOverIndex, onDragStart, onDragOver, onDragEnd, onDrop, onAskAssistant, leagueKey
 }: {
   player: any; activeSport: string; isTaken: boolean; isFirst: boolean; isLast: boolean;
   onMoveUp: () => void; onMoveDown: () => void; onDelete: () => void;
   index: number; draggedIndex: number | null; dragOverIndex: number | null;
   onDragStart: (idx: number) => void; onDragOver: (idx: number) => void; onDragEnd: () => void; onDrop: (idx: number) => void;
   onAskAssistant?: (prompt: string) => void;
-  leagueId?: number | null;
+  leagueKey?: string | null;
 }) => {
   const [showNotes, setShowNotes] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -86,7 +86,7 @@ const WatchlistItem = ({
   const handleFetchYahooNews = async () => {
     setLoadingNews(true);
     try {
-      const url = `/api/yahoo/player-news?name=${encodeURIComponent(player.name)}${leagueId ? `&leagueId=${leagueId}` : ''}`;
+      const url = `/api/yahoo/player-news?name=${encodeURIComponent(player.name)}${leagueKey ? `&leagueKey=${leagueKey}` : ''}`;
       const response = await fetch(url);
       const data = await response.json();
       if (data.success) {
@@ -375,7 +375,7 @@ const WatchlistItem = ({
  * Includes: MLB Draft Tracker & NBA Standings Scaffold
  */
 
-const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWatchlist, activeSport, myRoster, BATTING_STAT_IDS, PITCHING_STAT_IDS, YAHOO_STAT_LABELS, onAskAssistant, leagueId }: any) => {
+const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWatchlist, activeSport, myRoster, BATTING_STAT_IDS, PITCHING_STAT_IDS, YAHOO_STAT_LABELS, onAskAssistant, leagueKey }: any) => {
   const isPitcher = /SP|RP|P/i.test(p.pos);
   const ids = isPitcher ? PITCHING_STAT_IDS : BATTING_STAT_IDS;
   const [showNotes, setShowNotes] = useState(false);
@@ -393,7 +393,7 @@ const DraftBoardPlayerRow = React.memo(({ p, yahooStats, yahooPlayers, updateWat
   const handleFetchYahooNews = async () => {
     setLoadingNews(true);
     try {
-      const url = `/api/yahoo/player-news?name=${encodeURIComponent(p.name)}${leagueId ? `&leagueId=${leagueId}` : ''}`;
+      const url = `/api/yahoo/player-news?name=${encodeURIComponent(p.name)}${leagueKey ? `&leagueKey=${leagueKey}` : ''}`;
       const response = await fetch(url);
       const data = await response.json();
       if (data.success) {
@@ -735,7 +735,7 @@ export default function Home() {
       await fetch('/api/draft-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'SYNC_ROSTER', rosterData: newRoster, leagueId: selectedLeague?.id })
+        body: JSON.stringify({ action: 'SYNC_ROSTER', rosterData: newRoster, leagueKey: selectedLeague?.league_key })
       });
     } catch (err) {
       console.error('Failed to sync watchlist to JSON', err);
@@ -835,18 +835,18 @@ export default function Home() {
       return;
     }
 
-    const leagueId = selectedLeague.id;
-    console.log(`📊 Loading data for league ${leagueId} (${selectedLeague.league_name})`);
+    const leagueKey = selectedLeague.league_key;
+    console.log(`📊 Loading data for league ${leagueKey} (${selectedLeague.league_name})`);
 
     Promise.all([
-      fetch(`/api/draft-data?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch(`/api/assistant/notes?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch(`/api/assistant/history?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({ history: [] })),
+      fetch(`/api/draft-data?leagueKey=${leagueKey}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/assistant/notes?leagueKey=${leagueKey}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/assistant/history?leagueKey=${leagueKey}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({ history: [] })),
       fetch(`/api/player-stats?season=${selectedLeague.season}&sport=${selectedLeague.sport}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch(`/api/yahoo/league-settings?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch(`/api/team-data?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch(`/api/my-team?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
-      fetch(`/api/yahoo/scoreboard?leagueId=${leagueId}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({}))
+      fetch(`/api/yahoo/league-settings?leagueKey=${leagueKey}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/team-data?leagueKey=${leagueKey}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/my-team?leagueKey=${leagueKey}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({})),
+      fetch(`/api/yahoo/scoreboard?leagueKey=${leagueKey}&t=${Date.now()}`, { cache: 'no-store' }).then(res => res.json()).catch(() => ({}))
     ]).then(([draftData, notesData, chatData, statsData, leagueSettings, teamData, myTeamData, scoreboardData]) => {
       if (draftData.roster) setMyRoster(draftData.roster);
       if (draftData.draft && draftData.draft.length > 0) {
@@ -921,15 +921,15 @@ export default function Home() {
   const handleImport = async () => {
     setIsSyncing(true);
     try {
-      let leagueId = selectedLeague?.id;
+      let leagueKey = selectedLeague?.league_key;
       
       // Fallback: try to get from localStorage if state is not set
-      if (!leagueId) {
+      if (!leagueKey) {
         try {
           const stored = localStorage.getItem('selectedLeague');
           if (stored) {
             const league = JSON.parse(stored);
-            leagueId = league.id;
+            leagueKey = league.league_key;
             setSelectedLeague(league); // Update state
             setActiveSport(league.sport);
           }
@@ -938,13 +938,13 @@ export default function Home() {
         }
       }
       
-      if (!leagueId) {
+      if (!leagueKey) {
         alert("No league selected. Please select a league first.");
         setIsSyncing(false);
         return;
       }
       
-      const response = await fetch(`/api/scrape-draft?leagueId=${leagueId}`);
+      const response = await fetch(`/api/scrape-draft?leagueKey=${leagueKey}`);
       const data = await response.json();
 
       if (data.success) {
@@ -974,7 +974,7 @@ export default function Home() {
       const response = await fetch('/api/yahoo/sync-all', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leagueId: selectedLeague?.id })
+        body: JSON.stringify({ leagueKey: selectedLeague?.league_key })
       });
       const data = await response.json();
 
@@ -1017,19 +1017,19 @@ export default function Home() {
   // Load live Yahoo player rankings + projected stats
   const loadYahooPlayers = async () => {
     setIsLoadingYahoo(true);
-    const leagueId = selectedLeague?.id;
+    const leagueKey = selectedLeague?.league_key;
     try {
       const results = await Promise.all([
-        fetch(`/api/yahoo/players?start=0&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
-        fetch(`/api/yahoo/players?start=50&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
-        fetch(`/api/yahoo/players?start=100&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
-        fetch(`/api/yahoo/players?start=150&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
-        fetch(`/api/yahoo/players?start=200&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
-        fetch(`/api/yahoo/players?start=250&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
-        fetch(`/api/yahoo/players?start=300&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
-        fetch(`/api/yahoo/players?start=350&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
-        fetch(`/api/yahoo/players?start=400&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
-        fetch(`/api/yahoo/players?start=450&count=50${leagueId ? `&leagueId=${leagueId}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=0&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=50&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=100&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=150&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=200&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=250&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=300&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=350&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=400&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
+        fetch(`/api/yahoo/players?start=450&count=50${leagueKey ? `&leagueKey=${leagueKey}` : ''}`).then(r => r.json()),
       ]);
       const combined = results.flatMap(d => d.players || []).map((p, i) => ({ ...p, rank: i + 1 }));
       setYahooPlayers(combined);
@@ -1138,7 +1138,7 @@ export default function Home() {
         picksUntilTurn: waitPicks,
         customPrompt: userPromptText,
         chatHistory: newHistory,
-        leagueId: selectedLeague?.id,
+        leagueKey: selectedLeague?.league_key,
         sport: activeSport
       };
 
@@ -1169,7 +1169,7 @@ export default function Home() {
 
         // Refetch AI notes so any new rationales are immediately rendered across the board
         try {
-          const notesRes = await fetch(`/api/assistant/notes?leagueId=${selectedLeague?.id}&t=${Date.now()}`);
+          const notesRes = await fetch(`/api/assistant/notes?leagueKey=${selectedLeague?.league_key}&t=${Date.now()}`);
           const notesData = await notesRes.json();
           if (notesData) {
             const normalizedNotes: Record<string, string> = {};
@@ -1542,10 +1542,16 @@ export default function Home() {
         </div>
         <div className="flex gap-3 bg-slate-900 p-2 rounded-2xl border border-slate-800">
           <button 
-            onClick={() => window.location.href = '/select-league'}
+            onClick={() => window.location.href = '/'}
             className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-slate-700"
           >
             <LayoutGrid className="w-3.5 h-3.5" /> CHANGE LEAGUE
+          </button>
+          <button
+            onClick={() => window.location.href = '/chat'}
+            className="px-4 py-2 bg-sky-500/10 text-sky-400 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-sky-500/20"
+          >
+            <MessageSquare className="w-3.5 h-3.5" /> CHAT
           </button>
           
           {activeSport === 'baseball' ? (
@@ -1572,8 +1578,8 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Compact Status Strip */}
-      {activeSport === 'baseball' && (
+      {/* Compact Status Strip — only show during active draft (not in-season) */}
+      {activeSport === 'baseball' && teamRosters.length === 0 && draftResults.length > 0 && (
         <div className={`max-w-7xl w-full mx-auto shrink-0 mb-4 rounded-2xl px-5 py-3 flex items-center gap-6 border ${waitPicks === 0 ? 'bg-green-500/10 border-green-500/30 text-green-300' : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-300'}`}>
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Pick</span>
@@ -1769,7 +1775,7 @@ export default function Home() {
                     PITCHING_STAT_IDS={PITCHING_STAT_IDS}
                     YAHOO_STAT_LABELS={YAHOO_STAT_LABELS}
                     onAskAssistant={askAssistant}
-                    leagueId={selectedLeague?.id}
+                    leagueKey={selectedLeague?.league_key}
                   />
                 ))}
               </div>
@@ -1781,7 +1787,11 @@ export default function Home() {
               .filter(pick => pick.tm && !pick.isKeeper)
               .sort((a, b) => a.pk - b.pk);
 
-            if (drafted.length === 0) {
+            const keepers = draftResults
+              .filter(pick => pick.tm && pick.isKeeper)
+              .sort((a, b) => (a.tm || '').localeCompare(b.tm || ''));
+
+            if (drafted.length === 0 && keepers.length === 0) {
               return (
                 <div className="flex-1 overflow-y-auto pr-2">
                   <div className="text-center mt-20 opacity-50 font-black tracking-widest text-slate-500">NO DRAFT DATA SYNCED YET</div>
@@ -1801,6 +1811,37 @@ export default function Home() {
 
             return (
               <div className="flex-1 overflow-y-auto pr-2 pb-10 space-y-8">
+                {keepers.length > 0 && (
+                  <div className="bg-slate-900/50 rounded-2xl border border-yellow-800/30 overflow-hidden">
+                    <div className="bg-yellow-900/20 px-5 py-3 border-b border-yellow-800/30 flex items-center justify-between sticky top-0 backdrop-blur-md z-10">
+                      <h3 className="font-black tracking-widest text-yellow-400 uppercase text-xs">Keepers</h3>
+                      <span className="text-[10px] font-bold text-slate-500">{keepers.length} Players</span>
+                    </div>
+                    <table className="w-full border-collapse text-sm">
+                      <tbody>
+                        {keepers.map((p, i) => (
+                          <tr key={`keeper-${i}`} className={`border-b border-slate-800/30 transition-colors hover:bg-slate-800/30 ${i % 2 === 0 ? 'bg-slate-950/30' : 'bg-transparent'} last:border-0`}>
+                            <td className="py-2 px-5 w-24">
+                              <span className="text-[10px] font-black text-yellow-400 border border-yellow-500/20 bg-yellow-500/10 px-1.5 py-0.5 rounded">K</span>
+                            </td>
+                            <td className="py-2 px-2">
+                              <span className="font-bold text-slate-200 text-sm tracking-tight">{p.name}</span>
+                            </td>
+                            <td className="py-2 px-2 w-24">
+                              <span className="text-[9px] font-black text-slate-500 bg-slate-800/50 px-1.5 py-0.5 rounded uppercase tracking-wider">{p.pos}</span>
+                            </td>
+                            <td className="py-2 px-2 w-20">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase">{p.playerTeam}</span>
+                            </td>
+                            <td className="py-2 px-5 text-right">
+                              <span className="text-[11px] font-black text-slate-300 italic tracking-wide">{p.tm}</span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
                 {sortedRounds.map(rd => (
                   <div key={`round-${rd}`} className="bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden">
                     <div className="bg-slate-800/50 px-5 py-3 border-b border-slate-800/80 flex items-center justify-between sticky top-0 backdrop-blur-md z-10">
@@ -1930,7 +1971,7 @@ export default function Home() {
                           yahooStatus: player.status !== 'Active' ? player.status : undefined,
                         }}
                         activeSport={activeSport}
-                        leagueId={selectedLeague?.id}
+                        leagueKey={selectedLeague?.league_key}
                         onAskAssistant={askAssistant}
                         context="team"
                       />
@@ -1978,7 +2019,7 @@ export default function Home() {
                         slot={r.slot}
                         yahooStats={yhStats}
                         activeSport={activeSport}
-                        leagueId={selectedLeague?.id}
+                        leagueKey={selectedLeague?.league_key}
                         onAskAssistant={askAssistant}
                         context="team"
                       />
@@ -2414,7 +2455,7 @@ export default function Home() {
                             player={enrichedPlayer}
                             activeSport={activeSport}
                             isTaken={isTaken}
-                            leagueId={selectedLeague?.id}
+                            leagueKey={selectedLeague?.league_key}
                             isFirst={originalIndex === 0}
                             isLast={originalIndex === myRoster.length - 1}
                             onMoveUp={() => {

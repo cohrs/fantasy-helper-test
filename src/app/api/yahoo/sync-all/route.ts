@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/route";
-import { getDb, getSelectedLeagueId } from '@/lib/db';
+import { getDb, getSelectedLeagueKey } from '@/lib/db';
 import { getYahooAccessToken } from '@/lib/yahoo-auth';
 
 const sql = getDb();
@@ -25,11 +25,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Accept leagueId from request body (client knows it from localStorage)
-        let bodyLeagueId: number | null = null;
+        // Accept leagueKey from request body (client knows it from localStorage)
+        let bodyLeagueKey: string | null = null;
         try {
             const body = await request.json();
-            bodyLeagueId = body?.leagueId ? Number(body.leagueId) : null;
+            bodyLeagueKey = body?.leagueKey || null;
         } catch {}
 
         // Get Yahoo GUID from database using email
@@ -50,22 +50,21 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Failed to get Yahoo access token. Please re-login.' }, { status: 401 });
         }
 
-        const leagueId = bodyLeagueId || await getSelectedLeagueId(session);
+        const leagueKey = bodyLeagueKey || await getSelectedLeagueKey(session);
         
-        if (!leagueId) {
+        if (!leagueKey) {
             return NextResponse.json({ error: 'No league selected' }, { status: 400 });
         }
 
-        // Get league key
+        // Get league info
         const leagueResult = await sql`
-            SELECT league_key, sport FROM user_leagues WHERE id = ${leagueId}
+            SELECT league_key, sport FROM user_leagues WHERE league_key = ${leagueKey}
         `;
 
         if (!leagueResult.length) {
             return NextResponse.json({ error: 'League not found' }, { status: 404 });
         }
 
-        const leagueKey = leagueResult[0].league_key;
         const sport = leagueResult[0].sport;
 
         console.log(`🔄 Syncing all data from Yahoo for ${sport} league ${leagueKey}...`);
@@ -120,7 +119,7 @@ export async function POST(request: Request) {
                     }
 
                     // Parse and save draft picks with actual player names
-                    await sql`DELETE FROM draft_picks WHERE league_id = ${leagueId}`;
+                    await sql`DELETE FROM draft_picks WHERE league_key = ${leagueKey}`;
                     
                     let inserted = 0;
                     const pickPromises = [];
@@ -170,11 +169,11 @@ export async function POST(request: Request) {
 
                                 await sql`
                                     INSERT INTO draft_picks (
-                                        league_id, round, pick, player_name, position, 
+                                        league_key, round, pick, player_name, position, 
                                         team_abbr, drafted_by, is_keeper
                                     )
                                     VALUES (
-                                        ${leagueId},
+                                        ${leagueKey},
                                         ${parseInt(pick.round)},
                                         ${parseInt(pick.pick)},
                                         ${playerName},
@@ -238,7 +237,7 @@ export async function POST(request: Request) {
                     // Add stats_json column if it doesn't exist (for existing tables)
                     await sql`ALTER TABLE standings ADD COLUMN IF NOT EXISTS stats_json JSONB`;
 
-                    await sql`DELETE FROM standings WHERE league_id = ${leagueId}`;
+                    await sql`DELETE FROM standings WHERE league_key = ${leagueKey}`;
 
                     let standingsCount = 0;
                     let insertOrder = 1; // Yahoo returns roto teams in rank order
@@ -300,11 +299,11 @@ export async function POST(request: Request) {
                         if (teamKey) {
                             await sql`
                                 INSERT INTO standings (
-                                    league_id, team_key, team_name, rank, wins, losses, ties,
+                                    league_key, team_key, team_name, rank, wins, losses, ties,
                                     points_for, points_against, stats_json
                                 )
                                 VALUES (
-                                    ${leagueId}, ${teamKey}, ${teamName}, ${rank}, ${wins}, ${losses}, ${ties},
+                                    ${leagueKey}, ${teamKey}, ${teamName}, ${rank}, ${wins}, ${losses}, ${ties},
                                     ${pointsFor}, ${pointsAgainst}, ${JSON.stringify(statsMap)}
                                 )
                             `;
@@ -350,7 +349,7 @@ export async function POST(request: Request) {
                     )
                 `;
 
-                await sql`DELETE FROM team_rosters WHERE league_id = ${leagueId}`;
+                await sql`DELETE FROM team_rosters WHERE league_key = ${leagueKey}`;
 
                 let rosterCount = 0;
                 const teams: any[] = [];
@@ -413,16 +412,16 @@ export async function POST(request: Request) {
 
                                     await sql`
                                         INSERT INTO team_rosters (
-                                            league_id, team_key, team_name, player_name, player_key,
+                                            league_key, team_key, team_name, player_name, player_key,
                                             position, nba_team, status
                                         )
                                         VALUES (
-                                            ${leagueId}, ${team.teamKey}, ${team.teamName}, ${fullName},
+                                            ${leagueKey}, ${team.teamKey}, ${team.teamName}, ${fullName},
                                             ${findField('player_key')}, ${position},
                                             ${findField('editorial_team_abbr') || 'FA'},
                                             ${findField('status') || 'Active'}
                                         )
-                                        ON CONFLICT (league_id, team_key, player_key) DO NOTHING
+                                        ON CONFLICT (league_key, team_key, player_key) DO NOTHING
                                     `;
                                     rosterCount++;
                                 }
@@ -438,13 +437,13 @@ export async function POST(request: Request) {
 
                 // Update team_name on the league record
                 // First try: match by stored team_key
-                const userTeamResult = await sql`SELECT team_key FROM user_leagues WHERE id = ${leagueId}`;
+                const userTeamResult = await sql`SELECT team_key FROM user_leagues WHERE league_key = ${leagueKey}`;
                 const userTeamKey = userTeamResult[0]?.team_key;
                 if (userTeamKey) {
                     const myTeam = teams.find(t => t.teamKey === userTeamKey);
                     if (myTeam) {
-                        await sql`UPDATE user_leagues SET team_name = ${myTeam.teamName} WHERE id = ${leagueId}`;
-                        console.log(`✅ Updated team_name to "${myTeam.teamName}" for league ${leagueId}`);
+                        await sql`UPDATE user_leagues SET team_name = ${myTeam.teamName} WHERE league_key = ${leagueKey}`;
+                        console.log(`✅ Updated team_name to "${myTeam.teamName}" for league ${leagueKey}`);
                     }
                 } else {
                     // Second try: fetch league teams with manager info to match by Yahoo GUID
@@ -484,7 +483,7 @@ export async function POST(request: Request) {
                                     });
                                     
                                     if (isMyTeam && tKey && tName) {
-                                        await sql`UPDATE user_leagues SET team_key = ${tKey}, team_name = ${tName} WHERE id = ${leagueId}`;
+                                        await sql`UPDATE user_leagues SET team_key = ${tKey}, team_name = ${tName} WHERE league_key = ${leagueKey}`;
                                         console.log(`✅ Found user team by GUID: "${tName}" (${tKey})`);
                                         break;
                                     }
@@ -538,7 +537,7 @@ export async function POST(request: Request) {
 
                     // Get current week from scoreboard
                     const weekNum = parseInt(scoreboardData?.fantasy_content?.league?.[0]?.current_week || '1');
-                    await sql`DELETE FROM matchups WHERE league_id = ${leagueId} AND week = ${weekNum}`;
+                    await sql`DELETE FROM matchups WHERE league_key = ${leagueKey} AND week = ${weekNum}`;
 
                     let matchupCount = 0;
                     for (const mk in matchupsRaw) {
@@ -581,17 +580,17 @@ export async function POST(request: Request) {
                         if (teams.length === 2) {
                             await sql`
                                 INSERT INTO matchups (
-                                    league_id, week,
+                                    league_key, week,
                                     team1_key, team1_name, team1_points, team1_wins, team1_losses, team1_ties,
                                     team2_key, team2_name, team2_points, team2_wins, team2_losses, team2_ties,
                                     is_playoffs
                                 ) VALUES (
-                                    ${leagueId}, ${week},
+                                    ${leagueKey}, ${week},
                                     ${teams[0].teamKey}, ${teams[0].teamName}, ${teams[0].points}, ${teams[0].wins}, ${teams[0].losses}, ${teams[0].ties},
                                     ${teams[1].teamKey}, ${teams[1].teamName}, ${teams[1].points}, ${teams[1].wins}, ${teams[1].losses}, ${teams[1].ties},
                                     ${isPlayoffs}
                                 )
-                                ON CONFLICT (league_id, week, team1_key, team2_key) DO UPDATE SET
+                                ON CONFLICT (league_key, week, team1_key, team2_key) DO UPDATE SET
                                     team1_points = EXCLUDED.team1_points,
                                     team2_points = EXCLUDED.team2_points,
                                     updated_at = CURRENT_TIMESTAMP

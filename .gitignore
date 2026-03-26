@@ -55,3 +55,6 @@ patch*.py
 test-*.js
 tapatalk*.txt
 tapatalk*.html
+
+# one-off scripts archive
+_scratch/

@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
-        const leagueIdParam = searchParams.get('leagueId');
+        const leagueKeyParam = searchParams.get('leagueKey');
         
         const session = await getServerSession(authOptions);
 
@@ -36,12 +36,12 @@ export async function GET(request: Request) {
         let leagueKey: string;
         let sport: string;
 
-        if (leagueIdParam) {
-            // Use provided league ID
+        if (leagueKeyParam) {
+            // Use provided league key
             const leagueResult = await sql`
                 SELECT league_key, sport
                 FROM user_leagues
-                WHERE id = ${parseInt(leagueIdParam)}
+                WHERE league_key = ${leagueKeyParam}
             `;
             
             if (!leagueResult.length) {

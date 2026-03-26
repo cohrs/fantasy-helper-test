@@ -30,13 +30,13 @@ export async function GET(request: Request) {
         }
         const { searchParams } = new URL(request.url);
         const playerName = searchParams.get('name');
-        const leagueIdParam = searchParams.get('leagueId');
+        const leagueKeyParam = searchParams.get('leagueKey');
 
         if (!playerName) {
             return NextResponse.json({ error: 'Player name required' }, { status: 400 });
         }
         
-        const leagueId = leagueIdParam ? parseInt(leagueIdParam) : null;
+        const leagueKey = leagueKeyParam || null;
         
         // Normalize player name for database lookup
         const normalizedName = playerName
@@ -49,10 +49,10 @@ export async function GET(request: Request) {
             .replace(/\s+/g, '');
         
         // Check if we have cached news (less than 1 hour old)
-        if (leagueId) {
+        if (leagueKey) {
             const cached = await sql`
                 SELECT * FROM yahoo_player_news
-                WHERE league_id = ${leagueId}
+                WHERE league_key = ${leagueKey}
                 AND player_name_normalized = ${normalizedName}
                 AND fetched_at > NOW() - INTERVAL '1 hour'
             `;
@@ -153,17 +153,17 @@ export async function GET(request: Request) {
         }
 
         // Save to database for caching (don't await, let it happen in background)
-        if (leagueId) {
+        if (leagueKey) {
             sql`
                 INSERT INTO yahoo_player_news (
-                    league_id, player_name, player_name_normalized,
+                    league_key, player_name, player_name_normalized,
                     status, status_full, image_url, notes, fetched_at
                 )
                 VALUES (
-                    ${leagueId}, ${fullName}, ${normalizedName},
+                    ${leagueKey}, ${fullName}, ${normalizedName},
                     ${status}, ${statusFull}, ${imageUrl}, ${JSON.stringify(notes)}, CURRENT_TIMESTAMP
                 )
-                ON CONFLICT (league_id, player_name_normalized)
+                ON CONFLICT (league_key, player_name_normalized)
                 DO UPDATE SET
                     player_name = ${fullName},
                     status = ${status},

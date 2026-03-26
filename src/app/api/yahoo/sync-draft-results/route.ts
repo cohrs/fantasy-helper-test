@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/route";
-import { getDb, getSelectedLeagueId } from '@/lib/db';
+import { getDb, getSelectedLeagueKey } from '@/lib/db';
 
 const sql = getDb();
 
@@ -16,24 +16,21 @@ export async function POST() {
         }
 
         const accessToken = (session as any).accessToken;
-        const leagueId = await getSelectedLeagueId(session);
+        const leagueKey = await getSelectedLeagueKey(session);
         
-        if (!leagueId) {
+        if (!leagueKey) {
             return NextResponse.json({ error: 'No league selected' }, { status: 400 });
         }
 
-        const userGuid = session.user?.email?.split('@')[0] || 'unknown';
-
-        // Get league key
+        // Get league info
         const leagueResult = await sql`
-            SELECT league_key, sport FROM user_leagues WHERE id = ${leagueId}
+            SELECT league_key, sport FROM user_leagues WHERE league_key = ${leagueKey}
         `;
 
         if (!leagueResult.length) {
             return NextResponse.json({ error: 'League not found' }, { status: 404 });
         }
 
-        const leagueKey = leagueResult[0].league_key;
         const sport = leagueResult[0].sport;
 
         console.log(`📥 Fetching draft results from Yahoo for ${sport} league ${leagueKey}...`);
@@ -163,7 +160,7 @@ export async function POST() {
         console.log(`💾 Saving ${detailedPicks.length} picks to database...`);
 
         // Clear existing draft picks for this league
-        await sql`DELETE FROM draft_picks WHERE league_id = ${leagueId}`;
+        await sql`DELETE FROM draft_picks WHERE league_key = ${leagueKey}`;
 
         // Insert new picks
         let inserted = 0;
@@ -171,11 +168,11 @@ export async function POST() {
             try {
                 await sql`
                     INSERT INTO draft_picks (
-                        league_id, round, pick, player_name, position, 
+                        league_key, round, pick, player_name, position, 
                         team_abbr, drafted_by, is_keeper
                     )
                     VALUES (
-                        ${leagueId},
+                        ${leagueKey},
                         ${pick.round},
                         ${pick.pick},
                         ${pick.name},

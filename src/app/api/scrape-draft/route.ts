@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
-import { getSelectedLeagueId, getDb } from '@/lib/db';
+import { getSelectedLeagueKey, getDb } from '@/lib/db';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
 
@@ -67,18 +67,18 @@ function normalizeTeamName(name: string | null): string | null {
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
-        const leagueIdParam = searchParams.get('leagueId');
+        const leagueKeyParam = searchParams.get('leagueKey');
         
-        let leagueId: number | null = null;
+        let leagueKey: string | null = null;
         
-        if (leagueIdParam) {
-            leagueId = parseInt(leagueIdParam);
+        if (leagueKeyParam) {
+            leagueKey = leagueKeyParam;
         } else {
             const session = await getServerSession(authOptions);
-            leagueId = await getSelectedLeagueId(session);
+            leagueKey = await getSelectedLeagueKey(session);
         }
         
-        if (!leagueId) {
+        if (!leagueKey) {
             return NextResponse.json({ 
                 success: false, 
                 error: "No league selected. Please select a league first." 
@@ -86,7 +86,7 @@ export async function GET(request: Request) {
         }
 
         const leagueInfo = await sql`
-            SELECT sport FROM user_leagues WHERE id = ${leagueId}
+            SELECT sport FROM user_leagues WHERE league_key = ${leagueKey}
         `;
         
         if (!leagueInfo.length) {
@@ -106,7 +106,7 @@ export async function GET(request: Request) {
             }, { status: 400 });
         }
 
-        console.log(`🔄 Scraping ${sport} draft for league ${leagueId}...`);
+        console.log(`🔄 Scraping ${sport} draft for league ${leagueKey}...`);
 
         const { data } = await axios.get(TARGET_URL, {
             headers: {
@@ -246,37 +246,85 @@ export async function GET(request: Request) {
         console.log(`   Draft picks: ${results.filter(p => p.pk !== null).length}`);
         console.log(`   Undrafted: ${results.filter(p => !p.isKeeper && p.pk === null).length}`);
 
-        // Save to database — full replace to avoid duplicates
-        // Delete existing data and re-insert everything
-        console.log(`🗑️ Clearing existing draft data for league ${leagueId}...`);
-        await sql`DELETE FROM draft_picks WHERE league_id = ${leagueId}`;
+        // Save to database — upsert mode (insert new, update existing, preserve manual additions)
+        const fullReplace = searchParams.get('fullReplace') === 'true';
+        
+        if (fullReplace) {
+            console.log(`🗑️ FULL REPLACE mode: Clearing existing draft data for league ${leagueKey}...`);
+            await sql`DELETE FROM draft_picks WHERE league_key = ${leagueKey}`;
+        } else {
+            console.log(`🔄 UPSERT mode: Preserving existing manual additions...`);
+        }
         
         let insertedCount = 0;
+        let updatedCount = 0;
+        
         for (const pick of results) {
-            await sql`
-                INSERT INTO draft_picks (league_id, round, pick, rank, player_name, position, team_abbr, drafted_by, is_keeper)
-                VALUES (
-                    ${leagueId},
-                    ${pick.rd || 0},
-                    ${pick.pk},
-                    ${pick.rank},
-                    ${pick.name},
-                    ${pick.pos},
-                    ${pick.playerTeam || null},
-                    ${pick.tm || null},
-                    ${pick.isKeeper || false}
-                )
-            `;
-            insertedCount++;
+            if (fullReplace) {
+                await sql`
+                    INSERT INTO draft_picks (league_key, round, pick, rank, player_name, position, team_abbr, drafted_by, is_keeper)
+                    VALUES (
+                        ${leagueKey},
+                        ${pick.rd || 0},
+                        ${pick.pk},
+                        ${pick.rank},
+                        ${pick.name},
+                        ${pick.pos},
+                        ${pick.playerTeam || null},
+                        ${pick.tm || null},
+                        ${pick.isKeeper || false}
+                    )
+                `;
+                insertedCount++;
+            } else {
+                // Check if player already exists for this league
+                const existing = await sql`
+                    SELECT id FROM draft_picks 
+                    WHERE league_key = ${leagueKey} AND player_name = ${pick.name} AND position = ${pick.pos}
+                    LIMIT 1
+                `;
+                
+                if (existing.length > 0) {
+                    // Update round/pick/team info if it changed (but don't delete manual additions)
+                    await sql`
+                        UPDATE draft_picks SET
+                            round = ${pick.rd || 0},
+                            pick = ${pick.pk},
+                            rank = ${pick.rank},
+                            team_abbr = ${pick.playerTeam || null},
+                            drafted_by = ${pick.tm || null},
+                            is_keeper = ${pick.isKeeper || false}
+                        WHERE id = ${existing[0].id}
+                    `;
+                    updatedCount++;
+                } else {
+                    await sql`
+                        INSERT INTO draft_picks (league_key, round, pick, rank, player_name, position, team_abbr, drafted_by, is_keeper)
+                        VALUES (
+                            ${leagueKey},
+                            ${pick.rd || 0},
+                            ${pick.pk},
+                            ${pick.rank},
+                            ${pick.name},
+                            ${pick.pos},
+                            ${pick.playerTeam || null},
+                            ${pick.tm || null},
+                            ${pick.isKeeper || false}
+                        )
+                    `;
+                    insertedCount++;
+                }
+            }
         }
-        console.log(`✅ Inserted ${insertedCount} rows`);
+        console.log(`✅ Inserted ${insertedCount}, updated ${updatedCount} rows`);
 
         return NextResponse.json({ 
             success: true, 
             totalPicks: results.length,
             newPicks: insertedCount,
+            updatedPicks: updatedCount,
             picks: results,
-            message: `Synced ${insertedCount} picks (${results.filter(p => p.isKeeper).length} keepers, ${results.filter(p => p.pk !== null).length} draft picks)`
+            message: `Synced ${insertedCount} new + ${updatedCount} updated picks (${results.filter(p => p.isKeeper).length} keepers, ${results.filter(p => p.pk !== null).length} draft picks)`
         });
     } catch (error) {
         console.error("Scraper Error:", error);

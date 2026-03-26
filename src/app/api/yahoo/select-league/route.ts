@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
         // Get league ID
         const leagueResult = await sql`
-            SELECT id FROM user_leagues 
+            SELECT id, league_key FROM user_leagues 
             WHERE user_id = ${userId} AND league_key = ${leagueKey}
         `;
 
@@ -44,17 +44,18 @@ export async function POST(request: NextRequest) {
 
         const leagueId = leagueResult[0].id;
 
-        // Update selected league
+        // Update selected league (store league_key)
         await sql`
-            INSERT INTO user_selected_league (user_id, league_id)
-            VALUES (${userId}, ${leagueId})
+            INSERT INTO user_selected_league (user_id, league_id, league_key)
+            VALUES (${userId}, ${leagueId}, ${leagueKey})
             ON CONFLICT (user_id)
             DO UPDATE SET 
                 league_id = ${leagueId},
+                league_key = ${leagueKey},
                 updated_at = CURRENT_TIMESTAMP
         `;
 
-        return NextResponse.json({ success: true, leagueId });
+        return NextResponse.json({ success: true, leagueKey });
 
     } catch (error) {
         console.error("Error selecting league:", error);

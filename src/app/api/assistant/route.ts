@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { getPlayerNotes, savePlayerNote, saveChatHistory } from '@/lib/db';
+import { getPlayerNotes, savePlayerNote, saveChatHistory, getUserId } from '@/lib/db';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]/route";
 
 export async function POST(request: NextRequest) {
     try {
@@ -13,10 +15,13 @@ export async function POST(request: NextRequest) {
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
         const body = await request.json();
-        const { myTeam, openSlots, availablePool, picksUntilTurn, customPrompt, chatHistory = [], allDrafted = [], leagueId, sport = 'baseball' } = body;
+        const { myTeam, openSlots, availablePool, picksUntilTurn, customPrompt, chatHistory = [], allDrafted = [], leagueKey, sport = 'baseball' } = body;
+
+        const session = await getServerSession(authOptions);
+        const userId = await getUserId(session);
 
         // Feedback Loop: Read historical AI notes from database
-        const historicalNotes = await getPlayerNotes(leagueId);
+        const historicalNotes = await getPlayerNotes(leagueKey, userId);
 
         let feedbackContext = '';
         if (Object.keys(historicalNotes).length > 0 && allDrafted.length > 0) {
@@ -143,7 +148,7 @@ If the user is asking a general question about players, injuries, news, or strat
                             ? newNote + '\n\n---\n\n' + existingNote
                             : newNote;
                         
-                        await savePlayerNote(r.name, normalized, combinedNote, leagueId);
+                        await savePlayerNote(r.name, normalized, combinedNote, leagueKey, userId);
                     }
                 }
             } else if (customPrompt && text) {
@@ -168,7 +173,7 @@ If the user is asking a general question about players, injuries, news, or strat
                         ? newNote + '\n\n---\n\n' + existingNote
                         : newNote;
                     
-                    await savePlayerNote(playerName, normalized, combinedNote, leagueId);
+                    await savePlayerNote(playerName, normalized, combinedNote, leagueKey, userId);
                 }
             }
         } catch (e) {
@@ -181,7 +186,8 @@ If the user is asking a general question about players, injuries, news, or strat
                 customPrompt || "General Analysis",
                 text,
                 recommendations,
-                leagueId
+                leagueKey,
+                userId
             );
         } catch (e) {
             console.error("Failed to save chat history:", e);

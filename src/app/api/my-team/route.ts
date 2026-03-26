@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]/route";
-import { getDb, getSelectedLeagueId } from '@/lib/db';
+import { getDb, getSelectedLeagueKey } from '@/lib/db';
 
 const sql = getDb();
 
@@ -10,29 +10,29 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const leagueIdParam = searchParams.get('leagueId');
+    const leagueKeyParam = searchParams.get('leagueKey');
     
-    let leagueId: number | null = null;
+    let leagueKey: string | null = null;
     
-    if (leagueIdParam) {
-      leagueId = parseInt(leagueIdParam);
+    if (leagueKeyParam) {
+      leagueKey = leagueKeyParam;
     } else {
       // Fallback to session-based league selection
       const session = await getServerSession(authOptions);
-      leagueId = await getSelectedLeagueId(session);
+      leagueKey = await getSelectedLeagueKey(session);
     }
     
-    if (!leagueId) {
+    if (!leagueKey) {
       return NextResponse.json({ error: 'No league selected' }, { status: 400 });
     }
 
-    console.log(`⭐ [My Team] Fetching for league ID: ${leagueId}`);
+    console.log(`⭐ [My Team] Fetching for league key: ${leagueKey}`);
 
     // Get user's team name for this league
     const result = await sql`
       SELECT team_name, team_key, league_name, sport
       FROM user_leagues
-      WHERE id = ${leagueId}
+      WHERE league_key = ${leagueKey}
     `;
 
     if (!result.length) {
@@ -42,8 +42,7 @@ export async function GET(request: Request) {
     let teamName = result[0].team_name;
     let teamKey = result[0].team_key;
 
-    // If team_name is null (not yet synced), try to find it from team_rosters
-    // by matching the session user's Yahoo GUID
+    // If team_name is null (not yet synced), try to resolve it
     if (!teamName) {
       try {
         const session = await getServerSession(authOptions);
@@ -54,20 +53,63 @@ export async function GET(request: Request) {
           const yahooGuid = userResult[0]?.yahoo_guid;
           
           if (yahooGuid) {
-            // Try to find team by team_key stored in user_leagues (may have been set by sync)
-            // Or fall back to checking if we can match via standings/rosters
-            // For now, check if team_key is set and look up name from rosters
+            // If team_key is set, look up name from rosters
             if (teamKey) {
               const rosterTeam = await sql`
                 SELECT DISTINCT team_name FROM team_rosters 
-                WHERE league_id = ${leagueId} AND team_key = ${teamKey} LIMIT 1
+                WHERE league_key = ${leagueKey} AND team_key = ${teamKey} LIMIT 1
               `;
-              if (rosterTeam.length) teamName = rosterTeam[0].team_name;
+              if (rosterTeam.length) {
+                teamName = rosterTeam[0].team_name;
+                // Persist it so we don't have to look it up again
+                await sql`UPDATE user_leagues SET team_name = ${teamName} WHERE league_key = ${leagueKey}`;
+              }
+            }
+            
+            // If still no team_key, try Yahoo API to match by manager GUID
+            if (!teamKey) {
+              const { getYahooAccessTokenByEmail } = await import('@/lib/yahoo-auth');
+              const accessToken = await getYahooAccessTokenByEmail(session.user.email);
+              if (accessToken) {
+                const teamsUrl = `https://fantasysports.yahooapis.com/fantasy/v2/league/${leagueKey}/teams?format=json`;
+                const teamsResp = await fetch(teamsUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+                if (teamsResp.ok) {
+                  const teamsData = await teamsResp.json();
+                  const teamsRaw = teamsData?.fantasy_content?.league?.[1]?.teams;
+                  if (teamsRaw) {
+                    for (const k in teamsRaw) {
+                      if (k === 'count') continue;
+                      const teamArr = teamsRaw[k]?.team;
+                      if (!teamArr) continue;
+                      let tk = '', tn = '';
+                      let isMe = false;
+                      teamArr[0].forEach((item: any) => {
+                        if (item.team_key) tk = item.team_key;
+                        if (item.name) tn = item.name;
+                        if (item.managers) {
+                          for (const mk in item.managers) {
+                            if (mk === 'count') continue;
+                            const mgr = item.managers[mk]?.manager;
+                            if (mgr?.guid?.toUpperCase() === yahooGuid.toUpperCase()) isMe = true;
+                          }
+                        }
+                      });
+                      if (isMe && tk && tn) {
+                        teamKey = tk;
+                        teamName = tn;
+                        await sql`UPDATE user_leagues SET team_key = ${tk}, team_name = ${tn} WHERE league_key = ${leagueKey}`;
+                        console.log(`⭐ [My Team] Resolved via Yahoo: ${tn} (${tk})`);
+                        break;
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }
       } catch (e) {
-        console.error('[My Team] Error looking up team from rosters:', e);
+        console.error('[My Team] Error looking up team:', e);
       }
     }
 
