@@ -1525,14 +1525,14 @@ export default function Home() {
   };
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-slate-950 text-slate-100 p-4 md:p-8 font-sans">
-      <header className="max-w-7xl w-full mx-auto shrink-0 flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4 border-b border-slate-900 pb-8">
+    <div className="h-dvh overflow-hidden flex flex-col bg-slate-950 text-slate-100 p-2 sm:p-4 md:p-8 font-sans">
+      <header className="max-w-7xl w-full mx-auto shrink-0 flex flex-col lg:flex-row lg:items-center justify-between mb-4 sm:mb-8 gap-3 sm:gap-4 border-b border-slate-900 pb-4 sm:pb-8">
         <div className="flex items-center gap-4">
           <div className={`p-3 rounded-2xl shadow-lg ${activeSport === 'baseball' ? 'bg-indigo-600' : 'bg-orange-600'}`}>
             <Trophy className="w-7 h-7" />
           </div>
           <div>
-            <h1 className="text-3xl font-black italic uppercase tracking-tighter">
+            <h1 className="text-xl sm:text-3xl font-black italic uppercase tracking-tighter">
               {selectedLeague ? selectedLeague.league_name : leagueName}
             </h1>
             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">
@@ -1540,26 +1540,26 @@ export default function Home() {
             </p>
           </div>
         </div>
-        <div className="flex gap-3 bg-slate-900 p-2 rounded-2xl border border-slate-800">
+        <div className="flex gap-2 sm:gap-3 bg-slate-900 p-1.5 sm:p-2 rounded-2xl border border-slate-800 overflow-x-auto scrollbar-hide">
           <button 
             onClick={() => window.location.href = '/'}
-            className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-slate-700"
+            className="px-3 sm:px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-slate-700 whitespace-nowrap"
           >
             <LayoutGrid className="w-3.5 h-3.5" /> CHANGE LEAGUE
           </button>
           <button
             onClick={() => window.location.href = '/chat'}
-            className="px-4 py-2 bg-sky-500/10 text-sky-400 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-sky-500/20"
+            className="px-3 sm:px-4 py-2 bg-sky-500/10 text-sky-400 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-sky-500/20 whitespace-nowrap"
           >
             <MessageSquare className="w-3.5 h-3.5" /> CHAT
           </button>
           
           {activeSport === 'baseball' ? (
-            <button onClick={handleImport} disabled={isSyncing} className="px-4 py-2 bg-indigo-500/10 text-indigo-400 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-indigo-500/20 disabled:opacity-50">
+            <button onClick={handleImport} disabled={isSyncing} className="px-3 sm:px-4 py-2 bg-indigo-500/10 text-indigo-400 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-indigo-500/20 disabled:opacity-50 whitespace-nowrap">
               <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> {isSyncing ? 'SYNCING...' : 'SYNC LOCAL'}
             </button>
           ) : (
-            <button onClick={handleYahooSync} disabled={isSyncing} className="px-4 py-2 bg-orange-500/10 text-orange-400 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-orange-500/20 disabled:opacity-50">
+            <button onClick={handleYahooSync} disabled={isSyncing} className="px-3 sm:px-4 py-2 bg-orange-500/10 text-orange-400 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-orange-500/20 disabled:opacity-50 whitespace-nowrap">
               <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> {isSyncing ? 'SYNCING...' : 'SYNC FROM YAHOO'}
             </button>
           )}
@@ -1601,30 +1601,30 @@ export default function Home() {
       )}
 
       <main className="max-w-7xl w-full mx-auto flex-1 flex flex-col min-h-0">
-        <div className="bg-slate-900 rounded-[2.5rem] p-8 border border-slate-800 flex-1 flex flex-col shadow-2xl min-h-0">
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-10 shrink-0">
-            <h2 className="text-3xl font-black italic uppercase tracking-tighter flex items-center gap-4">
+        <div className="bg-slate-900 rounded-2xl sm:rounded-[2.5rem] p-3 sm:p-8 border border-slate-800 flex-1 flex flex-col shadow-2xl min-h-0">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-10 shrink-0">
+            <h2 className="text-xl sm:text-3xl font-black italic uppercase tracking-tighter flex items-center gap-2 sm:gap-4">
               <LayoutGrid className={`w-8 h-8 ${activeSport === 'baseball' ? 'text-indigo-500' : 'text-orange-500'}`} />
               {activeSport === 'baseball' ? 'Draft Board' : 'Team Manager'}
             </h2>
             
-            <div className="flex bg-slate-950 w-fit rounded-xl p-1 border border-slate-800 shadow-inner">
+            <div className="flex bg-slate-950 w-full sm:w-fit rounded-xl p-1 border border-slate-800 shadow-inner overflow-x-auto scrollbar-hide">
               {/* Basketball in-season tabs */}
               {activeSport === 'basketball' && (
                 <>
-                  <button onClick={() => setViewMode('TEAM')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'TEAM' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                  <button onClick={() => setViewMode('TEAM')} className={`px-3 sm:px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 rounded-lg transition-all whitespace-nowrap ${viewMode === 'TEAM' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
                     <Users className="w-3.5 h-3.5" /> Team
                   </button>
-                  <button onClick={() => setViewMode('STANDINGS')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'STANDINGS' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                  <button onClick={() => setViewMode('STANDINGS')} className={`px-3 sm:px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 rounded-lg transition-all whitespace-nowrap ${viewMode === 'STANDINGS' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
                     <BarChart3 className="w-3.5 h-3.5" /> Standings
                   </button>
-                  <button onClick={() => setViewMode('MATCHUP')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'MATCHUP' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                  <button onClick={() => setViewMode('MATCHUP')} className={`px-3 sm:px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 rounded-lg transition-all whitespace-nowrap ${viewMode === 'MATCHUP' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
                     <Activity className="w-3.5 h-3.5" /> Matchup
                   </button>
-                  <button onClick={() => setViewMode('PLAYERS')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'PLAYERS' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                  <button onClick={() => setViewMode('PLAYERS')} className={`px-3 sm:px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 rounded-lg transition-all whitespace-nowrap ${viewMode === 'PLAYERS' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
                     <Search className="w-3.5 h-3.5" /> Pool
                   </button>
-                  <button onClick={() => setViewMode('WATCHLIST')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'WATCHLIST' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                  <button onClick={() => setViewMode('WATCHLIST')} className={`px-3 sm:px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 rounded-lg transition-all whitespace-nowrap ${viewMode === 'WATCHLIST' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
                     <ListOrdered className="w-3.5 h-3.5" /> Watchlist
                   </button>
                 </>
@@ -1633,19 +1633,19 @@ export default function Home() {
               {/* Baseball draft tabs */}
               {activeSport === 'baseball' && (
                 <>
-                  <button onClick={() => setViewMode('PLAYERS')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'PLAYERS' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                  <button onClick={() => setViewMode('PLAYERS')} className={`px-3 sm:px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 rounded-lg transition-all whitespace-nowrap ${viewMode === 'PLAYERS' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
                     <Search className="w-3.5 h-3.5" /> Pool
                   </button>
-                  <button onClick={() => setViewMode('GRID')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'GRID' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                  <button onClick={() => setViewMode('GRID')} className={`px-3 sm:px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 rounded-lg transition-all whitespace-nowrap ${viewMode === 'GRID' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
                     <LayoutGrid className="w-3.5 h-3.5" /> Grid
                   </button>
-                  <button onClick={() => setViewMode('TEAM')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'TEAM' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                  <button onClick={() => setViewMode('TEAM')} className={`px-3 sm:px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 rounded-lg transition-all whitespace-nowrap ${viewMode === 'TEAM' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
                     <Users className="w-3.5 h-3.5" /> Team
                   </button>
-                  <button onClick={() => setViewMode('NEEDS')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'NEEDS' ? 'bg-orange-600 text-white shadow shadow-orange-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                  <button onClick={() => setViewMode('NEEDS')} className={`px-3 sm:px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 rounded-lg transition-all whitespace-nowrap ${viewMode === 'NEEDS' ? 'bg-orange-600 text-white shadow shadow-orange-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
                     <BarChart3 className="w-3.5 h-3.5" /> Needs
                   </button>
-                  <button onClick={() => setViewMode('WATCHLIST')} className={`px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 rounded-lg transition-all ${viewMode === 'WATCHLIST' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
+                  <button onClick={() => setViewMode('WATCHLIST')} className={`px-3 sm:px-4 py-2 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5 sm:gap-2 rounded-lg transition-all whitespace-nowrap ${viewMode === 'WATCHLIST' ? 'bg-indigo-600 text-white shadow shadow-indigo-500/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'}`}>
                     <ListOrdered className="w-3.5 h-3.5" /> Watchlist
                   </button>
                 </>
@@ -1654,7 +1654,7 @@ export default function Home() {
           </div>
 
           {/* === GLOBAL ROW: Assistant controls === */}
-          <div className="flex items-center gap-2 mb-4 shrink-0 flex-wrap">
+          <div className="flex items-center gap-2 mb-3 sm:mb-4 shrink-0 flex-wrap">
             <div className="flex items-center gap-1.5 bg-sky-500/5 border border-sky-500/20 rounded-2xl px-3 py-2 flex-1 min-w-0">
               {/* Toggle panel open/close without firing a query */}
               <button
@@ -1676,10 +1676,11 @@ export default function Home() {
             <button
               onClick={() => askAssistant(assistantInputRef.current?.getValue() || '', true)}
               disabled={isAskingAssistant}
-              className="px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-sky-500/20 text-sky-400 border border-sky-500/30 hover:bg-sky-500/30 disabled:opacity-50 flex items-center gap-2 transition-all whitespace-nowrap"
+              className="px-3 sm:px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest bg-sky-500/20 text-sky-400 border border-sky-500/30 hover:bg-sky-500/30 disabled:opacity-50 flex items-center gap-2 transition-all whitespace-nowrap"
             >
               <Sparkles className={`w-4 h-4 ${isAskingAssistant ? 'animate-spin' : ''}`} />
-              {isAskingAssistant ? 'Analyzing...' : 'Ask Assistant'}
+              <span className="hidden sm:inline">{isAskingAssistant ? 'Analyzing...' : 'Ask Assistant'}</span>
+              <span className="sm:hidden">{isAskingAssistant ? '...' : 'Ask'}</span>
             </button>
           </div>
 

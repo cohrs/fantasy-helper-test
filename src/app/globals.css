@@ -5,6 +5,27 @@
   --color-brand-500: #6366f1;
 }
 
+/* Mobile viewport height fix (accounts for browser chrome) */
+@supports (height: 100dvh) {
+  .h-screen-safe {
+    height: 100dvh;
+  }
+}
+@supports not (height: 100dvh) {
+  .h-screen-safe {
+    height: 100vh;
+  }
+}
+
+/* Horizontal scroll for tab bars on mobile */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Drag and Drop manual performance overrides */
 .dragging-node {
   opacity: 0.4;

@@ -201,25 +201,25 @@ export default function ChatPage() {
   const sportEmoji = sport === 'basketball' ? '🏀' : '⚾';
 
   return (
-    <div className="flex flex-col h-screen bg-slate-950 text-slate-100">
+    <div className="flex flex-col h-dvh bg-slate-950 text-slate-100">
       {/* Header with nav */}
-      <div className="flex items-center justify-between px-6 py-3 bg-slate-900 border-b border-slate-800">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-slate-200 transition-colors">
+      <div className="flex items-center justify-between px-3 sm:px-6 py-3 bg-slate-900 border-b border-slate-800">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <Link href="/" className="flex items-center gap-1.5 sm:gap-2 text-slate-400 hover:text-slate-200 transition-colors">
             <Trophy className="text-indigo-400" size={20} />
-            <span className="text-sm font-bold tracking-tight">
+            <span className="text-sm font-bold tracking-tight hidden sm:inline">
               Asshat<span className="text-indigo-400">Fantasy</span>
             </span>
           </Link>
-          <span className="text-slate-700">|</span>
+          <span className="text-slate-700 hidden sm:inline">|</span>
           <Link href="/draft-room" className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors">
-            <LayoutGrid size={14} /> Draft Room
+            <LayoutGrid size={14} /> <span className="hidden sm:inline">Draft Room</span>
           </Link>
           <span className="flex items-center gap-1.5 text-xs text-indigo-400 font-medium">
             <MessageSquare size={14} /> Chat
           </span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {leagueName && (
             <span className="text-xs text-slate-400">{sportEmoji} {leagueName}</span>
           )}
@@ -325,7 +325,7 @@ export default function ChatPage() {
       </div>
 
       {/* Input */}
-      <div className="px-4 py-3 bg-slate-900 border-t border-slate-800">
+      <div className="px-2 sm:px-4 py-3 bg-slate-900 border-t border-slate-800">
         <div className="flex gap-2 max-w-4xl mx-auto">
           <textarea
             ref={inputRef}
