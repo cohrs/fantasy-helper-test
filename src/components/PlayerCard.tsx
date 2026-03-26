@@ -139,7 +139,7 @@ export function PlayerCard({
           >
             {/* Name & Badges */}
             <div className="flex items-center gap-1.5 shrink-0">
-              <span className={`text-xs font-black truncate max-w-[120px] ${player.isTaken ? 'text-slate-500 line-through' : 'text-slate-100'}`}>
+              <span className={`text-xs font-black truncate max-w-[160px] sm:max-w-[120px] md:max-w-[200px] ${player.isTaken ? 'text-slate-500 line-through' : 'text-slate-100'}`}>
                 {player.name}
               </span>
               {player.yahooStatus && <span className="text-[7px] font-black bg-red-500/20 text-red-400 px-1 py-0.5 rounded uppercase leading-none">{player.yahooStatus}</span>}

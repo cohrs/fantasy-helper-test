@@ -87,7 +87,7 @@ export default function Home() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-fuchsia-600/20 blur-[120px] rounded-full pointer-events-none" />
 
       {/* Nav */}
-      <nav className="relative z-10 flex items-center justify-between px-8 py-6 max-w-7xl mx-auto backdrop-blur-sm border-b border-white/5">
+      <nav className="relative z-10 flex items-center justify-between px-4 sm:px-8 py-4 sm:py-6 max-w-7xl mx-auto backdrop-blur-sm border-b border-white/5">
         <div className="flex items-center gap-2">
           <Trophy className="text-indigo-400" size={28} />
           <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
@@ -95,8 +95,8 @@ export default function Home() {
           </span>
         </div>
         {session && (
-          <div className="flex items-center gap-4 text-sm text-slate-400">
-            <span>{session.user?.name || session.user?.email}</span>
+          <div className="flex items-center gap-2 sm:gap-4 text-sm text-slate-400">
+            <span className="hidden sm:inline truncate max-w-[150px]">{session.user?.name || session.user?.email}</span>
             <button
               onClick={() => signOut()}
               className="flex items-center gap-1.5 px-4 py-2 text-sm text-slate-400 hover:text-red-400 bg-zinc-900 border border-zinc-800 hover:border-red-500/30 rounded-full transition-colors"
@@ -107,10 +107,10 @@ export default function Home() {
         )}
       </nav>
 
-      <main className="relative z-10 max-w-4xl mx-auto px-4 py-16">
+      <main className="relative z-10 max-w-4xl mx-auto px-4 py-8 sm:py-16">
         {/* Hero */}
-        <div className="text-center mb-12">
-          <h1 className="text-5xl md:text-6xl font-black tracking-tighter mb-4 bg-clip-text text-transparent bg-gradient-to-br from-white via-slate-200 to-indigo-400">
+        <div className="text-center mb-8 sm:mb-12">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter mb-4 bg-clip-text text-transparent bg-gradient-to-br from-white via-slate-200 to-indigo-400">
             Asshat Fantasy 2026
           </h1>
           <p className="text-lg text-slate-400 mb-8">
@@ -120,7 +120,7 @@ export default function Home() {
 
         {/* Not logged in */}
         {status === 'unauthenticated' && (
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-12 text-center">
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 sm:p-12 text-center">
             <LogIn className="w-12 h-12 text-indigo-400 mx-auto mb-4" />
             <h2 className="text-2xl font-bold mb-3">Connect Your Yahoo Account</h2>
             <p className="text-slate-400 mb-6">Sign in with Yahoo to access your fantasy leagues.</p>
@@ -157,7 +157,7 @@ export default function Home() {
             </div>
 
             {leagues.length === 0 ? (
-              <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-12 text-center">
+              <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-6 sm:p-12 text-center">
                 <p className="text-slate-400 mb-4">No leagues found.</p>
                 <p className="text-sm text-slate-500">Hit &quot;Sync Leagues from Yahoo&quot; to pull in your leagues.</p>
               </div>
