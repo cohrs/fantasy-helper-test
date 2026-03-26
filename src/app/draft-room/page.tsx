@@ -1545,34 +1545,34 @@ export default function Home() {
             onClick={() => window.location.href = '/'}
             className="px-3 sm:px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-slate-700 whitespace-nowrap"
           >
-            <LayoutGrid className="w-3.5 h-3.5" /> CHANGE LEAGUE
+            <LayoutGrid className="w-3.5 h-3.5" /> <span className="hidden sm:inline">CHANGE LEAGUE</span>
           </button>
           <button
             onClick={() => window.location.href = '/chat'}
             className="px-3 sm:px-4 py-2 bg-sky-500/10 text-sky-400 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-sky-500/20 whitespace-nowrap"
           >
-            <MessageSquare className="w-3.5 h-3.5" /> CHAT
+            <MessageSquare className="w-3.5 h-3.5" /> <span className="hidden sm:inline">CHAT</span>
           </button>
           
           {activeSport === 'baseball' ? (
             <button onClick={handleImport} disabled={isSyncing} className="px-3 sm:px-4 py-2 bg-indigo-500/10 text-indigo-400 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-indigo-500/20 disabled:opacity-50 whitespace-nowrap">
-              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> {isSyncing ? 'SYNCING...' : 'SYNC LOCAL'}
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> <span className="hidden sm:inline">{isSyncing ? 'SYNCING...' : 'SYNC LOCAL'}</span>
             </button>
           ) : (
             <button onClick={handleYahooSync} disabled={isSyncing} className="px-3 sm:px-4 py-2 bg-orange-500/10 text-orange-400 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-orange-500/20 disabled:opacity-50 whitespace-nowrap">
-              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> {isSyncing ? 'SYNCING...' : 'SYNC FROM YAHOO'}
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> <span className="hidden sm:inline">{isSyncing ? 'SYNCING...' : 'SYNC FROM YAHOO'}</span>
             </button>
           )}
 
           {session ? (
             <>
               <button onClick={() => signOut()} className="px-4 py-2 bg-green-500/10 text-green-400 border border-green-500/20 rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-green-500/20 hover:text-red-400 transition-colors" title={session.user?.name || "Connected"}>
-                <ShieldCheck className="w-3.5 h-3.5" /> YAHOO LINKED
+                <ShieldCheck className="w-3.5 h-3.5" /> <span className="hidden sm:inline">YAHOO LINKED</span>
               </button>
             </>
           ) : (
             <button onClick={() => signIn('yahoo')} className="px-4 py-2 bg-purple-600 border border-purple-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 hover:bg-purple-500 transition-transform active:scale-95 shadow-lg shadow-purple-600/20">
-              <Plug className="w-3.5 h-3.5" /> CONNECT YAHOO
+              <Plug className="w-3.5 h-3.5" /> <span className="hidden sm:inline">CONNECT YAHOO</span>
             </button>
           )}
         </div>
@@ -1604,7 +1604,7 @@ export default function Home() {
         <div className="bg-slate-900 rounded-2xl sm:rounded-[2.5rem] p-3 sm:p-8 border border-slate-800 flex-1 flex flex-col shadow-2xl min-h-0">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-10 shrink-0">
             <h2 className="text-xl sm:text-3xl font-black italic uppercase tracking-tighter flex items-center gap-2 sm:gap-4">
-              <LayoutGrid className={`w-8 h-8 ${activeSport === 'baseball' ? 'text-indigo-500' : 'text-orange-500'}`} />
+              <LayoutGrid className={`w-5 sm:w-8 h-5 sm:h-8 ${activeSport === 'baseball' ? 'text-indigo-500' : 'text-orange-500'}`} />
               {activeSport === 'baseball' ? 'Draft Board' : 'Team Manager'}
             </h2>
             
@@ -1654,7 +1654,7 @@ export default function Home() {
           </div>
 
           {/* === GLOBAL ROW: Assistant controls === */}
-          <div className="flex items-center gap-2 mb-3 sm:mb-4 shrink-0 flex-wrap">
+          <div className="hidden sm:flex items-center gap-2 mb-3 sm:mb-4 shrink-0 flex-wrap">
             <div className="flex items-center gap-1.5 bg-sky-500/5 border border-sky-500/20 rounded-2xl px-3 py-2 flex-1 min-w-0">
               {/* Toggle panel open/close without firing a query */}
               <button
@@ -1895,9 +1895,36 @@ export default function Home() {
           })()}
 
           {viewMode === 'TEAM' && (
-            <div className="flex-1 flex gap-6 overflow-hidden">
-              {/* Team sidebar */}
-              <div className="w-44 shrink-0 flex flex-col gap-1 overflow-y-auto pr-2 border-r border-slate-800">
+            <div className="flex-1 flex flex-col sm:flex-row gap-3 sm:gap-6 overflow-hidden">
+              {/* Team selector - dropdown on mobile, sidebar on desktop */}
+              <div className="sm:hidden shrink-0">
+                <select
+                  value={selectedTeam || ''}
+                  onChange={(e) => setSelectedTeam(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-200 focus:ring-2 focus:ring-indigo-500/40 focus:outline-none"
+                >
+                  {(() => {
+                    const teamList = activeSport === 'basketball' && teamRosters.length > 0
+                      ? Array.from(new Set(teamRosters.map((r: any) => r.team_name))).sort((a, b) => {
+                          if (a === myTeamName) return -1;
+                          if (b === myTeamName) return 1;
+                          return a.localeCompare(b);
+                        })
+                      : Array.from(new Set(draftResults.filter(p => p.tm).map(p => p.tm as string))).sort((a, b) => {
+                          if (a === myTeamName) return -1;
+                          if (b === myTeamName) return 1;
+                          return a.localeCompare(b);
+                        });
+                    return teamList.map(team => (
+                      <option key={team} value={team}>
+                        {team === myTeamName ? `★ ${team}` : team}
+                      </option>
+                    ));
+                  })()}
+                </select>
+              </div>
+              {/* Team sidebar - desktop only */}
+              <div className="hidden sm:flex w-44 shrink-0 flex-col gap-1 overflow-y-auto pr-2 border-r border-slate-800">
                 <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 sticky top-0 bg-slate-900 py-2">Franchise</div>
                 {(() => {
                   // For basketball (in-season), use team_rosters table
@@ -1918,7 +1945,7 @@ export default function Home() {
                     <button
                       key={team}
                       onClick={() => setSelectedTeam(team)}
-                      className={`text-left px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${selectedTeam === team ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
+                      className={`text-left px-3 py-2 rounded-lg text-[11px] font-bold transition-all whitespace-nowrap ${selectedTeam === team ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`}
                     >
                       {team === myTeamName ? `★ ${team}` : team}
                     </button>
@@ -1949,7 +1976,7 @@ export default function Home() {
                 </div>
                 
                 {/* Player Cards */}
-                <div className="flex-1 overflow-y-auto space-y-2 pr-2">{(() => {
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1 sm:pr-2">{(() => {
                   // For basketball (in-season), show current roster from team_rosters
                   if (activeSport === 'basketball' && teamRosters.length > 0) {
                     const teamPlayers = teamRosters.filter((r: any) => r.team_name === selectedTeam);
