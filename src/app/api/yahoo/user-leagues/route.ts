@@ -192,8 +192,8 @@ export async function GET() {
         `;
         
         // Add manually created leagues that aren't already in the list
-        dbLeagues.forEach(dbLeague => {
-            if (!leagues.find(l => l.league_key === dbLeague.league_key)) {
+        dbLeagues.forEach((dbLeague: any) => {
+            if (!leagues.find((l: any) => l.league_key === dbLeague.league_key)) {
                 leagues.push({
                     league_key: dbLeague.league_key,
                     name: dbLeague.name,
