@@ -753,7 +753,7 @@ export default function Home() {
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   // User's team info (fetched from Yahoo)
-  const [myTeamName, setMyTeamName] = useState("Loading...");
+  const [myTeamName, setMyTeamName] = useState<string | null>(null);
   const [myTeamKey, setMyTeamKey] = useState<string | null>(null);
   const [leagueName, setLeagueName] = useState("Fantasy League");
 
@@ -805,18 +805,25 @@ export default function Home() {
 
   // Auto-select my team once myTeamName is resolved, or first team if unknown
   useEffect(() => {
-    if (selectedTeam !== null) return; // already selected
-    
-    const teamList = activeSport === 'basketball' && teamRosters.length > 0
+    // Build team list from rosters (in-season) or draft results
+    const teamList = teamRosters.length > 0
       ? Array.from(new Set(teamRosters.map((r: any) => r.team_name)))
       : Array.from(new Set(draftResults.filter(p => p.tm).map(p => p.tm as string)));
     
     if (teamList.length === 0) return; // data not loaded yet
     
-    // Prefer myTeamName if it's in the list, otherwise first team
-    const target = teamList.includes(myTeamName) ? myTeamName : teamList[0];
-    setSelectedTeam(target);
-  }, [myTeamName, teamRosters, draftResults, activeSport, selectedTeam]);
+    // If myTeamName is resolved and in the list, always select it (even if something else was auto-selected)
+    if (myTeamName && teamList.includes(myTeamName)) {
+      if (selectedTeam !== myTeamName) setSelectedTeam(myTeamName);
+      return;
+    }
+    
+    // If myTeamName hasn't resolved yet, don't auto-select — wait for it
+    if (!myTeamName) return;
+    
+    // myTeamName resolved but not in list — pick first team
+    if (selectedTeam === null) setSelectedTeam(teamList[0]);
+  }, [myTeamName, teamRosters, draftResults, selectedTeam]);
 
   const { data: session } = useSession();
   const nbaStats = {
