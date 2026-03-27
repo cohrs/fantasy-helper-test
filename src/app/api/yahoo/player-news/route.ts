@@ -76,7 +76,8 @@ export async function GET(request: Request) {
         }
 
         // Search for player by name - request player notes only (editorial not supported)
-        const searchUrl = `https://fantasysports.yahooapis.com/fantasy/v2/league/${LEAGUE_KEY}/players;search=${encodeURIComponent(playerName)};out=player_notes?format=json`;
+        const searchLeagueKey = leagueKey || LEAGUE_KEY;
+        const searchUrl = `https://fantasysports.yahooapis.com/fantasy/v2/league/${searchLeagueKey}/players;search=${encodeURIComponent(playerName)};out=player_notes?format=json`;
 
         const response = await fetch(searchUrl, {
             headers: {
