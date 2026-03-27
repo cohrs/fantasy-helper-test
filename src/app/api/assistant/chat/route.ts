@@ -26,12 +26,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No league selected' }, { status: 400 });
     }
 
-    // Get league info
-    const leagueResult = await sql`SELECT league_key, sport, league_name, team_key FROM user_leagues WHERE league_key = ${leagueKey}`;
+    // Get league info (scoped to this user)
+    const userId = await getUserId(session);
+    const leagueResult = userId
+      ? await sql`SELECT league_key, sport, league_name, team_key, team_name FROM user_leagues WHERE league_key = ${leagueKey} AND user_id = ${userId}`
+      : await sql`SELECT league_key, sport, league_name, team_key, team_name FROM user_leagues WHERE league_key = ${leagueKey} LIMIT 1`;
     if (!leagueResult.length) {
       return NextResponse.json({ error: 'League not found' }, { status: 404 });
     }
-    const { sport, league_name, team_key } = leagueResult[0];
+    const { sport, league_name, team_key, team_name: myTeamName } = leagueResult[0];
 
     // Get Yahoo token for live data
     const accessToken = await getYahooAccessTokenByEmail(session.user.email);
@@ -165,7 +168,7 @@ Consider player injuries, recent form, schedule (back-to-backs, games per week),
 
     const systemPrompt = `${sportContextMap[sport] || sportContextMap.baseball}
 
-My team: New Jersey Nine
+My team: ${myTeamName || 'Unknown'}
 
 === CRITICAL RULES ===
 1. YOU ALREADY HAVE MY FULL ROSTER BELOW. Do NOT ask me for it. Reference it directly.
@@ -175,7 +178,7 @@ My team: New Jersey Nine
 5. Be direct and confident. Do not over-apologize. If you make an error, correct it briefly and move on.
 6. Keep responses concise and actionable. No filler, no excessive caveats.
 
-=== MY ROSTER (New Jersey Nine) ===
+=== MY ROSTER (${myTeamName || 'My Team'}) ===
 ${rosterContext}
 
 ${injuredPlayers.length > 0 ? `=== MY INJURY REPORT ===\n${injuredPlayers.join('\n')}` : ''}
@@ -209,7 +212,6 @@ ${allRostersContext}
     const text = response.response.text();
 
     // Save to chat history
-    const userId = await getUserId(session);
     try {
       await saveChatHistory(message, text, [], leagueKey, userId);
     } catch (e) {
