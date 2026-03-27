@@ -7,7 +7,7 @@ let _sql: ReturnType<typeof neon> | ReturnType<typeof postgres> | null = null;
 export function getDb() {
   if (_sql) return _sql as any;
   
-  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseUrl = process.env.SUPABASE_POSTGRES_URL || process.env.SUPABASE_URL;
   const neonUrl = process.env.POSTGRES_URL;
   
   if (supabaseUrl) {

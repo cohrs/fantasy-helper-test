@@ -112,7 +112,7 @@ export default function AdminPage() {
         <div className="flex items-center gap-4 mb-8">
           <Link href="/" className="text-slate-500 hover:text-slate-300 transition-colors">
             <ArrowLeft className="w-5 h-5" />
-          </a>
+          </Link>
           <div className="p-3 rounded-2xl bg-red-600">
             <Shield className="w-6 h-6" />
           </div>

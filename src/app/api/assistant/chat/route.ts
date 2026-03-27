@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
     try {
       const standings = await sql`SELECT team_name, rank, wins, losses, ties, points_for FROM standings WHERE league_key = ${leagueKey} ORDER BY rank ASC`;
       if (standings.length > 0) {
-        standingsContext = '\n=== STANDINGS ===\n' + standings.map((s) =>
+        standingsContext = '\n=== STANDINGS ===\n' + standings.map((s: any) =>
           `${s.rank}. ${s.team_name} (${s.wins}-${s.losses}-${s.ties}, ${s.points_for} pts)`
         ).join('\n');
       }

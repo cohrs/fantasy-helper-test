@@ -67,12 +67,12 @@ async function restoreLeagues() {
   `;
   
   console.log('\nLeagues in database:');
-  leagues.forEach(l => {
+  leagues.forEach((l: any) => {
     console.log(`  ${l.id}: ${l.league_name} (${l.sport})`);
   });
   
   // Set baseball as selected league
-  const baseballLeague = leagues.find(l => l.sport === 'baseball');
+  const baseballLeague = leagues.find((l: any) => l.sport === 'baseball');
   if (baseballLeague) {
     await sql`
       INSERT INTO user_selected_league (user_id, league_id)

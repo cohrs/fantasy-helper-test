@@ -18,7 +18,7 @@ if (fs.existsSync(envPath)) {
   }
 }
 
-const dbUrl = process.env.SUPABASE_URL;
+const dbUrl = process.env.SUPABASE_POSTGRES_URL || process.env.SUPABASE_URL;
 if (!dbUrl) { console.error('❌ SUPABASE_URL not found'); process.exit(1); }
 
 const sql = postgres(dbUrl, { ssl: 'require' });

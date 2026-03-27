@@ -71,7 +71,7 @@ async function restoreLeaguesWithCorrectIds() {
   `;
   
   console.log('\nLeagues in database:');
-  leagues.forEach(l => {
+  leagues.forEach((l: any) => {
     console.log(`  ${l.id}: ${l.league_name} (${l.sport})`);
   });
   
