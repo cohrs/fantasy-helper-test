@@ -899,17 +899,23 @@ export default function Home() {
         console.log('📊 Standings:', teamData.standings?.length || 0, 'teams');
       }
       if (myTeamData?.success) {
-        setMyTeamName(myTeamData.teamName || selectedLeague.team_name || 'My Team');
-        setMyTeamKey(myTeamData.teamKey || selectedLeague.team_key || null);
+        const resolvedName = myTeamData.teamName || selectedLeague.team_name || null;
+        const resolvedKey = myTeamData.teamKey || selectedLeague.team_key || null;
+        setMyTeamName(resolvedName);
+        setMyTeamKey(resolvedKey);
         setLeagueName(myTeamData.leagueName || selectedLeague.league_name);
-        setSelectedTeam(myTeamData.teamName || selectedLeague.team_name || 'My Team');
-        console.log('⭐ My Team:', myTeamData.teamName, myTeamData.teamKey);
+        console.log('⭐ My Team:', resolvedName, resolvedKey);
+        // Update localStorage so stale team_name/team_key gets fixed
+        if (resolvedName && selectedLeague && (!selectedLeague.team_name || !selectedLeague.team_key)) {
+          const updated = { ...selectedLeague, team_name: resolvedName, team_key: resolvedKey };
+          localStorage.setItem('selectedLeague', JSON.stringify(updated));
+          setSelectedLeague(updated);
+        }
       } else {
         // Fallback to league data if API fails
-        setMyTeamName(selectedLeague.team_name || 'My Team');
+        setMyTeamName(selectedLeague.team_name || null);
         setMyTeamKey(selectedLeague.team_key || null);
         setLeagueName(selectedLeague.league_name);
-        setSelectedTeam(selectedLeague.team_name || 'My Team');
       }
       if (scoreboardData?.success && scoreboardData.matchups?.length > 0) {
         setMatchups(scoreboardData.matchups);
@@ -2054,7 +2060,7 @@ export default function Home() {
               <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center gap-3 mb-4 shrink-0">
-                  <h3 className="text-lg font-black italic tracking-tighter text-indigo-400">{selectedTeam || myTeamName}</h3>
+                  <h3 className="text-lg font-black italic tracking-tighter text-indigo-400">{selectedTeam || myTeamName || 'Select Team'}</h3>
                   {(() => {
                     // For in-season, show player count from team_rosters
                     if (teamRosters.length > 0) {
