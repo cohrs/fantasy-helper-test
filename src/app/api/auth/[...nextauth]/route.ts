@@ -47,6 +47,19 @@ export const authOptions: NextAuthOptions = {
     ],
     secret: process.env.NEXTAUTH_SECRET,
     callbacks: {
+        async signIn({ profile }) {
+            // Check if user is blocked
+            if (profile) {
+                const yahooGuid = (profile as any)?.sub;
+                if (yahooGuid) {
+                    const user = await sql`SELECT is_blocked FROM users WHERE yahoo_guid = ${yahooGuid} LIMIT 1`;
+                    if (user.length > 0 && user[0].is_blocked) {
+                        return false; // Deny sign-in
+                    }
+                }
+            }
+            return true;
+        },
         async jwt({ token, account, profile }) {
             if (account) {
                 token.accessToken = account.access_token;
