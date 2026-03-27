@@ -21,6 +21,7 @@ export const authOptions: NextAuthOptions = {
                 params: {
                     client_id: process.env.YAHOO_CLIENT_ID,
                     response_type: "code",
+                    scope: "openid fspt-r",
                 }
             },
             token: "https://api.login.yahoo.com/oauth2/get_token",

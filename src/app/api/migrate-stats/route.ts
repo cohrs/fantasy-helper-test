@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { neon } from '@neondatabase/serverless';
+import { getDb } from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const sql = neon(process.env.POSTGRES_URL!);
+        const sql = getDb();
         
         // Read the stats JSON file
         const statsPath = path.join(process.cwd(), 'yahoo-stats.json');
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
 // GET endpoint to check migration status
 export async function GET() {
     try {
-        const sql = neon(process.env.POSTGRES_URL!);
+        const sql = getDb();
         
         const result = await sql`SELECT COUNT(*) as count FROM player_stats WHERE season = 2025`;
         const count = result[0]?.count || 0;

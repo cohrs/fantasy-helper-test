@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/route";
-import { neon } from '@neondatabase/serverless';
+import { getDb } from '@/lib/db';
 
-const sql = neon(process.env.POSTGRES_URL!);
+const sql = getDb();
 
 export const dynamic = 'force-dynamic';
 
