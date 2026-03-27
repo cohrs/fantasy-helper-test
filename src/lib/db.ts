@@ -1,13 +1,28 @@
 import { neon } from '@neondatabase/serverless';
+import postgres from 'postgres';
 
-// Get database connection
+// Unified SQL interface — uses postgres.js for Supabase, neon for Neon
+let _sql: ReturnType<typeof neon> | ReturnType<typeof postgres> | null = null;
+
 export function getDb() {
-  const databaseUrl = process.env.POSTGRES_URL;
-  if (!databaseUrl) {
-    throw new Error('POSTGRES_URL environment variable is not set');
+  if (_sql) return _sql as any;
+  
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const neonUrl = process.env.POSTGRES_URL;
+  
+  if (supabaseUrl) {
+    // Use postgres.js for Supabase (standard Postgres wire protocol)
+    _sql = postgres(supabaseUrl, { ssl: 'require' });
+    return _sql as any;
   }
-  const sql = neon(databaseUrl, { fetchOptions: { cache: 'no-store' } });
-  return sql;
+  
+  if (neonUrl) {
+    // Use neon serverless driver for Neon
+    _sql = neon(neonUrl, { fetchOptions: { cache: 'no-store' } });
+    return _sql as any;
+  }
+  
+  throw new Error('SUPABASE_URL or POSTGRES_URL environment variable is not set');
 }
 
 // Get current user's ID from session

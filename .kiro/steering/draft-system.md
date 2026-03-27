@@ -87,7 +87,7 @@
 - Git: `main` = production, `dev` = working branch
 - Vercel project: `fantasy-helper-test` (linked via `.vercel/`)
 - Production URL: https://fantasy-helper-test.vercel.app
-- Production branch: `main` (set in Vercel dashboard)
+- Production branch: `main` (set in Vercel dashboard → Settings → Environments → Production)
 - DB: Neon PostgreSQL (`POSTGRES_URL` in `.env.local`)
 - Auth: Yahoo OAuth via NextAuth
 - AI: Google Gemini 2.5 Pro (`GEMINI_API_KEY`)
