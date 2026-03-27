@@ -146,8 +146,8 @@ export function PlayerCard({
   };
 
   return (
-    <div className={`bg-slate-950 rounded-xl border ${player.isTaken ? 'border-slate-800/30 opacity-50' : 'border-slate-800/50 hover:border-slate-700/50'} group transition-all relative overflow-hidden`}>
-      <div className={`absolute left-0 top-0 bottom-0 w-1 ${activeSport === 'baseball' ? 'bg-indigo-600' : 'bg-orange-600'} ${player.isTaken ? 'bg-slate-700' : ''}`} />
+    <div className={`bg-slate-950 rounded-xl border ${player.isTaken ? 'border-slate-800/30 opacity-50' : 'border-slate-800/50 hover:border-slate-700/50'} group transition-all relative`}>
+      <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-xl ${activeSport === 'baseball' ? 'bg-indigo-600' : 'bg-orange-600'} ${player.isTaken ? 'bg-slate-700' : ''}`} />
 
       <div className="flex justify-between items-center p-2 pl-3">
         <div className="flex items-center gap-3 flex-1 min-w-0 pr-2">

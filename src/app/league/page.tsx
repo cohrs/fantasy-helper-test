@@ -803,26 +803,20 @@ export default function Home() {
     });
   }, [assistantRecs, isAskingAssistant, showAssistantModal]);
 
-  // Auto-select my team once myTeamName is resolved, or first team if unknown
+  // Auto-select my team on initial load only (don't override manual team selection)
   useEffect(() => {
-    // Build team list from rosters (in-season) or draft results
+    if (selectedTeam !== null) return; // already selected (manually or previously)
+    
     const teamList = teamRosters.length > 0
       ? Array.from(new Set(teamRosters.map((r: any) => r.team_name)))
       : Array.from(new Set(draftResults.filter(p => p.tm).map(p => p.tm as string)));
     
     if (teamList.length === 0) return; // data not loaded yet
+    if (!myTeamName) return; // wait for my-team API to resolve
     
-    // If myTeamName is resolved and in the list, always select it (even if something else was auto-selected)
-    if (myTeamName && teamList.includes(myTeamName)) {
-      if (selectedTeam !== myTeamName) setSelectedTeam(myTeamName);
-      return;
-    }
-    
-    // If myTeamName hasn't resolved yet, don't auto-select — wait for it
-    if (!myTeamName) return;
-    
-    // myTeamName resolved but not in list — pick first team
-    if (selectedTeam === null) setSelectedTeam(teamList[0]);
+    // Pick my team if in list, otherwise first team
+    const target = teamList.includes(myTeamName) ? myTeamName : teamList[0];
+    setSelectedTeam(target);
   }, [myTeamName, teamRosters, draftResults, selectedTeam]);
 
   const { data: session } = useSession();
@@ -2092,7 +2086,7 @@ export default function Home() {
                 </div>
                 
                 {/* Player Cards */}
-                <div className="flex-1 overflow-y-auto space-y-2 pr-1 sm:pr-2">{(() => {
+                <div key={selectedTeam} className="flex-1 overflow-y-auto space-y-2 pr-1 sm:pr-2">{(() => {
                   // In-season: use team_rosters data (has selected_position from Yahoo)
                   if (teamRosters.length > 0) {
                     const teamPlayers = teamRosters.filter((r: any) => r.team_name === selectedTeam);
@@ -2141,6 +2135,20 @@ export default function Home() {
                       const section = getSection(player.selected_position || player.position);
                       if (!sections[section]) sections[section] = [];
                       sections[section].push(player);
+                    }
+
+                    // Sort players within each section by slot order (not alphabetical)
+                    const slotOrder = activeSport === 'basketball'
+                      ? ['PG', 'SG', 'G', 'SF', 'PF', 'F', 'C', 'UTIL', 'BN', 'IL', 'IL+', 'IL60']
+                      : ['C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'OF', 'UTIL', 'SP', 'RP', 'P', 'BN', 'IL', 'IL+', 'IL60', 'NA'];
+                    for (const section of Object.keys(sections)) {
+                      sections[section].sort((a: any, b: any) => {
+                        const aSlot = a.selected_position || a.position || '';
+                        const bSlot = b.selected_position || b.position || '';
+                        const aIdx = slotOrder.indexOf(aSlot.toUpperCase());
+                        const bIdx = slotOrder.indexOf(bSlot.toUpperCase());
+                        return (aIdx === -1 ? 99 : aIdx) - (bIdx === -1 ? 99 : bIdx);
+                      });
                     }
 
                     const sectionColors: Record<string, string> = {
