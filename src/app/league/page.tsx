@@ -754,6 +754,7 @@ export default function Home() {
 
   // User's team info (fetched from Yahoo)
   const [myTeamName, setMyTeamName] = useState("Loading...");
+  const [myTeamKey, setMyTeamKey] = useState<string | null>(null);
   const [leagueName, setLeagueName] = useState("Fantasy League");
 
   // New Layout States 
@@ -773,6 +774,7 @@ export default function Home() {
   const [statCategories, setStatCategories] = useState<{statId: string; displayName: string; name: string}[]>([]);
   const [matchups, setMatchups] = useState<any[]>([]);
   const [matchupWeek, setMatchupWeek] = useState<number | null>(null);
+  const [isRefreshingRoster, setIsRefreshingRoster] = useState(false);
 
   // Gemini Assistant
   const [isAskingAssistant, setIsAskingAssistant] = useState(false);
@@ -891,12 +893,14 @@ export default function Home() {
       }
       if (myTeamData?.success) {
         setMyTeamName(myTeamData.teamName || selectedLeague.team_name || 'My Team');
+        setMyTeamKey(myTeamData.teamKey || selectedLeague.team_key || null);
         setLeagueName(myTeamData.leagueName || selectedLeague.league_name);
         setSelectedTeam(myTeamData.teamName || selectedLeague.team_name || 'My Team');
-        console.log('⭐ My Team:', myTeamData.teamName);
+        console.log('⭐ My Team:', myTeamData.teamName, myTeamData.teamKey);
       } else {
         // Fallback to league data if API fails
         setMyTeamName(selectedLeague.team_name || 'My Team');
+        setMyTeamKey(selectedLeague.team_key || null);
         setLeagueName(selectedLeague.league_name);
         setSelectedTeam(selectedLeague.team_name || 'My Team');
       }
@@ -993,6 +997,80 @@ export default function Home() {
       alert("Error syncing from Yahoo.");
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  // Roster editing: move a player to a new position slot
+  const handlePositionChange = async (playerKey: string, newPosition: string) => {
+    if (!myTeamKey || !selectedLeague?.league_key) {
+      alert('Missing team key or league key');
+      return;
+    }
+    try {
+      const res = await fetch('/api/yahoo/roster', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          teamKey: myTeamKey,
+          playerKey,
+          newPosition,
+          leagueKey: selectedLeague.league_key,
+        }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert(`Move failed: ${data.error || 'Unknown error'}${data.detail ? '\n' + data.detail : ''}`);
+        return;
+      }
+      // Update local state so UI reflects the change immediately
+      setTeamRosters(prev =>
+        prev.map(p =>
+          p.player_key === playerKey
+            ? { ...p, selected_position: newPosition, position: newPosition }
+            : p
+        )
+      );
+    } catch (err) {
+      console.error('Position change error:', err);
+      alert('Failed to update position.');
+    }
+  };
+
+  // Refresh my team's roster live from Yahoo (gets fresh selected_position data)
+  const refreshMyRoster = async () => {
+    if (!myTeamKey || !selectedLeague?.league_key) return;
+    setIsRefreshingRoster(true);
+    try {
+      const res = await fetch(`/api/yahoo/roster?leagueKey=${selectedLeague.league_key}&teamKey=${myTeamKey}&t=${Date.now()}`);
+      const data = await res.json();
+      if (data.success && data.roster) {
+        // Merge live Yahoo data into teamRosters state for my team
+        setTeamRosters(prev => {
+          // Remove old entries for my team, add fresh ones
+          const otherTeams = prev.filter(p => p.team_key !== myTeamKey);
+          const myTeamName_ = prev.find(p => p.team_key === myTeamKey)?.team_name || myTeamName;
+          const freshPlayers = data.roster.map((p: any) => ({
+            league_key: selectedLeague.league_key,
+            team_key: myTeamKey,
+            team_name: myTeamName_,
+            player_name: p.name,
+            player_key: p.playerKey,
+            position: p.selectedPosition,
+            selected_position: p.selectedPosition,
+            eligible_positions: p.eligiblePositions,
+            nba_team: p.team,
+            status: p.status,
+          }));
+          return [...otherTeams, ...freshPlayers];
+        });
+        console.log(`✅ Refreshed roster: ${data.roster.length} players`);
+      } else {
+        console.error('Roster refresh failed:', data.error);
+      }
+    } catch (err) {
+      console.error('Roster refresh error:', err);
+    } finally {
+      setIsRefreshingRoster(false);
     }
   };
 
@@ -1968,7 +2046,7 @@ export default function Home() {
               {/* Roster - Card View */}
               <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
-                <div className="flex items-baseline gap-3 mb-4 shrink-0">
+                <div className="flex items-center gap-3 mb-4 shrink-0">
                   <h3 className="text-lg font-black italic tracking-tighter text-indigo-400">{selectedTeam || myTeamName}</h3>
                   {(() => {
                     // For in-season, show player count from team_rosters
@@ -1985,6 +2063,19 @@ export default function Home() {
                       ? <span className="text-[10px] font-black text-orange-400 uppercase tracking-wider">{missing.length} open slots</span>
                       : <span className="text-[10px] font-black text-green-400 uppercase tracking-wider">Roster Full</span>;
                   })()}
+                  {/* Refresh + Edit indicator for own team */}
+                  {selectedTeam === myTeamName && myTeamKey && teamRosters.length > 0 && (
+                    <>
+                      <span className="text-[8px] font-bold text-indigo-400/60 uppercase tracking-wider border border-indigo-500/20 px-1.5 py-0.5 rounded">tap slot to edit</span>
+                      <button
+                        onClick={refreshMyRoster}
+                        disabled={isRefreshingRoster}
+                        className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-wait"
+                      >
+                        {isRefreshingRoster ? 'Refreshing...' : 'Refresh'}
+                      </button>
+                    </>
+                  )}
                 </div>
                 
                 {/* Player Cards */}
@@ -2080,6 +2171,11 @@ export default function Home() {
                                     leagueKey={selectedLeague?.league_key}
                                     onAskAssistant={askAssistant}
                                     context="team"
+                                    editable={selectedTeam === myTeamName && !!myTeamKey}
+                                    playerKey={player.player_key}
+                                    teamKey={myTeamKey || undefined}
+                                    eligiblePositions={player.eligible_positions}
+                                    onPositionChange={handlePositionChange}
                                   />
                                 );
                               })}
