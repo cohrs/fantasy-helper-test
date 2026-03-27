@@ -24,7 +24,13 @@ interface PlayerCardProps {
   onAskAssistant?: (prompt: string) => void;
   showControls?: boolean;
   controls?: React.ReactNode;
-  context?: 'watchlist' | 'team' | 'pool'; // Where is this card being shown?
+  context?: 'watchlist' | 'team' | 'pool';
+  // Roster editing props
+  editable?: boolean;
+  playerKey?: string;
+  teamKey?: string;
+  eligiblePositions?: string;
+  onPositionChange?: (playerKey: string, newPosition: string) => void;
 }
 
 export function PlayerCard({ 
@@ -36,7 +42,12 @@ export function PlayerCard({
   onAskAssistant,
   showControls = false,
   controls,
-  context = 'pool'
+  context = 'pool',
+  editable = false,
+  playerKey,
+  teamKey,
+  eligiblePositions,
+  onPositionChange,
 }: PlayerCardProps) {
   const [showNotes, setShowNotes] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -45,6 +56,8 @@ export function PlayerCard({
   const [loadingNews, setLoadingNews] = useState(false);
   const [playerNotes, setPlayerNotes] = useState<string | null>(null);
   const [loadingNotes, setLoadingNotes] = useState(false);
+  const [showPosMenu, setShowPosMenu] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
 
   // Fetch player notes from database when card is opened
   useEffect(() => {
@@ -110,6 +123,28 @@ export function PlayerCard({
     }
   };
 
+  // Build list of positions this player can be moved to
+  const getAvailablePositions = () => {
+    if (!eligiblePositions) return [];
+    const eligible = eligiblePositions.split(',').map(p => p.trim()).filter(Boolean);
+    // Always include BN and IL slots
+    const extras = ['BN', 'IL', 'IL+', 'IL60', 'NA'];
+    const all = [...new Set([...eligible, ...extras])];
+    // Filter out current slot
+    return all.filter(p => p !== slot);
+  };
+
+  const handlePositionChange = async (newPos: string) => {
+    if (!playerKey || !onPositionChange) return;
+    setIsMoving(true);
+    setShowPosMenu(false);
+    try {
+      await onPositionChange(playerKey, newPos);
+    } finally {
+      setIsMoving(false);
+    }
+  };
+
   return (
     <div className={`bg-slate-950 rounded-xl border ${player.isTaken ? 'border-slate-800/30 opacity-50' : 'border-slate-800/50 hover:border-slate-700/50'} group transition-all relative overflow-hidden`}>
       <div className={`absolute left-0 top-0 bottom-0 w-1 ${activeSport === 'baseball' ? 'bg-indigo-600' : 'bg-orange-600'} ${player.isTaken ? 'bg-slate-700' : ''}`} />
@@ -117,10 +152,36 @@ export function PlayerCard({
       <div className="flex justify-between items-center p-2 pl-3">
         <div className="flex items-center gap-3 flex-1 min-w-0 pr-2">
           
-          {/* Roster Slot Badge (Team View) */}
+          {/* Roster Slot Badge (Team View) — clickable when editable */}
           {slot && (
-            <div className={`w-8 flex-col items-center justify-center font-black text-[10px] leading-none text-center rounded py-1 shrink-0 ${slot === 'BN' ? 'bg-slate-800/50 text-slate-500' : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'}`}>
-              {slot}
+            <div className="relative">
+              <button
+                onClick={(e) => {
+                  if (!editable || isMoving) return;
+                  e.stopPropagation();
+                  setShowPosMenu(v => !v);
+                }}
+                disabled={!editable || isMoving}
+                className={`w-8 flex-col items-center justify-center font-black text-[10px] leading-none text-center rounded py-1 shrink-0 flex transition-all ${
+                  isMoving ? 'animate-pulse bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                  slot === 'BN' ? 'bg-slate-800/50 text-slate-500' : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+                } ${editable && !isMoving ? 'cursor-pointer hover:bg-indigo-500/20 hover:border-indigo-400/40' : isMoving ? 'cursor-wait' : 'cursor-default'}`}
+              >
+                {isMoving ? '...' : slot}
+              </button>
+              {showPosMenu && editable && (
+                <div className="absolute left-0 top-full mt-1 z-50 bg-slate-900 border border-slate-700 rounded-lg shadow-xl py-1 min-w-[60px]">
+                  {getAvailablePositions().map(pos => (
+                    <button
+                      key={pos}
+                      onClick={(e) => { e.stopPropagation(); handlePositionChange(pos); }}
+                      className="block w-full text-left px-3 py-1.5 text-[10px] font-bold text-slate-300 hover:bg-indigo-500/20 hover:text-indigo-300 transition-colors"
+                    >
+                      {pos}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

@@ -1,151 +1,112 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]/route";
+import { getDb } from '@/lib/db';
+import { getYahooAccessToken } from '@/lib/yahoo-auth';
 
-const LEAGUE_KEY = '469.l.4136';
+const sql = getDb();
+export const dynamic = 'force-dynamic';
 
-// GET - Fetch your roster
+// GET - Fetch your roster live from Yahoo (with selected_position)
 export async function GET(request: Request) {
-    try {
-        const session = await getServerSession(authOptions);
-
-        if (!session || !(session as any).accessToken) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const accessToken = (session as any).accessToken;
-        const { searchParams } = new URL(request.url);
-        const week = searchParams.get('week') || 'current';
-
-        // Get user's team key
-        const teamsUrl = `https://fantasysports.yahooapis.com/fantasy/v2/users;use_login=1/games;game_keys=mlb/teams?format=json`;
-        const teamsResponse = await fetch(teamsUrl, {
-            headers: { "Authorization": `Bearer ${accessToken}` }
-        });
-
-        if (!teamsResponse.ok) {
-            return NextResponse.json({ error: 'Failed to fetch teams' }, { status: teamsResponse.status });
-        }
-
-        const teamsData = await teamsResponse.json();
-        const games = teamsData?.fantasy_content?.users?.[0]?.user?.[1]?.games;
-        let teamKey = null;
-        
-        if (games) {
-            for (const key in games) {
-                if (key === 'count') continue;
-                const game = games[key];
-                const teams = game?.game?.[1]?.teams;
-                if (teams) {
-                    for (const tKey in teams) {
-                        if (tKey === 'count') continue;
-                        const team = teams[tKey]?.team?.[0];
-                        if (team) {
-                            const leagueKey = team.find((t: any) => t.team_key)?.team_key?.split('.t.')[0];
-                            if (leagueKey === LEAGUE_KEY) {
-                                teamKey = team.find((t: any) => t.team_key)?.team_key;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (!teamKey) {
-            return NextResponse.json({ error: 'Team not found in league' }, { status: 404 });
-        }
-
-        // Fetch roster
-        const rosterUrl = week === 'current' 
-            ? `https://fantasysports.yahooapis.com/fantasy/v2/team/${teamKey}/roster?format=json`
-            : `https://fantasysports.yahooapis.com/fantasy/v2/team/${teamKey}/roster;week=${week}?format=json`;
-
-        const rosterResponse = await fetch(rosterUrl, {
-            headers: { "Authorization": `Bearer ${accessToken}` }
-        });
-
-        if (!rosterResponse.ok) {
-            const errorText = await rosterResponse.text();
-            return NextResponse.json({ 
-                error: `Yahoo API returned ${rosterResponse.status}`,
-                detail: errorText.substring(0, 500)
-            }, { status: rosterResponse.status });
-        }
-
-        const rosterData = await rosterResponse.json();
-        const playersRaw = rosterData?.fantasy_content?.team?.[1]?.roster?.['0']?.players;
-
-        if (!playersRaw) {
-            return NextResponse.json({ error: 'No roster data found' }, { status: 404 });
-        }
-
-        const roster: any[] = [];
-        for (const key in playersRaw) {
-            if (key === 'count') continue;
-            const playerObj = playersRaw[key];
-            if (!playerObj?.player) continue;
-
-            const info = playerObj.player[0];
-            const findField = (fieldKey: string) => {
-                for (const item of info) {
-                    if (typeof item === 'object' && item !== null && fieldKey in item) return item[fieldKey];
-                }
-                return null;
-            };
-
-            const nameObj = findField('name');
-            const fullName = (typeof nameObj === 'object' && nameObj?.full)
-                ? nameObj.full
-                : (nameObj?.first && nameObj?.last ? `${nameObj.first} ${nameObj.last}` : 'Unknown');
-
-            const selectedPosition = findField('selected_position');
-            const position = selectedPosition?.[1]?.position || 'BN';
-
-            roster.push({
-                name: fullName,
-                team: findField('editorial_team_abbr') || 'FA',
-                eligiblePositions: findField('eligible_positions'),
-                selectedPosition: position,
-                status: findField('status'),
-                playerKey: findField('player_key')
-            });
-        }
-
-        return NextResponse.json({
-            success: true,
-            teamKey,
-            roster
-        });
-
-    } catch (error) {
-        console.error('[Yahoo Roster] Error:', error);
-        return NextResponse.json({ 
-            error: 'Internal Server Error', 
-            detail: String(error) 
-        }, { status: 500 });
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const { searchParams } = new URL(request.url);
+    const leagueKey = searchParams.get('leagueKey');
+    const teamKeyParam = searchParams.get('teamKey');
+
+    if (!leagueKey) {
+      return NextResponse.json({ error: 'leagueKey required' }, { status: 400 });
+    }
+
+    // Get access token via yahoo-auth (handles refresh)
+    const userResult = await sql`SELECT yahoo_guid FROM users WHERE email = ${session.user.email}`;
+    if (!userResult.length) return NextResponse.json({ error: 'User not found' }, { status: 401 });
+    const accessToken = await getYahooAccessToken(userResult[0].yahoo_guid);
+    if (!accessToken) return NextResponse.json({ error: 'Yahoo token expired. Re-login.' }, { status: 401 });
+
+    // Resolve team key if not provided
+    let teamKey = teamKeyParam;
+    if (!teamKey) {
+      const ul = await sql`SELECT team_key FROM user_leagues WHERE league_key = ${leagueKey} AND user_id = (SELECT id FROM users WHERE email = ${session.user.email}) LIMIT 1`;
+      teamKey = ul[0]?.team_key || null;
+    }
+    if (!teamKey) {
+      return NextResponse.json({ error: 'Could not resolve team_key' }, { status: 404 });
+    }
+
+    const rosterUrl = `https://fantasysports.yahooapis.com/fantasy/v2/team/${teamKey}/roster?format=json`;
+    const rosterResp = await fetch(rosterUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+
+    if (!rosterResp.ok) {
+      const errorText = await rosterResp.text();
+      return NextResponse.json({ error: `Yahoo API ${rosterResp.status}`, detail: errorText.substring(0, 500) }, { status: rosterResp.status });
+    }
+
+    const rosterData = await rosterResp.json();
+    const playersRaw = rosterData?.fantasy_content?.team?.[1]?.roster?.['0']?.players;
+    if (!playersRaw) return NextResponse.json({ error: 'No roster data' }, { status: 404 });
+
+    const roster: any[] = [];
+    for (const key in playersRaw) {
+      if (key === 'count') continue;
+      const playerObj = playersRaw[key];
+      if (!playerObj?.player) continue;
+      const info = playerObj.player[0];
+      const findField = (fieldKey: string) => {
+        for (const item of info) {
+          if (typeof item === 'object' && item !== null && fieldKey in item) return item[fieldKey];
+        }
+        return null;
+      };
+      const nameObj = findField('name');
+      const fullName = (typeof nameObj === 'object' && nameObj?.full) ? nameObj.full : 'Unknown';
+      const selectedPos = playerObj.player[1]?.selected_position?.[1]?.position || 'BN';
+      const positions = findField('eligible_positions');
+      const eligiblePos = Array.isArray(positions) ? positions.map((p: any) => typeof p === 'object' && p.position ? p.position : p).join(',') : 'UTIL';
+
+      roster.push({
+        playerKey: findField('player_key'),
+        name: fullName,
+        team: findField('editorial_team_abbr') || 'FA',
+        selectedPosition: selectedPos,
+        eligiblePositions: eligiblePos,
+        status: findField('status') || 'Active',
+      });
+    }
+
+    return NextResponse.json({ success: true, teamKey, roster });
+  } catch (error) {
+    console.error('[Yahoo Roster GET] Error:', error);
+    return NextResponse.json({ error: 'Internal Server Error', detail: String(error) }, { status: 500 });
+  }
 }
 
-// POST - Update lineup (move players between active/bench)
+
+// POST - Update lineup position (move player to new slot)
 export async function POST(request: Request) {
-    try {
-        const session = await getServerSession(authOptions);
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-        if (!session || !(session as any).accessToken) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+    const { teamKey, playerKey, newPosition, leagueKey } = await request.json();
+    if (!teamKey || !playerKey || !newPosition) {
+      return NextResponse.json({ error: 'Missing: teamKey, playerKey, newPosition' }, { status: 400 });
+    }
 
-        const { teamKey, playerKey, newPosition } = await request.json();
+    const userResult = await sql`SELECT yahoo_guid FROM users WHERE email = ${session.user.email}`;
+    if (!userResult.length) return NextResponse.json({ error: 'User not found' }, { status: 401 });
+    const accessToken = await getYahooAccessToken(userResult[0].yahoo_guid);
+    if (!accessToken) return NextResponse.json({ error: 'Yahoo token expired. Re-login.' }, { status: 401 });
 
-        if (!teamKey || !playerKey || !newPosition) {
-            return NextResponse.json({ 
-                error: 'Missing required fields: teamKey, playerKey, newPosition' 
-            }, { status: 400 });
-        }
-
-        // Yahoo API requires XML for roster updates
-        const xml = `<?xml version="1.0"?>
+    // Yahoo API requires XML for roster updates
+    const xml = `<?xml version="1.0"?>
 <fantasy_content>
   <roster>
     <coverage_type>week</coverage_type>
@@ -158,36 +119,33 @@ export async function POST(request: Request) {
   </roster>
 </fantasy_content>`;
 
-        const accessToken = (session as any).accessToken;
-        const updateUrl = `https://fantasysports.yahooapis.com/fantasy/v2/team/${teamKey}/roster`;
+    const updateUrl = `https://fantasysports.yahooapis.com/fantasy/v2/team/${teamKey}/roster`;
+    const response = await fetch(updateUrl, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/xml' },
+      body: xml
+    });
 
-        const response = await fetch(updateUrl, {
-            method: 'PUT',
-            headers: {
-                "Authorization": `Bearer ${accessToken}`,
-                "Content-Type": "application/xml"
-            },
-            body: xml
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            return NextResponse.json({ 
-                error: `Failed to update lineup: ${response.status}`,
-                detail: errorText.substring(0, 500)
-            }, { status: response.status });
-        }
-
-        return NextResponse.json({
-            success: true,
-            message: 'Lineup updated successfully'
-        });
-
-    } catch (error) {
-        console.error('[Yahoo Roster POST] Error:', error);
-        return NextResponse.json({ 
-            error: 'Internal Server Error', 
-            detail: String(error) 
-        }, { status: 500 });
+    if (!response.ok) {
+      const errorText = await response.text();
+      return NextResponse.json({
+        error: `Yahoo returned ${response.status}`,
+        detail: errorText.substring(0, 500)
+      }, { status: response.status });
     }
+
+    // Update local DB to reflect the change immediately
+    if (leagueKey && playerKey) {
+      await sql`
+        UPDATE team_rosters
+        SET selected_position = ${newPosition}, position = ${newPosition}
+        WHERE league_key = ${leagueKey} AND player_key = ${playerKey}
+      `;
+    }
+
+    return NextResponse.json({ success: true, message: 'Position updated' });
+  } catch (error) {
+    console.error('[Yahoo Roster POST] Error:', error);
+    return NextResponse.json({ error: 'Internal Server Error', detail: String(error) }, { status: 500 });
+  }
 }
