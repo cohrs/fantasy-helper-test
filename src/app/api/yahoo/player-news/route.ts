@@ -171,7 +171,7 @@ export async function GET(request: Request) {
                     image_url = ${imageUrl},
                     notes = ${JSON.stringify(notes)},
                     fetched_at = CURRENT_TIMESTAMP
-            `.catch(err => console.error('Failed to cache Yahoo news:', err));
+            `.catch((err: any) => console.error('Failed to cache Yahoo news:', err));
         }
 
         return NextResponse.json({

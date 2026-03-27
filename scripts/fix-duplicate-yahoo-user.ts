@@ -13,7 +13,7 @@ async function fixDuplicateUser() {
   `;
   
   console.log('Found users with yahoo@yahoo-user.placeholder.com:');
-  users.forEach(u => {
+  users.forEach((u: any) => {
     console.log(`  - ${u.yahoo_guid} (has_token: ${u.has_token})`);
   });
   
@@ -38,7 +38,7 @@ async function fixDuplicateUser() {
   `;
   
   console.log('\nRemaining users:');
-  remaining.forEach(u => {
+  remaining.forEach((u: any) => {
     console.log(`  - ${u.yahoo_guid} (has_token: ${u.has_token})`);
   });
 }
