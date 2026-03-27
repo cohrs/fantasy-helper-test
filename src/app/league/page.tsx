@@ -2071,17 +2071,15 @@ export default function Home() {
                       : <span className="text-[10px] font-black text-green-400 uppercase tracking-wider">Roster Full</span>;
                   })()}
                   {/* Refresh + Edit indicator for own team */}
+                  {/* Roster editing disabled — Yahoo API is read-only. Keep Refresh for re-syncing roster data. */}
                   {selectedTeam === myTeamName && myTeamKey && teamRosters.length > 0 && (
-                    <>
-                      <span className="text-[8px] font-bold text-indigo-400/60 uppercase tracking-wider border border-indigo-500/20 px-1.5 py-0.5 rounded">tap slot to edit</span>
-                      <button
-                        onClick={refreshMyRoster}
-                        disabled={isRefreshingRoster}
-                        className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-wait"
-                      >
-                        {isRefreshingRoster ? 'Refreshing...' : 'Refresh'}
-                      </button>
-                    </>
+                    <button
+                      onClick={refreshMyRoster}
+                      disabled={isRefreshingRoster}
+                      className="text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-wait"
+                    >
+                      {isRefreshingRoster ? 'Refreshing...' : 'Refresh'}
+                    </button>
                   )}
                 </div>
                 
@@ -2192,7 +2190,7 @@ export default function Home() {
                                     leagueKey={selectedLeague?.league_key}
                                     onAskAssistant={askAssistant}
                                     context="team"
-                                    editable={selectedTeam === myTeamName && !!myTeamKey}
+                                    editable={false} /* Yahoo API read-only — no write scope available */
                                     playerKey={player.player_key}
                                     teamKey={myTeamKey || undefined}
                                     eligiblePositions={player.eligible_positions}
